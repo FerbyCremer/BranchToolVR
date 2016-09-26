@@ -1,6 +1,26 @@
 #include "Render.h"
 
-Render::Render(){
+int Render::window_size_x = 0;
+int Render::window_size_y = 0;
+int Render::half_window_size_x = 0;
+int Render::half_window_size_y = 0;
+float Render::aspect = 1.0f;
+
+Render::Render(GLFWwindow *_window){
+
+	// configure glfw vars
+	window = _window;
+	glfwSetWindowSizeCallback(window, Render::window_size_callback);
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+	window_size_x = width;
+	window_size_y = height;
+	half_window_size_x = width / 2;
+	half_window_size_y = height / 2;
+	aspect = (float)window_size_x / (float)window_size_y;
+
+	// set ui vars
+	ui_quadrant_ortho[0] = glm::vec4(-2.0f, 2.0f, -2.0f, 2.0f);
 
 	// set clears
 	glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
@@ -87,10 +107,25 @@ Render::Render(){
 	branch_line.uniforms[8] = glGetUniformLocation(branch_line.id, "lights[1].pos");
 	branch_line.uniforms[9] = glGetUniformLocation(branch_line.id, "lights[2].pos");
 
+	ui_texture.id = CompileGLShader("ui_texture", shader_directory);
+	ui_texture.num_uniforms = 4;
+	ui_texture.uniforms = new GLuint[branch_line.num_uniforms];
+	ui_texture.uniforms[0] = glGetUniformLocation(ui_texture.id, "P");
+	ui_texture.uniforms[1] = glGetUniformLocation(ui_texture.id, "V");
+	ui_texture.uniforms[2] = glGetUniformLocation(ui_texture.id, "M");
+	ui_texture.uniforms[3] = glGetUniformLocation(ui_texture.id, "diffuse_texture");
+
+	ui_color.id = CompileGLShader("ui_color", shader_directory);
+	ui_color.num_uniforms = 4;
+	ui_color.uniforms = new GLuint[branch_line.num_uniforms];
+	ui_color.uniforms[0] = glGetUniformLocation(ui_color.id, "P");
+	ui_color.uniforms[1] = glGetUniformLocation(ui_color.id, "V");
+	ui_color.uniforms[2] = glGetUniformLocation(ui_color.id, "M");
+	ui_color.uniforms[3] = glGetUniformLocation(ui_color.id, "color");
 
 	// load textures
 	textures = new Texture*[CURR_NR_TEXTURES];
-	for (int i = 0; i < CURR_NR_TEXTURES; ++i) {
+	for (int i = 0; i < CURR_NR_TEXTURES - 1; ++i) {
 		textures[i] = new Texture;
 	}
 	textures[WOOD_TEXTURE]->Load("wood");
@@ -121,6 +156,14 @@ Render::Render(){
 
 Render::~Render(){
 
+}
+
+void Render::window_size_callback(GLFWwindow* window, int width, int height){
+	window_size_x = width;
+	window_size_y = height;
+	half_window_size_x = window_size_x / 2;
+	half_window_size_y = window_size_y / 2;
+	aspect = (float)window_size_x / (float)window_size_y;
 }
 
 bool Render::InitVR() {
@@ -227,7 +270,7 @@ void Render::RenderEyes() {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, rightEyeDesc.m_nRenderFramebufferId);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, rightEyeDesc.m_nResolveFramebufferId);
 
-	glBlitFramebuffer(0, 0, m_nRenderWidth, m_nRenderHeight, 0, 0, m_nRenderWidth, m_nRenderHeight,GL_COLOR_BUFFER_BIT,GL_LINEAR);
+	glBlitFramebuffer(0, 0, m_nRenderWidth, m_nRenderHeight, 0, 0, m_nRenderWidth, m_nRenderHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -251,9 +294,19 @@ void Render::UpdateLights() {
 	}
 }
 
-void Render::RenderScene(GLFWwindow* window) {
-
+void Render::RenderScene() {
+	glEnable(GL_SCISSOR_TEST);
 	UpdateLights();
+
+	glViewport(0, 0, half_window_size_x, window_size_y);
+	glScissor(0, 0, half_window_size_x, window_size_y);
+	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.0f, 0.0f, 1.0f)));
+	RenderSceneInternal(glm::perspective(90.0f ,aspect, 0.001f, 1000.0f), glm::inverse(controller_pose1));
+
+	//glViewport(h_width, 0, h_width , h_height);
+	//glScissor(h_width, 0, h_width, h_height);
+	//renderer->RenderSceneInternal(glm::perspective(90.0f, (float)width/(float)height, 0.001f, 1000.0f), glm::inverse(controller_mm1));
+	RenderUI(glm::perspective(90.0f, aspect, 0.001f, 1000.0f), glm::mat4(1.0f));
 
 	// render to hmd
 	//RenderEyes();
@@ -269,6 +322,86 @@ void Render::RenderScene(GLFWwindow* window) {
 	//RenderSceneInternal(glm::perspective(90.0f, 1.0f, 0.1f, 1000.0f), m_mat4HMDPose);
 
 	UpdateHMDMatrixPose();
+}
+
+void Render::RenderUI(glm::mat4 _P, glm::mat4 _V) {
+
+	glViewport(half_window_size_x, 0,  half_window_size_x, window_size_y);
+	glScissor(half_window_size_x, 0, half_window_size_x, window_size_y);
+	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)));
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+
+	glViewport(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
+	glScissor(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
+	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.4f, 0.4f, 0.4f, 1.0f)));
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+
+	_P = glm::ortho(-half_ui_panel_size.x, half_ui_panel_size.x, -half_ui_panel_size.y, half_ui_panel_size.y, -100.0f, 100.0f);
+	_V = glm::mat4(1.0f);
+
+	_P = glm::ortho(ui_quadrant_ortho[0].x, ui_quadrant_ortho[0].y, ui_quadrant_ortho[0].z, ui_quadrant_ortho[0].w, -100.0f, 100.0f);
+
+	glUseProgram(ui_color.id);
+
+	glUniformMatrix4fv(ui_color.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
+	glUniformMatrix4fv(ui_color.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
+
+	for (ColorObject* & cUiObj : color_ui_elements) {
+		if (cUiObj->is_hidden || !cUiObj->is_loaded)
+			continue;
+
+		if (cUiObj->ui_quadrant == 0) {
+			glViewport(half_window_size_x, 0, half_window_size_x, half_window_size_y);
+			glScissor(half_window_size_x, 0, half_window_size_x, half_window_size_y);
+		}
+
+		//glUniformMatrix4fv(ui_color.uniforms[2], 1, GL_FALSE, glm::value_ptr(cUiObj->GetModelMatrix()));
+		glUniformMatrix4fv(ui_color.uniforms[2], 1, GL_FALSE, glm::value_ptr(cUiObj->ui_transform));
+		glUniform4fv(ui_color.uniforms[3], 1, glm::value_ptr(cUiObj->GetDisplayColor()));
+
+		glBindVertexArray(cUiObj->vao);
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+
+		glDrawArrays(GL_TRIANGLES, 0, cUiObj->num_vertices);
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+
+	glUseProgram(ui_texture.id);
+
+	for (int i = 0; i < CURR_NR_TEXTURES; ++i) {
+		textures[i]->Bind();
+	}
+
+	glUniformMatrix4fv(ui_texture.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
+	glUniformMatrix4fv(ui_texture.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
+
+	for (TextureObject* & tUiObj : texture_ui_elements) {
+		if (tUiObj->is_hidden || !tUiObj->is_loaded)
+			continue;
+
+		if (tUiObj->ui_quadrant == 0) {
+			glViewport(half_window_size_x, 0, half_window_size_x, half_window_size_y);
+			glScissor(half_window_size_x, 0, half_window_size_x, half_window_size_y);
+		}
+		else if (tUiObj->ui_quadrant == 1) {
+			glViewport(half_window_size_x, half_window_size_y, half_window_size_x, half_window_size_y);
+			glScissor(half_window_size_x, half_window_size_y, half_window_size_x, half_window_size_y);
+		}
+
+		glUniformMatrix4fv(ui_texture.uniforms[2], 1, GL_FALSE, glm::value_ptr(tUiObj->ui_transform));
+		glUniform1i(ui_texture.uniforms[3], tUiObj->texture_id);
+
+		glBindVertexArray(tUiObj->vao);
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
+		glDrawArrays(GL_TRIANGLES, 0, tUiObj->num_vertices);
+	}
+
 }
 
 void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {

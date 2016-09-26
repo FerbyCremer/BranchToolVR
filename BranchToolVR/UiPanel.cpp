@@ -135,9 +135,11 @@ void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos
 	
 }
 
-void UiPanel::GenerateDicomPanel() {
+void UiPanel::GenerateDicomPanel(Render * _r) {
 
 	base_panel.SetSize(1.25f, 0.5f, 0.025f);
+	_r->ui_panel_size = base_panel.size;
+	_r->half_ui_panel_size = base_panel.size * 0.55f;
 
 	// tab 1
 	Tab * iso_controls = new Tab;
@@ -214,6 +216,32 @@ void UiPanel::GenerateDicomPanel() {
 	base_panel.AddTab(misc);
 
 	Finalize();
+
+	std::vector<AbstractBaseObject*> objects = base_panel.GetObjects();
+	_r->AddObjectToScene(objects);
+
+	for (int i = 0; i < objects.size(); ++i) {
+		if (objects[i]->Type() == 0) {
+			ColorObject* co = static_cast<ColorObject*>(objects[i]);
+			if (co != &base_panel.controller_handle.obj) {
+				co->ui_transform = glm::translate(glm::mat4(1.0f), -0.5f*base_panel.size) * co->base_model_matrix;
+				_r->color_ui_elements.push_back(co);
+			}
+		}
+		else if (objects[i]->Type() == 1) {
+			TextureObject* to = static_cast<TextureObject*>(objects[i]);
+			to->ui_transform = glm::translate(glm::mat4(1.0f), -0.5f*base_panel.size) * to->base_model_matrix;
+			_r->texture_ui_elements.push_back(to);
+		}
+	}
+
+
+	TextureObject * ortho_slice = new TextureObject;
+	ortho_slice->GenerateXYPlane(1.0f, 1.0f, 0.0f, glm::vec3(0.0f, 0.0f,0.0f));
+	ortho_slice->texture_id = CURR_ORTHOSLICE_TEXTURE;
+	ortho_slice->ui_quadrant = 1;
+	_r->texture_ui_elements.push_back(ortho_slice);
+
 }
 
 void UiPanel::Finalize() {

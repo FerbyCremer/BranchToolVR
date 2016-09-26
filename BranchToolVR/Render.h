@@ -55,7 +55,7 @@ struct FramebufferDesc{
 class Render{
 
 	public:
-		Render();
+		Render(GLFWwindow* _window);
 		~Render();
 		void AddObjectToScene(std::vector<AbstractBaseObject*> bsos);
 		void AddObjectToScene(AbstractBaseObject* abso);
@@ -63,12 +63,26 @@ class Render{
 		void AddObjectToScene(DicomPointCloudObject * dpco);
 		void AddObjectToScene(LineObject * l);
 		void AddObjectToScene(TextureObject * t);
-		void RenderScene(GLFWwindow* window);
+		void RenderScene();
 		void Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, glm::vec3 _ray, glm::vec3 _pos, bool _pressed);
 		void UpdateHMDMatrixPose();
 		void ResetSeatedPose();
+		void RenderUI(glm::mat4 _P, glm::mat4 _V);
+		static void window_size_callback(GLFWwindow* window, int width, int height);
+		static int window_size_x;
+		static int window_size_y;
+		static int half_window_size_x;
+		static int half_window_size_y;
+		static float aspect;
 
 	//private:
+		// ui variables
+		glm::vec4 ui_quadrant_ortho[4];
+		glm::vec3 ui_panel_size;
+		glm::vec3 half_ui_panel_size;
+
+		// glfw reference (must be initialized before constructor)
+		GLFWwindow * window;
 
 		// Textures
 		int num_textures;
@@ -86,8 +100,12 @@ class Render{
 		ShaderProgram dicom_point_cloud;
 		ShaderProgram branch_point;
 		ShaderProgram branch_line;
+		ShaderProgram ui_color;
+		ShaderProgram ui_texture;
 		
 		// object containers
+		std::vector<ColorObject*> color_ui_elements;
+		std::vector<TextureObject*> texture_ui_elements;
 		std::vector<ColorObject*> color_objects;
 		std::vector<TextureObject*> texture_objects;
 		std::vector<LineObject*> line_objects;

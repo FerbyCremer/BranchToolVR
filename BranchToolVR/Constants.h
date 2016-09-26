@@ -2,7 +2,7 @@
 
 #include <string>
 
-#define DEFAULT_WINDOW_SIZE_X 1000
+#define DEFAULT_WINDOW_SIZE_X 1600
 #define DEFAULT_WINDOW_SIZE_Y 800
 #define WINDOW_TITLE_STRING "Branch Tool VR"
 #define DEFAULT_ISOVALUE 1340

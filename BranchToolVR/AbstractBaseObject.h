@@ -38,9 +38,12 @@ class AbstractBaseObject
 		bool is_selectable;
 		bool is_selected;
 		int id;
+		short ui_quadrant;
+		glm::mat4 ui_transform;
 		static int id_counter;
 		glm::mat4 GetModelMatrix();
 		glm::mat4 model_matrix;
+		glm::mat4 base_model_matrix;
 
 		void Set_world_position(glm::vec3& v);
 		void Set_model_orientation(glm::vec3& v);

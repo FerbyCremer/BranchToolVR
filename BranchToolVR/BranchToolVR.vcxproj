@@ -248,6 +248,10 @@
     <None Include="Shaders\line.vs.glsl" />
     <None Include="Shaders\texture.fs.glsl" />
     <None Include="Shaders\texture.vs.glsl" />
+    <None Include="Shaders\ui_color.fs.glsl" />
+    <None Include="Shaders\ui_color.vs.glsl" />
+    <None Include="Shaders\ui_texture.fs.glsl" />
+    <None Include="Shaders\ui_texture.vs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -8,7 +8,7 @@ Engine::Engine(){
 	}
 	
 	// glew has been initialized
-	renderer = new Render;
+	renderer = new Render(window);
 	nonVR_camera = new Camera;
 
 	// axis lines
@@ -18,8 +18,9 @@ Engine::Engine(){
 	glLineWidth(12.0f);
 
 	// dicom panel
-	dicom_panel.GenerateDicomPanel();
-	renderer->AddObjectToScene(dicom_panel.GetObjects());
+	dicom_panel.GenerateDicomPanel(renderer);
+	//dicom_panel.addToRenderer();
+	//renderer->AddObjectToScene(dicom_panel.GetObjects());
 	dicom_panel.SetWorldPosition(glm::vec3(0.0f, 0.0f, -1.0f));
 	dicom_panel.SetModelOrientation(glm::vec3(0.8f, 0.2f, 0.2f));
 	isovalue_slider = dicom_panel.GetSliderByName("isovalue");
@@ -136,13 +137,13 @@ void Engine::FakeControllerInput(float _deltaT) {
 	glfwGetCursorPos(window, &xpos, &ypos);
 
 	glm::vec2 mpos;
-	mpos.x = width / 2 - xpos;
-	mpos.y = height / 2 - ypos; 
+	mpos.x = width / 4 - xpos;
+	mpos.y = height / 4 - ypos; 
 
 	int focused = glfwGetWindowAttrib(window, GLFW_FOCUSED);
 
 	if (focused) {
-		glfwSetCursorPos(window, width/2, height/2);
+		glfwSetCursorPos(window, width/4, height/4);
 		controller->model_orientation.x += rot_rate*mpos.x;
 		controller->model_orientation.y += glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f);
 		controller->CalcModelMatrix();
@@ -222,17 +223,20 @@ void Engine::Loop() {
 		begin = std::chrono::high_resolution_clock::now();
 		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(begin - end).count();
 		
-		renderer->RenderScene(window);
+		renderer->RenderScene();
 		Update();
 
 
 		FakeControllerInput((float)ms);
 
-		int width, height;
-		glfwGetWindowSize(window, &width, &height);
-		glViewport(0, 0, width , height);
-		renderer->RenderSceneInternal(glm::perspective(90.0f, (float)width/(float)height, 0.001f, 1000.0f), glm::inverse(controller_mm1));
-
+		//int width, height;
+		//glfwGetWindowSize(window, &width, &height);
+		//glViewport(0, 0, width , height);
+		////renderer->RenderSceneInternal(glm::perspective(90.0f, (float)width/(float)height, 0.001f, 1000.0f), glm::inverse(controller_mm1));
+		//renderer->RenderUI(glm::perspective(90.0f, (float)width/(float)height, 0.001f, 1000.0f), glm::inverse(controller_mm1));
+		
+		
+		
 		renderer->controller_pose1 = controller_mm1;
 		renderer->controller_press1 = controller_press1;
 

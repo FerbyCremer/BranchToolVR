@@ -8,11 +8,14 @@ AbstractBaseObject::AbstractBaseObject(){
 	model_position = glm::vec3(0.0f, 0.0f, 0.0f);
 	append_pose = glm::mat4(1.0f);
 	model_matrix = glm::mat4(1.0f);
+	base_model_matrix = glm::mat4(1.0f);
 	scale = glm::vec3(1.0f, 1.0f, 1.0f);
 	is_loaded = false;
 	is_hidden = false;
 	is_selectable = false;
 	is_selected = false;
+	ui_quadrant = 0;
+	ui_transform = glm::mat4(1.0f);
 	id = id_counter++;
 }
 
@@ -25,10 +28,11 @@ glm::mat4 AbstractBaseObject::GetModelMatrix() {
 }
 
 void AbstractBaseObject::CalcModelMatrix() {
+	base_model_matrix = glm::translate(glm::mat4(), model_position);
 	model_matrix = append_pose
-		* glm::translate(glm::mat4(), world_position)
-		* glm::yawPitchRoll(model_orientation.x, model_orientation.y, model_orientation.z)
-		* glm::translate(glm::mat4(), model_position);
+				 * glm::translate(glm::mat4(), world_position)
+				 * glm::yawPitchRoll(model_orientation.x, model_orientation.y, model_orientation.z)
+				 * base_model_matrix;
 }
 
 void AbstractBaseObject::Set_world_position(glm::vec3& v) {

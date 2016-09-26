@@ -370,5 +370,17 @@
     <None Include="Shaders\branch_line.vs.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\ui_color.fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ui_color.vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ui_texture.fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ui_texture.vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

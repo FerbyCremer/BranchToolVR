@@ -8,6 +8,7 @@
 #include "TextureObject.h"
 #include "ColorObject.h"
 #include "MiscFunctions.h"
+#include "Render.h"
 
 enum UiElementTypes {
 	SLIDER,
@@ -323,7 +324,7 @@ class UiPanel{
 		Panel base_panel;
 		std::vector<UiElement*> all_elements;
 		void Finalize();
-		void GenerateDicomPanel();
+		void GenerateDicomPanel(Render * _r);
 		void Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos, bool _pressed);
 		std::vector<AbstractBaseObject*> GetObjects();
 		void SetWorldPosition(glm::vec3 _inPos);
