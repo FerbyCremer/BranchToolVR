@@ -58,7 +58,7 @@ glm::vec3 UiPanel::GetCollisionPointWithPanelPlane(glm::vec3 _ray, glm::vec3 _po
 
 Slider* UiPanel::GetSliderByName(std::string _name) {
 	for (UiElement* uie : all_elements) {
-		if (uie->name.compare(_name)==0) {
+		if (uie->name.compare(_name) == 0) {
 			Slider * s = static_cast<Slider*>(uie);
 			return static_cast<Slider*>(uie);
 		}
@@ -106,7 +106,7 @@ void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos
 		if (glm::dot((p - _pos), _ray) > 0) {
 			if (selected_element->type == SLIDER) {
 				Slider* s = static_cast<Slider*>(selected_element);
-				s->knob.model_position.x = glm::clamp((glm::inverse(GetModelMatrix())*glm::vec4(p, 1.0f)).x - x_offset, s->track_min_max.x, s->track_min_max.y);
+				s->knob.Set_model_positionX(glm::clamp((glm::inverse(GetModelMatrix())*glm::vec4(p, 1.0f)).x - x_offset, s->track_min_max.x, s->track_min_max.y));
 				s->UpdateVal(s->knob.model_position.x / s->track_min_max.y, false);
 			}
 		}
@@ -137,9 +137,8 @@ void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos
 
 void UiPanel::GenerateDicomPanel(Render * _r) {
 
-	base_panel.SetSize(1.25f, 0.5f, 0.025f);
-	_r->ui_panel_size = base_panel.size;
-	_r->half_ui_panel_size = base_panel.size * 0.55f;
+	base_panel.SetSize(Constants::DICOM_PANEL_DIMENSIONS);
+	glm::vec3 half_panel_size = base_panel.size * 0.525f;
 
 	// tab 1
 	Tab * iso_controls = new Tab;
@@ -212,36 +211,31 @@ void UiPanel::GenerateDicomPanel(Render * _r) {
 	reset_bps->min = 0;
 	reset_bps->max = 1;
 	reset_bps->name = "reset selection";
-	misc->AddElement(window_width);
+	misc->AddElement(reset_bps);
 	base_panel.AddTab(misc);
 
 	Finalize();
 
 	std::vector<AbstractBaseObject*> objects = base_panel.GetObjects();
+	
+	// add objects to world scene
 	_r->AddObjectToScene(objects);
 
+	// add objects to 2D ui
 	for (int i = 0; i < objects.size(); ++i) {
 		if (objects[i]->Type() == 0) {
 			ColorObject* co = static_cast<ColorObject*>(objects[i]);
 			if (co != &base_panel.controller_handle.obj) {
-				co->ui_transform = glm::translate(glm::mat4(1.0f), -0.5f*base_panel.size) * co->base_model_matrix;
+				co->ui_transform = glm::translate(glm::mat4(1.0f), -0.5f*base_panel.size);// *co->base_model_matrix;
 				_r->color_ui_elements.push_back(co);
 			}
 		}
 		else if (objects[i]->Type() == 1) {
 			TextureObject* to = static_cast<TextureObject*>(objects[i]);
-			to->ui_transform = glm::translate(glm::mat4(1.0f), -0.5f*base_panel.size) * to->base_model_matrix;
+			to->ui_transform = glm::translate(glm::mat4(1.0f), -0.5f*base_panel.size);// *to->base_model_matrix;
 			_r->texture_ui_elements.push_back(to);
 		}
 	}
-
-
-	TextureObject * ortho_slice = new TextureObject;
-	ortho_slice->GenerateXYPlane(1.0f, 1.0f, 0.0f, glm::vec3(0.0f, 0.0f,0.0f));
-	ortho_slice->texture_id = CURR_ORTHOSLICE_TEXTURE;
-	ortho_slice->ui_quadrant = 1;
-	_r->texture_ui_elements.push_back(ortho_slice);
-
 }
 
 void UiPanel::Finalize() {

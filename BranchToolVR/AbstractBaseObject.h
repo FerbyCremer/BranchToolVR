@@ -44,9 +44,13 @@ class AbstractBaseObject
 		glm::mat4 GetModelMatrix();
 		glm::mat4 model_matrix;
 		glm::mat4 base_model_matrix;
+		glm::mat4 ui_model_matrix;
 
 		void Set_world_position(glm::vec3& v);
 		void Set_model_orientation(glm::vec3& v);
+		void Set_model_positionX(float _x);
+		void Set_model_positionY(float _y);
+		void Set_model_positionZ(float _z);
 		void Set_model_position(glm::vec3& v);
 		void Set_scale(glm::vec3& v);
 		void Set_append_pose(glm::mat4& m);

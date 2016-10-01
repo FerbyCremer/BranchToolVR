@@ -1,26 +1,23 @@
 #include "Render.h"
 
+// static variables
 int Render::window_size_x = 0;
 int Render::window_size_y = 0;
 int Render::half_window_size_x = 0;
 int Render::half_window_size_y = 0;
 float Render::aspect = 1.0f;
+float Render::half_aspect = 1.0f;
+glm::vec4 Render::ui_quadrant_ortho[4];
+glm::vec4 Render::ui_quadrant_ortho_aspect[4];
+VrData Render::vr_info;
+glm::mat4 Render::ui_view;
+glm::mat4 Render::ui_projection;
 
 Render::Render(GLFWwindow *_window){
 
 	// configure glfw vars
 	window = _window;
 	glfwSetWindowSizeCallback(window, Render::window_size_callback);
-	int width, height;
-	glfwGetWindowSize(window, &width, &height);
-	window_size_x = width;
-	window_size_y = height;
-	half_window_size_x = width / 2;
-	half_window_size_y = height / 2;
-	aspect = (float)window_size_x / (float)window_size_y;
-
-	// set ui vars
-	ui_quadrant_ortho[0] = glm::vec4(-2.0f, 2.0f, -2.0f, 2.0f);
 
 	// set clears
 	glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
@@ -158,12 +155,49 @@ Render::~Render(){
 
 }
 
+void Render::Finalize() {
+	// initialize glfw window variables
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+	window_size_callback(window, width, height);
+}
+
 void Render::window_size_callback(GLFWwindow* window, int width, int height){
 	window_size_x = width;
 	window_size_y = height;
 	half_window_size_x = window_size_x / 2;
 	half_window_size_y = window_size_y / 2;
 	aspect = (float)window_size_x / (float)window_size_y;
+	half_aspect = (float)half_window_size_x / (float)half_window_size_y;
+	float inverse_half_aspect = (float)half_window_size_y / (float)half_window_size_x;
+
+	float ui_aspect = (float)half_window_size_x / (float)window_size_y;
+	ui_projection = glm::perspective(90.0f, ui_aspect, 0.001f, 1000.0f);
+	ui_view = glm::mat4(1.0f);
+
+	float tmpX0 = ui_quadrant_ortho[0].x * half_aspect;
+	float tmpY0 = ui_quadrant_ortho[0].x * inverse_half_aspect;
+
+	float tmpX1 = ui_quadrant_ortho[1].x * half_aspect;
+	float tmpY1 = ui_quadrant_ortho[1].x * inverse_half_aspect;
+	
+	float tmpX00 = ui_quadrant_ortho[0].y * half_aspect;
+
+	if (tmpY0 < ui_quadrant_ortho[0].y) {
+		ui_quadrant_ortho_aspect[0] = glm::vec4(-tmpX00, tmpX00, -ui_quadrant_ortho[0].y, ui_quadrant_ortho[0].y);
+	}
+	else {
+		ui_quadrant_ortho_aspect[0] = glm::vec4(-ui_quadrant_ortho[0].x, ui_quadrant_ortho[0].x, -tmpY0, tmpY0);
+	}
+
+	float tmpX11 = ui_quadrant_ortho[1].y * half_aspect;
+
+	if (tmpY1 < ui_quadrant_ortho[1].y) {
+		ui_quadrant_ortho_aspect[1] = glm::vec4(-tmpX11, tmpX11, -ui_quadrant_ortho[1].y, ui_quadrant_ortho[1].y);
+	}
+	else {
+		ui_quadrant_ortho_aspect[1] = glm::vec4(-ui_quadrant_ortho[1].x, ui_quadrant_ortho[1].x, -tmpY1, tmpY1);
+	}
 }
 
 bool Render::InitVR() {
@@ -176,23 +210,25 @@ bool Render::InitVR() {
 		m_pHMD = NULL;
 		char buf[1024];
 		sprintf_s(buf, sizeof(buf), "Unable to init VR runtime: %s", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
+		vr_info.hmd_connected = false;
 		return false;
 	}
 
-	m_pRenderModels = (vr::IVRRenderModels *)vr::VR_GetGenericInterface(vr::IVRRenderModels_Version, &eError);
-	if (!m_pRenderModels){
-		m_pHMD = NULL;
-		vr::VR_Shutdown();
-		char buf[1024];
-		sprintf_s(buf, sizeof(buf), "Unable to get render model interface: %s", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
-		return false;
-	}
+	//m_pRenderModels = (vr::IVRRenderModels *)vr::VR_GetGenericInterface(vr::IVRRenderModels_Version, &eError);
+	//if (!m_pRenderModels){
+	//	m_pHMD = NULL;
+	//	vr::VR_Shutdown();
+	//	char buf[1024];
+	//	sprintf_s(buf, sizeof(buf), "Unable to get render model interface: %s", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
+	//	return false;
+	//}
 
 	m_pHMD->GetRecommendedRenderTargetSize(&m_nRenderWidth, &m_nRenderHeight);
 
 	CreateFrameBuffer(m_nRenderWidth, m_nRenderHeight, leftEyeDesc);
 	CreateFrameBuffer(m_nRenderWidth, m_nRenderHeight, rightEyeDesc);
 	
+	vr_info.hmd_connected = true;
 	return true;
 }
 
@@ -203,6 +239,9 @@ void Render::AddObjectToScene(std::vector<AbstractBaseObject*> cObjs) {
 }
 
 void Render::AddObjectToScene(AbstractBaseObject* abso) {
+	if (abso == NULL) {
+		return;
+	}
 	if (abso->Type() == 0) {
 		ColorObject * s = static_cast<ColorObject*>(abso);
 		AddObjectToScene(s);
@@ -213,9 +252,25 @@ void Render::AddObjectToScene(AbstractBaseObject* abso) {
 	}
 }
 
+void Render::AddObjectToUi(AbstractBaseObject* abso) {
+	if (abso == NULL) {
+		return;
+	}
+	if (abso->Type() == 0) {
+		ColorObject * s = static_cast<ColorObject*>(abso);
+		AddObjectToUi(s);
+	}
+	if (abso->Type() == 1) {
+		TextureObject * s = static_cast<TextureObject*>(abso);
+		AddObjectToUi(s);
+	}
+}
+
 void Render::AddObjectToScene(ColorObject * co) {
-	if(co != NULL)
+	if (co != NULL) {
+
 		color_objects.push_back(co);
+	}
 }
 
 void Render::AddObjectToScene(DicomPointCloudObject * dpco) {
@@ -236,6 +291,16 @@ void Render::AddObjectToScene(TextureObject * t) {
 		texture_objects.push_back(t);
 }
 
+void Render::AddObjectToUi(TextureObject * t) {
+	if (t != NULL)
+		texture_ui_elements.push_back(t);
+}
+
+void Render::AddObjectToUi(ColorObject * c) {
+	if (c != NULL)
+		color_ui_elements.push_back(c);
+}
+
 void Render::RenderEyes() {
 
 	if (!m_pHMD)
@@ -244,8 +309,7 @@ void Render::RenderEyes() {
 	// left eye
 	glBindFramebuffer(GL_FRAMEBUFFER, leftEyeDesc.m_nRenderFramebufferId);
 	glViewport(0, 0, m_nRenderWidth, m_nRenderHeight);
-	RenderSceneInternal(ValveMat4ToGlmMat4(m_pHMD->GetProjectionMatrix(vr::Eye_Left, 0.1f, 1000.0f, vr::API_OpenGL)),
-		ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Left))*m_mat4HMDPose);
+	RenderSceneInternal(vr_info.left_eye_proj, vr_info.left_eye_proj);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glDisable(GL_MULTISAMPLE);
@@ -261,8 +325,7 @@ void Render::RenderEyes() {
 	// right eye
 	glBindFramebuffer(GL_FRAMEBUFFER, rightEyeDesc.m_nRenderFramebufferId);
 	glViewport(0, 0, m_nRenderWidth, m_nRenderHeight);
-	RenderSceneInternal(ValveMat4ToGlmMat4(m_pHMD->GetProjectionMatrix(vr::Eye_Right, 0.1f, 1000.0f, vr::API_OpenGL)),
-						ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Right))*m_mat4HMDPose);
+	RenderSceneInternal(vr_info.right_eye_proj, vr_info.right_eye_transform_inv);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glDisable(GL_MULTISAMPLE);
@@ -301,12 +364,12 @@ void Render::RenderScene() {
 	glViewport(0, 0, half_window_size_x, window_size_y);
 	glScissor(0, 0, half_window_size_x, window_size_y);
 	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.0f, 0.0f, 1.0f)));
-	RenderSceneInternal(glm::perspective(90.0f ,aspect, 0.001f, 1000.0f), glm::inverse(controller_pose1));
+	RenderSceneInternal(ui_projection, ui_view);
 
 	//glViewport(h_width, 0, h_width , h_height);
 	//glScissor(h_width, 0, h_width, h_height);
 	//renderer->RenderSceneInternal(glm::perspective(90.0f, (float)width/(float)height, 0.001f, 1000.0f), glm::inverse(controller_mm1));
-	RenderUI(glm::perspective(90.0f, aspect, 0.001f, 1000.0f), glm::mat4(1.0f));
+	RenderUI();
 
 	// render to hmd
 	//RenderEyes();
@@ -324,28 +387,26 @@ void Render::RenderScene() {
 	UpdateHMDMatrixPose();
 }
 
-void Render::RenderUI(glm::mat4 _P, glm::mat4 _V) {
+void Render::RenderUI() {
+
 
 	glViewport(half_window_size_x, 0,  half_window_size_x, window_size_y);
 	glScissor(half_window_size_x, 0, half_window_size_x, window_size_y);
-	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)));
+	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)));
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
 	glViewport(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
 	glScissor(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
-	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.4f, 0.4f, 0.4f, 1.0f)));
+	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.15f, 0.15f, 0.15f, 1.0f)));
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
-	_P = glm::ortho(-half_ui_panel_size.x, half_ui_panel_size.x, -half_ui_panel_size.y, half_ui_panel_size.y, -100.0f, 100.0f);
-	_V = glm::mat4(1.0f);
-
-	_P = glm::ortho(ui_quadrant_ortho[0].x, ui_quadrant_ortho[0].y, ui_quadrant_ortho[0].z, ui_quadrant_ortho[0].w, -100.0f, 100.0f);
+	glm::mat4 _P = glm::mat4(1.0f);
+	glm::mat4 _V = glm::mat4(1.0f);
 
 	glUseProgram(ui_color.id);
 
-	glUniformMatrix4fv(ui_color.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 	glUniformMatrix4fv(ui_color.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 
 	for (ColorObject* & cUiObj : color_ui_elements) {
@@ -353,12 +414,19 @@ void Render::RenderUI(glm::mat4 _P, glm::mat4 _V) {
 			continue;
 
 		if (cUiObj->ui_quadrant == 0) {
+			_P = glm::ortho(ui_quadrant_ortho_aspect[0].x, ui_quadrant_ortho_aspect[0].y, ui_quadrant_ortho_aspect[0].z, ui_quadrant_ortho_aspect[0].w, -100.0f, 100.0f);
+			glUniformMatrix4fv(ui_color.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 			glViewport(half_window_size_x, 0, half_window_size_x, half_window_size_y);
 			glScissor(half_window_size_x, 0, half_window_size_x, half_window_size_y);
 		}
+		else if (cUiObj->ui_quadrant == 1) {
+			_P = glm::ortho(ui_quadrant_ortho_aspect[1].x, ui_quadrant_ortho_aspect[1].y, ui_quadrant_ortho_aspect[1].z, ui_quadrant_ortho_aspect[1].w, -100.0f, 100.0f);
+			glUniformMatrix4fv(ui_color.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
+			glViewport(half_window_size_x, half_window_size_y, half_window_size_x, half_window_size_y);
+			glScissor(half_window_size_x, half_window_size_y, half_window_size_x, half_window_size_y);
+		}
 
-		//glUniformMatrix4fv(ui_color.uniforms[2], 1, GL_FALSE, glm::value_ptr(cUiObj->GetModelMatrix()));
-		glUniformMatrix4fv(ui_color.uniforms[2], 1, GL_FALSE, glm::value_ptr(cUiObj->ui_transform));
+		glUniformMatrix4fv(ui_color.uniforms[2], 1, GL_FALSE, glm::value_ptr(cUiObj->ui_model_matrix));
 		glUniform4fv(ui_color.uniforms[3], 1, glm::value_ptr(cUiObj->GetDisplayColor()));
 
 		glBindVertexArray(cUiObj->vao);
@@ -376,7 +444,6 @@ void Render::RenderUI(glm::mat4 _P, glm::mat4 _V) {
 		textures[i]->Bind();
 	}
 
-	glUniformMatrix4fv(ui_texture.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 	glUniformMatrix4fv(ui_texture.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 
 	for (TextureObject* & tUiObj : texture_ui_elements) {
@@ -384,15 +451,19 @@ void Render::RenderUI(glm::mat4 _P, glm::mat4 _V) {
 			continue;
 
 		if (tUiObj->ui_quadrant == 0) {
+			_P = glm::ortho(ui_quadrant_ortho_aspect[0].x, ui_quadrant_ortho_aspect[0].y, ui_quadrant_ortho_aspect[0].z, ui_quadrant_ortho_aspect[0].w, -100.0f, 100.0f);
+			glUniformMatrix4fv(ui_texture.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 			glViewport(half_window_size_x, 0, half_window_size_x, half_window_size_y);
 			glScissor(half_window_size_x, 0, half_window_size_x, half_window_size_y);
 		}
 		else if (tUiObj->ui_quadrant == 1) {
+			_P = glm::ortho(ui_quadrant_ortho_aspect[1].x, ui_quadrant_ortho_aspect[1].y, ui_quadrant_ortho_aspect[1].z, ui_quadrant_ortho_aspect[1].w, -100.0f, 100.0f);
+			glUniformMatrix4fv(ui_texture.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 			glViewport(half_window_size_x, half_window_size_y, half_window_size_x, half_window_size_y);
 			glScissor(half_window_size_x, half_window_size_y, half_window_size_x, half_window_size_y);
 		}
 
-		glUniformMatrix4fv(ui_texture.uniforms[2], 1, GL_FALSE, glm::value_ptr(tUiObj->ui_transform));
+		glUniformMatrix4fv(ui_texture.uniforms[2], 1, GL_FALSE, glm::value_ptr(tUiObj->ui_model_matrix));
 		glUniform1i(ui_texture.uniforms[3], tUiObj->texture_id);
 
 		glBindVertexArray(tUiObj->vao);
@@ -640,13 +711,22 @@ void Render::PrintMat4(glm::mat4 m) {
 }
 
 void Render::UpdateHMDMatrixPose(){
-	if (!m_pHMD)
+	if (!m_pHMD) {
+		vr_info.hmd_connected = false;
 		return;
+	}
 
 	vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
 
 	if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid){
-		m_mat4HMDPose = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking) *ValveMat34ToGlmMat4Inv(m_pHMD->GetSeatedZeroPoseToStandingAbsoluteTrackingPose());
+		//m_mat4HMDPose = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking) *ValveMat34ToGlmMat4Inv(m_pHMD->GetSeatedZeroPoseToStandingAbsoluteTrackingPose());
+		vr_info.head_pose_inv = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking) *ValveMat34ToGlmMat4Inv(m_pHMD->GetSeatedZeroPoseToStandingAbsoluteTrackingPose());
+
+		vr_info.left_eye_proj = ValveMat4ToGlmMat4(m_pHMD->GetProjectionMatrix(vr::Eye_Left, 0.1f, 1000.0f, vr::API_OpenGL));
+		vr_info.left_eye_transform_inv = ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Left)) * vr_info.head_pose_inv;
+
+		vr_info.right_eye_proj = ValveMat4ToGlmMat4(m_pHMD->GetProjectionMatrix(vr::Eye_Right, 0.1f, 1000.0f, vr::API_OpenGL));
+		vr_info.right_eye_transform_inv = ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Right)) * vr_info.head_pose_inv;
 	}
 
 	for (vr::TrackedDeviceIndex_t unTrackedDevice = vr::k_unTrackedDeviceIndex_Hmd + 1; unTrackedDevice < vr::k_unMaxTrackedDeviceCount; ++unTrackedDevice){
@@ -660,7 +740,7 @@ void Render::UpdateHMDMatrixPose(){
 		if (m_rTrackedDevicePose[unTrackedDevice].bPoseIsValid)
 			continue;
 
-		controller_pose1 = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
+		//controller_pose1 = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
 		vr::VRControllerState_t state;
 		if (m_pHMD->GetControllerState(unTrackedDevice, &state))
 		{

@@ -18,6 +18,28 @@
 #include "TextureObject.h"
 #include "Texture.h"
 
+struct VrData {
+	glm::mat4 controller_pose;
+	glm::mat4 head_pose_inv;
+	glm::mat4 left_eye_proj;
+	glm::mat4 right_eye_proj;
+	glm::mat4 left_eye_transform_inv;
+	glm::mat4 right_eye_transform_inv;
+	bool controller_press;
+	bool hmd_connected;
+
+	VrData() {
+		controller_pose = glm::mat4(1.0f);
+		head_pose_inv = glm::mat4(1.0f);
+		left_eye_proj = glm::mat4(1.0f);
+		right_eye_proj = glm::mat4(1.0f);
+		left_eye_transform_inv = glm::mat4(1.0f);
+		right_eye_transform_inv = glm::mat4(1.0f);
+		hmd_connected = false;
+		controller_press = false;
+	}
+};
+
 struct Light {
 	glm::vec3 position;
 	ColorObject marker;
@@ -63,23 +85,33 @@ class Render{
 		void AddObjectToScene(DicomPointCloudObject * dpco);
 		void AddObjectToScene(LineObject * l);
 		void AddObjectToScene(TextureObject * t);
+		void AddObjectToUi(AbstractBaseObject* abso);
+		void AddObjectToUi(TextureObject * t);
+		void AddObjectToUi(ColorObject * c);
 		void RenderScene();
 		void Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, glm::vec3 _ray, glm::vec3 _pos, bool _pressed);
 		void UpdateHMDMatrixPose();
 		void ResetSeatedPose();
-		void RenderUI(glm::mat4 _P, glm::mat4 _V);
+		void Finalize();
+		void RenderUI();
 		static void window_size_callback(GLFWwindow* window, int width, int height);
 		static int window_size_x;
 		static int window_size_y;
 		static int half_window_size_x;
 		static int half_window_size_y;
 		static float aspect;
+		static float half_aspect;
+		static VrData vr_info;
 
 	//private:
+
 		// ui variables
-		glm::vec4 ui_quadrant_ortho[4];
+		static glm::vec4 ui_quadrant_ortho[4];
+		static glm::vec4 ui_quadrant_ortho_aspect[4];
 		glm::vec3 ui_panel_size;
 		glm::vec3 half_ui_panel_size;
+		static glm::mat4 ui_projection;
+		static glm::mat4 ui_view;
 
 		// glfw reference (must be initialized before constructor)
 		GLFWwindow * window;

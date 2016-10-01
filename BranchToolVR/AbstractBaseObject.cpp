@@ -7,6 +7,7 @@ AbstractBaseObject::AbstractBaseObject(){
 	model_orientation = glm::vec3(0.0f, 0.0f, 0.0f);
 	model_position = glm::vec3(0.0f, 0.0f, 0.0f);
 	append_pose = glm::mat4(1.0f);
+	ui_model_matrix = glm::mat4(1.0f);
 	model_matrix = glm::mat4(1.0f);
 	base_model_matrix = glm::mat4(1.0f);
 	scale = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -33,6 +34,7 @@ void AbstractBaseObject::CalcModelMatrix() {
 				 * glm::translate(glm::mat4(), world_position)
 				 * glm::yawPitchRoll(model_orientation.x, model_orientation.y, model_orientation.z)
 				 * base_model_matrix;
+	ui_model_matrix = ui_transform * base_model_matrix;
 }
 
 void AbstractBaseObject::Set_world_position(glm::vec3& v) {
@@ -47,6 +49,22 @@ void AbstractBaseObject::Set_model_position(glm::vec3& v) {
 	model_position = v;
 	CalcModelMatrix();
 }
+
+void AbstractBaseObject::Set_model_positionX(float _x) {
+	model_position.x = _x;
+	CalcModelMatrix();
+}
+
+void AbstractBaseObject::Set_model_positionY(float _y) {
+	model_position.y = _y;
+	CalcModelMatrix();
+}
+
+void AbstractBaseObject::Set_model_positionZ(float _z) {
+	model_position.z = _z;
+	CalcModelMatrix();
+}
+
 void AbstractBaseObject::Set_scale(glm::vec3& v) {
 	scale = v;
 	CalcModelMatrix();

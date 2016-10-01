@@ -43,10 +43,10 @@ bool Texture::Load(DicomSingle & _ds, int window_width, int window_center) {
 			tmp.push_back(240);
 		}
 		else {
-			tmp.push_back(0);
-			tmp.push_back(0);
-			tmp.push_back(0);
-			tmp.push_back(50);
+			tmp.push_back(10);
+			tmp.push_back(100);
+			tmp.push_back(20);
+			tmp.push_back(100);
 		}
 
 	

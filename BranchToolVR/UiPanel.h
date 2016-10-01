@@ -274,6 +274,9 @@ struct Panel : UiElement {
 	void SetSize(float _x, float _y, float _z) {
 		size = glm::vec3(_x, _y, _z);
 	}
+	void SetSize(glm::vec3 _size) {
+		size = _size;
+	}
 
 	void Finalize() {
 		back_plate.GenerateXYPrism(size.x, size.y, size.z/2.0f, glm::vec2(-0.05f,-0.05f), glm::vec3(0.0f, 0.0f, (-size.z/2.0f)-0.0001f));

@@ -3,6 +3,7 @@
 DicomObjectsContainer::DicomObjectsContainer(){
 	points = new DicomPointCloudObject;
 	viewer = new CoarseDicomViewer;
+	dicom_panel = new UiPanel;
 
 	// default values
 	imaging_data.isovalue = 1340;
@@ -14,13 +15,22 @@ DicomObjectsContainer::DicomObjectsContainer(){
 	points->SetWorldPosition(glm::vec3(1.0f, 0.1f, 0.1f));
 	viewer->Translate(glm::vec3(0.5f, 0.5f, 0.5f));
 
+	orthoslice = new TextureObject;
+	orthoslice->GenerateXYPlane(1.0f, 1.0f, 0.0f, glm::vec3(-0.5f, -0.5f, 0.0f));
+	orthoslice->texture_id = CURR_ORTHOSLICE_TEXTURE;
+	orthoslice->ui_quadrant = 1;
+
+	selector2D = new ColorObject;
+	selector2D->GenerateXYPlane(0.5f, 0.5f, 0.1f, glm::vec3(-0.5f, -0.5f, 0.1f));
+	selector2D->ui_quadrant = 1;
+
 }
 
 DicomObjectsContainer::~DicomObjectsContainer(){
 
 }
 
-void DicomObjectsContainer::Update(glm::mat4 & _controllerPose, glm::vec3& _ray, glm::vec3& _pos, bool _pressed) {
+void DicomObjectsContainer::Update(VrData & _vr){//(glm::mat4 & _controllerPose, glm::vec3& _ray, glm::vec3& _pos, bool _pressed) {
 
 	viewer->Update(imaging_data);
 
@@ -39,17 +49,26 @@ void DicomObjectsContainer::Update(glm::mat4 & _controllerPose, glm::vec3& _ray,
 		points->branch_point_marker->Set_append_pose(curr_pose);
 	}
 
-	//static bool once = true;
-	//if (_pressed && once) {
-	//
-	//}
-
 }
 
 void DicomObjectsContainer::AddObjects(Render * _r) {
+
+	// dicom panel
+	dicom_panel->GenerateDicomPanel(_r);
+	dicom_panel->SetWorldPosition(glm::vec3(0.0f, 0.0f, -1.0f));
+	dicom_panel->SetModelOrientation(glm::vec3(0.8f, 0.2f, 0.2f));
+	isovalue_slider = dicom_panel->GetSliderByName("isovalue");
+	isovalue_tol_slider = dicom_panel->GetSliderByName("isovalue tolerance");
+	scaleX_slider = dicom_panel->GetSliderByName("X");
+	scaleY_slider = dicom_panel->GetSliderByName("Y");
+	scaleZ_slider = dicom_panel->GetSliderByName("Z");
+	window_width_slider = dicom_panel->GetSliderByName("window width");
+	window_center_slider = dicom_panel->GetSliderByName("window center");
+	clear_branching_slider = dicom_panel->GetSliderByName("reset selection");
 	viewer->AddObjects(_r);
 	_r->AddObjectToScene(points);
-	//_r->AddObjectToScene(points->branch_point_marker);
+	_r->AddObjectToUi(orthoslice);
+	_r->AddObjectToUi(selector2D);
 }
 
 void DicomObjectsContainer::Load(std::string _dicomDir) {

@@ -17,26 +17,11 @@ Engine::Engine(){
 	renderer->AddObjectToScene(l);
 	glLineWidth(12.0f);
 
-	// dicom panel
-	dicom_panel.GenerateDicomPanel(renderer);
-	//dicom_panel.addToRenderer();
-	//renderer->AddObjectToScene(dicom_panel.GetObjects());
-	dicom_panel.SetWorldPosition(glm::vec3(0.0f, 0.0f, -1.0f));
-	dicom_panel.SetModelOrientation(glm::vec3(0.8f, 0.2f, 0.2f));
-	isovalue_slider = dicom_panel.GetSliderByName("isovalue");
-	isovalue_tol_slider = dicom_panel.GetSliderByName("isovalue tolerance");
-	scaleX_slider = dicom_panel.GetSliderByName("X");
-	scaleY_slider = dicom_panel.GetSliderByName("Y");
-	scaleZ_slider = dicom_panel.GetSliderByName("Z");
-	window_width_slider = dicom_panel.GetSliderByName("window width");
-	window_center_slider = dicom_panel.GetSliderByName("window center");
-	clear_branching_slider = dicom_panel.GetSliderByName("reset selection");
-
 	// TEMP: set dicom directory and panel values
 	dicomObjects1 = new DicomObjectsContainer;
 	dicomObjects1->AddObjects(renderer);
-	dicomObjects1->Load("Resources\\DICOM\\torso\\DCM0");
-
+	dicomObjects1->Load("Resources\\DICOM\\torso\\DCM0");	
+	
 	// scene
 	ground = new ColorObject;
 	ground->GenerateRoom();
@@ -48,6 +33,9 @@ Engine::Engine(){
 	controller->world_position = glm::vec3(0.2f, 0.2f, 0.2f);
 	controller->SetDisplayColor(glm::vec4(0.1f, 0.1f, 1.0f,1.0f));
 	//renderer->AddObjectToScene(controller);
+
+	// call final render initializer after all objects have been added
+	renderer->Finalize();
 
 	Loop();
 }
@@ -138,12 +126,12 @@ void Engine::FakeControllerInput(float _deltaT) {
 
 	glm::vec2 mpos;
 	mpos.x = width / 4 - xpos;
-	mpos.y = height / 4 - ypos; 
+	mpos.y = height / 2 - ypos; 
 
 	int focused = glfwGetWindowAttrib(window, GLFW_FOCUSED);
 
 	if (focused) {
-		glfwSetCursorPos(window, width/4, height/4);
+		glfwSetCursorPos(window, width/4, height/2);
 		controller->model_orientation.x += rot_rate*mpos.x;
 		controller->model_orientation.y += glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f);
 		controller->CalcModelMatrix();
@@ -163,54 +151,54 @@ void Engine::Update() {
 	glm::vec4 ray = p2 - p1;
 	
 
-	dicom_panel.Interact(controller_mm1, glm::vec3(ray), glm::vec3(p1), controller_press1);
+	dicomObjects1->dicom_panel->Interact(controller_mm1, glm::vec3(ray), glm::vec3(p1), controller_press1);
 	
 	// tab one
-	if (isovalue_slider->has_changed) {
-		dicomObjects1->UpdateDicomPointCloud(isovalue_slider->curr);
-		isovalue_slider->has_changed = false;
+	if (dicomObjects1->isovalue_slider->has_changed) {
+		dicomObjects1->UpdateDicomPointCloud(dicomObjects1->isovalue_slider->curr);
+		dicomObjects1->isovalue_slider->has_changed = false;
 	}
 
-	if (isovalue_tol_slider->has_changed) {
-		dicomObjects1->points->curr_tolerance = isovalue_tol_slider->curr;
-		isovalue_tol_slider->has_changed = false;
+	if (dicomObjects1->isovalue_tol_slider->has_changed) {
+		dicomObjects1->points->curr_tolerance = dicomObjects1->isovalue_tol_slider->curr;
+		dicomObjects1->isovalue_tol_slider->has_changed = false;
 	}
 
 	// tab two
-	if (scaleX_slider->has_changed) {
+	if (dicomObjects1->scaleX_slider->has_changed) {
 
-		scaleX_slider->has_changed = false;
+		dicomObjects1->scaleX_slider->has_changed = false;
 	}
 
-	if (scaleY_slider->has_changed) {
+	if (dicomObjects1->scaleY_slider->has_changed) {
 
-		scaleY_slider->has_changed = false;
+		dicomObjects1->scaleY_slider->has_changed = false;
 	}
 
-	if (scaleZ_slider->has_changed) {
+	if (dicomObjects1->scaleZ_slider->has_changed) {
 
-		scaleZ_slider->has_changed = false;
+		dicomObjects1->scaleZ_slider->has_changed = false;
 	}
 	
 	// tab three
-	if (window_width_slider->has_changed) {
-		dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], window_width_slider->curr, window_center_slider->curr);
-		window_width_slider->has_changed = false;
+	if (dicomObjects1->window_width_slider->has_changed) {
+		dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], dicomObjects1->window_width_slider->curr, dicomObjects1->window_center_slider->curr);
+		dicomObjects1->window_width_slider->has_changed = false;
 	}
 
-	if (window_center_slider->has_changed) {
-		dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], window_width_slider->curr, window_center_slider->curr);
-		window_center_slider->has_changed = false;
+	if (dicomObjects1->window_center_slider->has_changed) {
+		dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], dicomObjects1->window_width_slider->curr, dicomObjects1->window_center_slider->curr);
+		dicomObjects1->window_center_slider->has_changed = false;
 	}
 
-	if (window_center_slider->has_changed) {
-		dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], window_width_slider->curr, window_center_slider->curr);
-		window_center_slider->has_changed = false;
+	if (dicomObjects1->window_center_slider->has_changed) {
+		dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], dicomObjects1->window_width_slider->curr, dicomObjects1->window_center_slider->curr);
+		dicomObjects1->window_center_slider->has_changed = false;
 	}
 
 
-	renderer->Interact(controller_mm1, controller_mm2, glm::vec3(ray), glm::vec3(p1), controller_press1);		
-	dicomObjects1->Update(controller_mm1, glm::vec3(ray), glm::vec3(p1), controller_press1);
+	//renderer->Interact(controller_mm1, controller_mm2, glm::vec3(ray), glm::vec3(p1), controller_press1);		
+	//dicomObjects1->Update(controller_mm1, glm::vec3(ray), glm::vec3(p1), controller_press1);
 }
 
 void Engine::Loop() {
@@ -223,11 +211,10 @@ void Engine::Loop() {
 		begin = std::chrono::high_resolution_clock::now();
 		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(begin - end).count();
 		
+		dicomObjects1->Update(renderer->vr_info);
 		renderer->RenderScene();
-		Update();
-
-
-		FakeControllerInput((float)ms);
+		
+		//FakeControllerInput((float)ms);
 
 		//int width, height;
 		//glfwGetWindowSize(window, &width, &height);
@@ -237,8 +224,8 @@ void Engine::Loop() {
 		
 		
 		
-		renderer->controller_pose1 = controller_mm1;
-		renderer->controller_press1 = controller_press1;
+		//renderer->controller_pose1 = controller_mm1;
+		//renderer->controller_press1 = controller_press1;
 
 		//int width, height;
 		//glfwGetWindowSize(window, &width, &height);
