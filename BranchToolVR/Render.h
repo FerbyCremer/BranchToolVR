@@ -20,6 +20,7 @@
 
 struct VrData {
 	glm::mat4 controller_pose;
+	glm::vec3 controller_world_pos;
 	glm::mat4 head_pose_inv;
 	glm::mat4 left_eye_proj;
 	glm::mat4 right_eye_proj;
@@ -30,6 +31,7 @@ struct VrData {
 
 	VrData() {
 		controller_pose = glm::mat4(1.0f);
+		controller_world_pos = glm::vec3(0.0f);
 		head_pose_inv = glm::mat4(1.0f);
 		left_eye_proj = glm::mat4(1.0f);
 		right_eye_proj = glm::mat4(1.0f);
@@ -39,6 +41,19 @@ struct VrData {
 		controller_press = false;
 	}
 };
+
+struct CursorData {
+	glm::vec2 normalized_cursor_position;
+	bool is_pressed;
+	bool first_press;
+
+	CursorData() {
+		normalized_cursor_position = glm::vec2(0.0f, 0.0f);
+		is_pressed = false;
+		first_press = true;
+	}
+};
+
 
 struct Light {
 	glm::vec3 position;
@@ -93,7 +108,8 @@ class Render{
 		void UpdateHMDMatrixPose();
 		void ResetSeatedPose();
 		void Finalize();
-		void RenderUI();
+		void RenderUI(int level);
+		void FakeInput();
 		static void window_size_callback(GLFWwindow* window, int width, int height);
 		static int window_size_x;
 		static int window_size_y;
@@ -102,6 +118,7 @@ class Render{
 		static float aspect;
 		static float half_aspect;
 		static VrData vr_info;
+		static CursorData cursor_info;
 
 	//private:
 
@@ -112,6 +129,7 @@ class Render{
 		glm::vec3 half_ui_panel_size;
 		static glm::mat4 ui_projection;
 		static glm::mat4 ui_view;
+		void UpdateCursor();
 
 		// glfw reference (must be initialized before constructor)
 		GLFWwindow * window;
@@ -154,6 +172,7 @@ class Render{
 		uint32_t m_nRenderWidth;
 		uint32_t m_nRenderHeight;
 		glm::mat4 controller_pose1;
+		ColorObject * controller;
 		bool controller_press1;
 		
 		// internal functions

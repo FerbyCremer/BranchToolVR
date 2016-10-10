@@ -30,7 +30,7 @@ class ColorObject : public AbstractBaseObject{
 		void GenerateRoom();
 		void SetDisplayColor(const glm::vec4 & _inColor);
 		void SetSelected(bool _isSelected);
-		bool TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _cp);
+		bool TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _cp, bool world_space);
 		bool TestCollision(glm::vec3 _inPos);
 		glm::vec4 GetDisplayColor();
 

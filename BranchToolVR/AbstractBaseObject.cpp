@@ -18,6 +18,7 @@ AbstractBaseObject::AbstractBaseObject(){
 	ui_quadrant = 0;
 	ui_transform = glm::mat4(1.0f);
 	id = id_counter++;
+	level = 0;
 }
 
 AbstractBaseObject::~AbstractBaseObject(){
@@ -29,7 +30,7 @@ glm::mat4 AbstractBaseObject::GetModelMatrix() {
 }
 
 void AbstractBaseObject::CalcModelMatrix() {
-	base_model_matrix = glm::translate(glm::mat4(), model_position);
+	base_model_matrix = glm::translate(glm::mat4(), model_position) * glm::scale(glm::mat4(1.0f),scale);
 	model_matrix = append_pose
 				 * glm::translate(glm::mat4(), world_position)
 				 * glm::yawPitchRoll(model_orientation.x, model_orientation.y, model_orientation.z)

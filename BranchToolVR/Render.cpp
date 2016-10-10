@@ -10,6 +10,7 @@ float Render::half_aspect = 1.0f;
 glm::vec4 Render::ui_quadrant_ortho[4];
 glm::vec4 Render::ui_quadrant_ortho_aspect[4];
 VrData Render::vr_info;
+CursorData Render::cursor_info;
 glm::mat4 Render::ui_view;
 glm::mat4 Render::ui_projection;
 
@@ -31,6 +32,12 @@ Render::Render(GLFWwindow *_window){
 	//glEnable(GL_CULL_FACE);
 	//glFrontFace(GL_CCW);
 	//glCullFace(GL_BACK);
+
+	// ui
+	glEnable(GL_SCISSOR_TEST);
+	controller = new ColorObject;
+	controller->GenerateController();
+	AddObjectToScene(controller);
 
 	InitVR();
 
@@ -211,6 +218,7 @@ bool Render::InitVR() {
 		char buf[1024];
 		sprintf_s(buf, sizeof(buf), "Unable to init VR runtime: %s", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
 		vr_info.hmd_connected = false;
+		controller->is_hidden = true;
 		return false;
 	}
 
@@ -357,19 +365,49 @@ void Render::UpdateLights() {
 	}
 }
 
-void Render::RenderScene() {
-	glEnable(GL_SCISSOR_TEST);
-	UpdateLights();
+void Render::UpdateCursor() {
+	static bool fp = true;
+	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1)) {
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
 
-	glViewport(0, 0, half_window_size_x, window_size_y);
-	glScissor(0, 0, half_window_size_x, window_size_y);
-	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.0f, 0.0f, 1.0f)));
-	RenderSceneInternal(ui_projection, ui_view);
+		float nx = 2.0f*xpos / (float)window_size_x - 1.0f;
+		float ny = 2.0f*(window_size_y - ypos) / (float)window_size_y - 1.0f;
+		
+		cursor_info.normalized_cursor_position = glm::vec2(nx, ny);
+		cursor_info.is_pressed = true;
+		
+		if (fp) {
+			cursor_info.first_press = true;
+			fp = false;
+		}
+		else {
+			cursor_info.first_press = false;
+		}
+	}
+	else {
+		fp = true;
+		cursor_info.first_press = false;
+		cursor_info.is_pressed = false;
+	}
+}
+
+void Render::RenderScene() {
+
+	UpdateCursor();
+	UpdateLights();
+	Interact(vr_info.controller_pose, glm::mat4(1.0f),glm::vec3(vr_info.controller_pose* glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)), glm::vec3(vr_info.controller_pose* glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), vr_info.controller_press);
+
+	//glViewport(0, 0, half_window_size_x, window_size_y);
+	//glScissor(0, 0, half_window_size_x, window_size_y);
+	//glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.0f, 0.0f, 1.0f)));
+	//RenderSceneInternal(ui_projection, ui_view);
 
 	//glViewport(h_width, 0, h_width , h_height);
 	//glScissor(h_width, 0, h_width, h_height);
 	//renderer->RenderSceneInternal(glm::perspective(90.0f, (float)width/(float)height, 0.001f, 1000.0f), glm::inverse(controller_mm1));
-	RenderUI();
+	RenderUI(0);
+	RenderUI(1);
 
 	// render to hmd
 	//RenderEyes();
@@ -387,30 +425,47 @@ void Render::RenderScene() {
 	UpdateHMDMatrixPose();
 }
 
-void Render::RenderUI() {
+void Render::RenderUI(int level) {
+
+	if (level == 0) {
+		// clear and render HMD view, or if no hmd is connected, show controllers perspective
+		glViewport(0, 0, half_window_size_x, window_size_y);
+		glScissor(0, 0, half_window_size_x, window_size_y);
+		if (vr_info.hmd_connected) {
+			RenderSceneInternal(glm::perspective(90.0f,1.0f,0.1f,100.0f), vr_info.head_pose_inv);
+		}
+		else {
+			RenderSceneInternal(glm::perspective(90.0f, aspect*0.5f, 0.1f, 100.0f), glm::inverse(controller->GetModelMatrix()));
+		}
 
 
-	glViewport(half_window_size_x, 0,  half_window_size_x, window_size_y);
-	glScissor(half_window_size_x, 0, half_window_size_x, window_size_y);
-	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)));
-	glClear(GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
+		// clear ui quadrant 0
+		glViewport(half_window_size_x, 0,  half_window_size_x, window_size_y);
+		glScissor(half_window_size_x, 0, half_window_size_x, window_size_y);
+		glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)));
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
 
-	glViewport(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
-	glScissor(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
-	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.15f, 0.15f, 0.15f, 1.0f)));
-	glClear(GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
+		// clear ui quadrant 1
+		glViewport(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
+		glScissor(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
+		glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.15f, 0.15f, 0.15f, 1.0f)));
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
+	}
 
+	// TODO: remove unecessary uniform and viewport calls
 	glm::mat4 _P = glm::mat4(1.0f);
 	glm::mat4 _V = glm::mat4(1.0f);
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////
 
 	glUseProgram(ui_color.id);
 
 	glUniformMatrix4fv(ui_color.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 
 	for (ColorObject* & cUiObj : color_ui_elements) {
-		if (cUiObj->is_hidden || !cUiObj->is_loaded)
+		if (cUiObj->is_hidden || !cUiObj->is_loaded || cUiObj->level != level)
 			continue;
 
 		if (cUiObj->ui_quadrant == 0) {
@@ -447,7 +502,7 @@ void Render::RenderUI() {
 	glUniformMatrix4fv(ui_texture.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 
 	for (TextureObject* & tUiObj : texture_ui_elements) {
-		if (tUiObj->is_hidden || !tUiObj->is_loaded)
+		if (tUiObj->is_hidden || !tUiObj->is_loaded || tUiObj->level != level)
 			continue;
 
 		if (tUiObj->ui_quadrant == 0) {
@@ -472,6 +527,8 @@ void Render::RenderUI() {
 		glEnableVertexAttribArray(2);
 		glDrawArrays(GL_TRIANGLES, 0, tUiObj->num_vertices);
 	}
+
+
 
 }
 
@@ -657,7 +714,7 @@ void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, gl
 		current_selection = NULL;
 		float min_dist = 999999999.0f;
 		for (ColorObject* & cObj : color_objects) {
-			if (cObj->is_selectable && cObj->TestCollision(_ray, _pos, collision_point)) {
+			if (cObj->is_selectable && cObj->TestCollision(_ray, _pos, collision_point, true)) {
 				float curr_dist = glm::length(collision_point - _pos);
 				if (glm::dot(ray, collision_point - _pos) > 0 && curr_dist < min_dist) {
 					min_dist = curr_dist;
@@ -710,9 +767,69 @@ void Render::PrintMat4(glm::mat4 m) {
 	std::cout << m[3][0] << " " << m[3][1] << " " << m[3][2] << " " << m[3][3] << std::endl;
 }
 
+void Render::FakeInput() {
+	float move_rate = 0.025f;
+	float rot_rate = 0.025f;
+
+	// time based movement
+	//float delta_time_factor = (_deltaT + 1.0f) / 16.67f;
+	//move_rate *= delta_time_factor;
+	//rot_rate *= delta_time_factor;
+
+	glm::vec4 p1 = controller->GetModelMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 p2 = controller->GetModelMatrix() * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
+	glm::vec3 ray = glm::vec3(p2 - p1);
+	
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		controller->world_position += move_rate*ray;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+		controller->world_position.x -= move_rate;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		controller->world_position -= move_rate*ray;
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+		controller->world_position.x += move_rate;
+	}
+
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+	
+	double xpos, ypos;
+	glfwGetCursorPos(window, &xpos, &ypos);
+	
+	glm::vec2 mpos;
+	mpos.x = width / 4 - xpos;
+	mpos.y = height / 2 - ypos;
+
+	int focused = glfwGetWindowAttrib(window, GLFW_FOCUSED);
+	
+	if (focused) {
+		glfwSetCursorPos(window, width / 4, height / 2);
+		controller->model_orientation.x += rot_rate*mpos.x;
+		controller->model_orientation.y += glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f);
+		controller->CalcModelMatrix();
+		controller_press1 = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+		controller->SetSelected(controller_press1);
+		vr_info.controller_pose = controller->GetModelMatrix();
+		vr_info.controller_press = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1);
+		glm::mat4 tmp = controller->GetModelMatrix();
+		vr_info.controller_world_pos = glm::vec3(tmp[0][3], tmp[1][3], tmp[2][3]);
+	}
+	else {
+	
+	}
+}
+
+
 void Render::UpdateHMDMatrixPose(){
 	if (!m_pHMD) {
 		vr_info.hmd_connected = false;
+		if (glfwGetKey(window, GLFW_KEY_SPACE)) {
+			FakeInput();
+		}
 		return;
 	}
 

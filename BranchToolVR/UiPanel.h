@@ -262,6 +262,7 @@ struct Panel : UiElement {
 	ColorObject back_plate;
 	Handle controller_handle;
 	glm::vec3 size;
+	glm::vec3 half_size;
 
 	Panel() {
 		type = PANEL;
@@ -276,6 +277,7 @@ struct Panel : UiElement {
 	}
 	void SetSize(glm::vec3 _size) {
 		size = _size;
+		half_size = _size * 0.5f;
 	}
 
 	void Finalize() {
@@ -328,14 +330,14 @@ class UiPanel{
 		std::vector<UiElement*> all_elements;
 		void Finalize();
 		void GenerateDicomPanel(Render * _r);
-		void Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos, bool _pressed);
+		void Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos, bool _pressed, bool world_space);
 		std::vector<AbstractBaseObject*> GetObjects();
 		void SetWorldPosition(glm::vec3 _inPos);
 		void SetModelOrientation(glm::vec3 _inPos);
 		void SetAppendPose(glm::mat4 _inPose);
 		Slider* GetSliderByName(std::string _name);
 		glm::mat4 GetModelMatrix();
-		UiElement* GetSelectedElement(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos);
-		glm::vec3 GetCollisionPointWithPanelPlane(glm::vec3 _ray, glm::vec3 _pos);
+		UiElement* GetSelectedElement(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos, bool world_space);
+		glm::vec3 GetCollisionPointWithPanelPlane(glm::vec3 _ray, glm::vec3 _pos, bool world_space);
 };
 

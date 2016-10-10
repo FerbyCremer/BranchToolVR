@@ -90,58 +90,7 @@ bool Engine::InitVR() {
 
 void Engine::FakeControllerInput(float _deltaT) {
 
-    
-	float move_rate = 0.025f;
-	float rot_rate =  0.025f;
-	float delta_time_factor = (_deltaT+1.0f)/16.67f;
-	move_rate *= delta_time_factor;
-	//rot_rate *= delta_time_factor;
-
-
-	glm::vec4 p1 = controller_mm1 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 p2 = controller_mm1 * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
-	glm::vec3 ray = glm::vec3(p2 - p1);
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		controller->world_position += move_rate*ray;
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		controller->world_position.x -= move_rate;
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		controller->world_position -= move_rate*ray;
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		controller->world_position.x += move_rate;
-	}
-	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
-		renderer->ResetSeatedPose();
-	}
-
-	int width, height;
-	glfwGetWindowSize(window, &width, &height);
-
-	double xpos, ypos;
-	glfwGetCursorPos(window, &xpos, &ypos);
-
-	glm::vec2 mpos;
-	mpos.x = width / 4 - xpos;
-	mpos.y = height / 2 - ypos; 
-
-	int focused = glfwGetWindowAttrib(window, GLFW_FOCUSED);
-
-	if (focused) {
-		glfwSetCursorPos(window, width/4, height/2);
-		controller->model_orientation.x += rot_rate*mpos.x;
-		controller->model_orientation.y += glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f);
-		controller->CalcModelMatrix();
-		controller_mm1 = controller->GetModelMatrix();
-		controller_press1 = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-		controller->SetSelected(controller_press1);	
-	}
-	else {
-
-	}
+   
 }
 
 void Engine::Update() {
@@ -151,7 +100,7 @@ void Engine::Update() {
 	glm::vec4 ray = p2 - p1;
 	
 
-	dicomObjects1->dicom_panel->Interact(controller_mm1, glm::vec3(ray), glm::vec3(p1), controller_press1);
+	dicomObjects1->dicom_panel->Interact(controller_mm1, glm::vec3(ray), glm::vec3(p1), controller_press1, true);
 	
 	// tab one
 	if (dicomObjects1->isovalue_slider->has_changed) {
@@ -211,7 +160,8 @@ void Engine::Loop() {
 		begin = std::chrono::high_resolution_clock::now();
 		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(begin - end).count();
 		
-		dicomObjects1->Update(renderer->vr_info);
+
+		dicomObjects1->Update(renderer->half_aspect, renderer->vr_info, renderer->cursor_info);
 		renderer->RenderScene();
 		
 		//FakeControllerInput((float)ms);

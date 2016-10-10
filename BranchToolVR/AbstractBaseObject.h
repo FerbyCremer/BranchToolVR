@@ -39,6 +39,7 @@ class AbstractBaseObject
 		bool is_selected;
 		int id;
 		short ui_quadrant;
+		int level;
 		glm::mat4 ui_transform;
 		static int id_counter;
 		glm::mat4 GetModelMatrix();

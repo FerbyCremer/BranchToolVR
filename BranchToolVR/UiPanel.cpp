@@ -8,32 +8,29 @@ UiPanel::~UiPanel(){
 
 }
 
-UiElement* UiPanel::GetSelectedElement(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos) {
+UiElement* UiPanel::GetSelectedElement(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos, bool world_space) {
 
-	for (int i = 0; i < all_elements.size(); ++i) {
-
-		if (all_elements[i]->type == CTRLHANDLE) {
+	for (int i = 0; i < all_elements.size(); ++i) 
+	{
+		if (world_space && all_elements[i]->type == CTRLHANDLE) {
 			Handle * h = static_cast<Handle*>(all_elements[i]);
-			if (h->obj.TestCollision(_ray, _pos, collision_point)) {
+			if (h->obj.TestCollision(_ray, _pos, collision_point, world_space)) {
 				m = glm::inverse(_controllerPose) * h->obj.append_pose;
 				return h;
 			}
 		}
-
 		else if (all_elements[i]->type == SLIDER) {
 			Slider* s = static_cast<Slider*>(all_elements[i]);
-			if (!s->knob.is_hidden && s->knob.TestCollision(_ray, _pos, collision_point)) {
+			if (!s->knob.is_hidden && s->knob.TestCollision(_ray, _pos, collision_point, world_space)) {
 				return s;
 			}
 		}
-
 		else if (all_elements[i]->type == TAB) {
 			Tab* t = static_cast<Tab*>(all_elements[i]);
-			if (!t->activator.button.is_hidden && t->activator.button.TestCollision(_ray, _pos, collision_point)) {
+			if (!t->activator.button.is_hidden && t->activator.button.TestCollision(_ray, _pos, collision_point, world_space)) {
 				return t;
 			}
 		}
-
 	}
 
 	return NULL;
@@ -43,9 +40,17 @@ glm::mat4 UiPanel::GetModelMatrix() {
 	return base_panel.back_plate.GetModelMatrix();
 }
 
-glm::vec3 UiPanel::GetCollisionPointWithPanelPlane(glm::vec3 _ray, glm::vec3 _pos) {
+glm::vec3 UiPanel::GetCollisionPointWithPanelPlane(glm::vec3 _ray, glm::vec3 _pos, bool world_space) {
 
-	glm::mat4 mm = base_panel.back_plate.GetModelMatrix();
+	glm::mat4 mm;
+	
+	if (world_space) {
+		mm = base_panel.back_plate.GetModelMatrix();
+	}
+	else {
+		mm = base_panel.back_plate.ui_transform;
+	}
+	
 	glm::vec3 cg;
 	glm::vec4 tri[3];
 	tri[0] = mm * glm::vec4(base_panel.back_plate.positions[0], 1.0f);
@@ -66,25 +71,35 @@ Slider* UiPanel::GetSliderByName(std::string _name) {
 	return NULL;
 }
 
-void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos, bool _pressed) {
+void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos, bool _pressed, bool world_space) {
 
 	static UiElement * selected_element = NULL;
 	static bool once = false;
 	static float x_offset = 0.0f;
+	static bool lock = false;
 
 	// first press, test for collision
 	if (_pressed && selected_element == NULL && !once) {
-		glm::vec3 p = GetCollisionPointWithPanelPlane(_ray, _pos);
-		selected_element = GetSelectedElement(_controllerPose, _ray, _pos);
+		glm::vec3 p = GetCollisionPointWithPanelPlane(_ray, _pos, world_space);
+		selected_element = GetSelectedElement(_controllerPose, _ray, _pos, world_space);
 		once = true;
 		
-		// slider found, set x offset 
 		if (selected_element != NULL){
-			
+
+			// disallow controller/2d ui interference
+			lock = world_space;
+
+			// slider found, set x offset 
 			if (selected_element->type == SLIDER) {
 				selected_element->SetSelected(true);
 				Slider* s = static_cast<Slider*>(selected_element);
-				x_offset = (glm::inverse(GetModelMatrix())*glm::vec4(p, 1.0f)).x - s->knob.model_position.x;
+				if (world_space) {
+					x_offset = (glm::inverse(GetModelMatrix())*glm::vec4(p, 1.0f)).x - s->knob.model_position.x;
+				}
+				else {
+					x_offset = (glm::inverse(base_panel.back_plate.ui_transform)*glm::vec4(p, 1.0f)).x - s->knob.model_position.x;
+				}
+				
 			}
 			else if (selected_element->type == TAB) {
 				for (Tab* _tab : base_panel.tabs) {
@@ -101,12 +116,18 @@ void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos
 
 	}
 	// press held down and element was selected
-	else if (_pressed && selected_element != NULL) {
-		glm::vec3 p = GetCollisionPointWithPanelPlane(_ray,_pos);
+	else if (_pressed && selected_element != NULL && lock == world_space) {
+		glm::vec3 p = GetCollisionPointWithPanelPlane(_ray,_pos, world_space);
 		if (glm::dot((p - _pos), _ray) > 0) {
 			if (selected_element->type == SLIDER) {
 				Slider* s = static_cast<Slider*>(selected_element);
-				s->knob.Set_model_positionX(glm::clamp((glm::inverse(GetModelMatrix())*glm::vec4(p, 1.0f)).x - x_offset, s->track_min_max.x, s->track_min_max.y));
+				if (world_space) {
+					s->knob.Set_model_positionX(glm::clamp((glm::inverse(GetModelMatrix())*glm::vec4(p, 1.0f)).x - x_offset, s->track_min_max.x, s->track_min_max.y));
+				}
+				else {
+					s->knob.Set_model_positionX(glm::clamp((glm::inverse(base_panel.back_plate.ui_transform)*glm::vec4(p, 1.0f)).x - x_offset, s->track_min_max.x, s->track_min_max.y));
+				}
+
 				s->UpdateVal(s->knob.model_position.x / s->track_min_max.y, false);
 			}
 		}
@@ -118,7 +139,7 @@ void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos
 		
 	}
 	// press released with a selected element
-	else if (!_pressed && selected_element != NULL) {
+	else if (!_pressed && selected_element != NULL && lock == world_space) {
 		if (selected_element->type == SLIDER) {
 			Slider* s = static_cast<Slider*>(selected_element);
 			s->UpdateVal(s->knob.model_position.x / s->track_min_max.y, true);
@@ -129,7 +150,7 @@ void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos
 		selected_element = NULL;
 	}
 	// press released with a click miss
-	else if (!_pressed && once) {
+	else if (!_pressed && once && lock == world_space) {
 		once = false;
 	}
 	
@@ -138,7 +159,7 @@ void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos
 void UiPanel::GenerateDicomPanel(Render * _r) {
 
 	base_panel.SetSize(Constants::DICOM_PANEL_DIMENSIONS);
-	glm::vec3 half_panel_size = base_panel.size * 0.525f;
+	//glm::vec3 half_panel_size = base_panel.size * 0.525f;
 
 	// tab 1
 	Tab * iso_controls = new Tab;
@@ -168,24 +189,13 @@ void UiPanel::GenerateDicomPanel(Render * _r) {
 	Slider* scaler_x = new Slider;
 	scaler_x->min = 0;
 	scaler_x->max = 1.0f;
-	scaler_x->name = "X";
-
-	Slider* scaler_y = new Slider;
-	scaler_y->min = 0;
-	scaler_y->max = 1.0f;
-	scaler_y->name = "Y";
-
-	Slider* scaler_z = new Slider;
-	scaler_z->min = 0;
-	scaler_z->max = 1.0f;
-	scaler_z->name = "Z";
+	scaler_x->name = "scale";
 	
 	scale_controls->AddElement(scaler_x);
-	scale_controls->AddElement(scaler_y);
-	scale_controls->AddElement(scaler_z);
 
 	base_panel.AddTab(scale_controls);
 
+	// tab 3
 	Tab * orthoslice = new Tab;
 	orthoslice->name = "orthoslice";
 
@@ -199,11 +209,18 @@ void UiPanel::GenerateDicomPanel(Render * _r) {
 	window_center->max = -32000;
 	window_center->name = "window center";
 
+	Slider* ortho_level = new Slider;
+	ortho_level->min = 0;
+	ortho_level->max = 310;
+	ortho_level->name = "level";
+
 	orthoslice->AddElement(window_width);
 	orthoslice->AddElement(window_center);	
+	orthoslice->AddElement(ortho_level);
 	
 	base_panel.AddTab(orthoslice);
 
+	// tab 4
 	Tab * misc = new Tab;
 	misc->name = "misc";
 
@@ -236,6 +253,9 @@ void UiPanel::GenerateDicomPanel(Render * _r) {
 			_r->texture_ui_elements.push_back(to);
 		}
 	}
+
+	_r->ui_quadrant_ortho[0] = glm::vec4(base_panel.half_size.x, base_panel.half_size.y, 0.0f,0.0f);
+	_r->ui_quadrant_ortho[1] = glm::vec4(0.5f,0.5f,0.0f,0.0f);
 }
 
 void UiPanel::Finalize() {

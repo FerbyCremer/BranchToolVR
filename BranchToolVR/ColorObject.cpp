@@ -462,10 +462,6 @@ void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel
 			vertlist[11] = VertexInterp(_isolevel, cell_points[3], cell_points[7], grid_values[3], grid_values[7]);
 			norm_list[11] = VertexInterp(_isolevel, normals1[3], normals1[7], grid_values[0], grid_values[1]);
 		}
-			
-
-
-
 
 		for (int j = 0; triTable[cubeindex][j] != -1; j += 3) {
 			positions.push_back(_dSet.scale*vertlist[triTable[cubeindex][j]]);
@@ -538,10 +534,19 @@ void ColorObject::SetBoundingBox() {
 
 }
 
-bool ColorObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _cp) {
+bool ColorObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _cp, bool world_space) {
 
-	glm::mat4 mm = GetModelMatrix();
+	glm::mat4 mm;
+
+	if (world_space) {
+		mm = GetModelMatrix();
+	}
+	else {
+		mm = ui_model_matrix;
+	}
+
 	glm::vec3 cg;
+
 	for (int i = 0; i < positions.size(); i += 3) {
 		glm::vec4 tri[3];
 		tri[0] = mm * glm::vec4(positions[i + 0], 1.0f);

@@ -19,6 +19,7 @@ CoarseDicomViewer::CoarseDicomViewer(){
 	point_cloud_selector = new ColorObject;
 	point_cloud_selector->is_selectable = true;
 	point_cloud_selector->SetDisplayColor(glm::vec4(0.0f, 0.5f, 0.5f, 0.5f));
+	point_cloud_selector_scale = glm::vec3(0.2f, 0.2f, 0.2f);
 }
 
 CoarseDicomViewer::~CoarseDicomViewer(){
@@ -152,7 +153,6 @@ void CoarseDicomViewer::Load(DicomSet & _dSet) {
 	orthoslice_texture->Load(_dSet.data[0], _dSet.window_width, _dSet.window_center);
 	orthoslice->texture_id = CURR_ORTHOSLICE_TEXTURE;
 	orthoslice_handle->Set_model_position(glm::vec3(_dSet.scale.x/2.0f, 0.0f, 0.0f));
-	point_cloud_selector_scale = glm::vec3(0.2f, 0.2f, 0.2f);
 	point_cloud_selector->GenerateXYPrism(point_cloud_selector_scale, glm::vec2(0.0f), glm::vec3(0.0f));
 }
 

@@ -18,7 +18,7 @@ class DicomObjectsContainer{
 		void UpdateDicomPointCloud(int _isovalue);
 		void Interact(glm::mat4 & _controllerPose, glm::vec3& _ray, glm::vec3& _pos, bool _pressed);
 		void AddObjects(Render * _r);
-		void Update(VrData & _vr);// glm::mat4 & _controllerPose, glm::vec3& _ray, glm::vec3& _pos, bool _pressed);
+		void Update(float h_asp, VrData & _vr, CursorData & _crsr);// glm::mat4 & _controllerPose, glm::vec3& _ray, glm::vec3& _pos, bool _pressed);
 
 	//private:
 
@@ -41,5 +41,6 @@ class DicomObjectsContainer{
 		Slider* window_width_slider;
 		Slider* window_center_slider;
 		Slider* clear_branching_slider;
+		Slider* ortho_level;
 
 };
