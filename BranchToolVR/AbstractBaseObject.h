@@ -47,15 +47,15 @@ class AbstractBaseObject
 		glm::mat4 base_model_matrix;
 		glm::mat4 ui_model_matrix;
 
-		void Set_world_position(glm::vec3& v);
-		void Set_model_orientation(glm::vec3& v);
+		void Set_world_position(const glm::vec3& v);
+		void Set_model_orientation(const glm::vec3& v);
 		void Set_model_positionX(float _x);
-		void Set_model_positionY(float _y);
-		void Set_model_positionZ(float _z);
-		void Set_model_position(glm::vec3& v);
-		void Set_scale(glm::vec3& v);
-		void Set_append_pose(glm::mat4& m);
-		void Set_cache_pose(glm::mat4& m, int index);
+		void Set_model_positionY(const float _y);
+		void Set_model_positionZ(const float _z);
+		void Set_model_position(const glm::vec3& v);
+		void Set_scale(const glm::vec3& v);
+		void Set_append_pose(const glm::mat4& m);
+		void Set_cache_pose(const glm::mat4& m, int index);
 	//private:
 		// model matrix components
 		void CalcModelMatrix();

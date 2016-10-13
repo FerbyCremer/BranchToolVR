@@ -36,8 +36,6 @@ class DicomObjectsContainer{
 		Slider* isovalue_slider;
 		Slider* isovalue_tol_slider;
 		Slider* scaleX_slider;
-		Slider* scaleY_slider;
-		Slider* scaleZ_slider;
 		Slider* window_width_slider;
 		Slider* window_center_slider;
 		Slider* clear_branching_slider;

@@ -38,43 +38,43 @@ void AbstractBaseObject::CalcModelMatrix() {
 	ui_model_matrix = ui_transform * base_model_matrix;
 }
 
-void AbstractBaseObject::Set_world_position(glm::vec3& v) {
+void AbstractBaseObject::Set_world_position(const glm::vec3& v) {
 	world_position = v;
 	CalcModelMatrix();
 }
-void AbstractBaseObject::Set_model_orientation(glm::vec3& v) {
+void AbstractBaseObject::Set_model_orientation(const glm::vec3& v) {
 	model_orientation = v;
 	CalcModelMatrix();
 }
-void AbstractBaseObject::Set_model_position(glm::vec3& v) {
+void AbstractBaseObject::Set_model_position(const glm::vec3& v) {
 	model_position = v;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_positionX(float _x) {
+void AbstractBaseObject::Set_model_positionX(const float _x) {
 	model_position.x = _x;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_positionY(float _y) {
+void AbstractBaseObject::Set_model_positionY(const float _y) {
 	model_position.y = _y;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_positionZ(float _z) {
+void AbstractBaseObject::Set_model_positionZ(const float _z) {
 	model_position.z = _z;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_scale(glm::vec3& v) {
+void AbstractBaseObject::Set_scale(const glm::vec3& v) {
 	scale = v;
 	CalcModelMatrix();
 }
-void AbstractBaseObject::Set_append_pose(glm::mat4& m) {
+void AbstractBaseObject::Set_append_pose(const glm::mat4& m) {
 	append_pose = m;
 	CalcModelMatrix();
 }
-void AbstractBaseObject::Set_cache_pose(glm::mat4& m, int index) {
+void AbstractBaseObject::Set_cache_pose(const glm::mat4& m, const int index) {
 	cache_pose[index] = m;
 	CalcModelMatrix();
 }

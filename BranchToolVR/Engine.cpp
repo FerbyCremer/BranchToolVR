@@ -30,7 +30,7 @@ Engine::Engine(){
 	// controller
 	controller = new ColorObject;
 	controller->GenerateController();
-	controller->world_position = glm::vec3(0.2f, 0.2f, 0.2f);
+	controller->world_position = glm::vec3(0.5f, 0.5f, 0.5f);
 	controller->SetDisplayColor(glm::vec4(0.1f, 0.1f, 1.0f,1.0f));
 	//renderer->AddObjectToScene(controller);
 
@@ -95,55 +95,55 @@ void Engine::FakeControllerInput(float _deltaT) {
 
 void Engine::Update() {
 
-	glm::vec4 p1 = controller_mm1 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 p2 = controller_mm1 * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
-	glm::vec4 ray = p2 - p1;
-	
-
-	dicomObjects1->dicom_panel->Interact(controller_mm1, glm::vec3(ray), glm::vec3(p1), controller_press1, true);
-	
-	// tab one
-	if (dicomObjects1->isovalue_slider->has_changed) {
-		dicomObjects1->UpdateDicomPointCloud(dicomObjects1->isovalue_slider->curr);
-		dicomObjects1->isovalue_slider->has_changed = false;
-	}
-
-	if (dicomObjects1->isovalue_tol_slider->has_changed) {
-		dicomObjects1->points->curr_tolerance = dicomObjects1->isovalue_tol_slider->curr;
-		dicomObjects1->isovalue_tol_slider->has_changed = false;
-	}
-
-	// tab two
-	if (dicomObjects1->scaleX_slider->has_changed) {
-
-		dicomObjects1->scaleX_slider->has_changed = false;
-	}
-
-	if (dicomObjects1->scaleY_slider->has_changed) {
-
-		dicomObjects1->scaleY_slider->has_changed = false;
-	}
-
-	if (dicomObjects1->scaleZ_slider->has_changed) {
-
-		dicomObjects1->scaleZ_slider->has_changed = false;
-	}
-	
-	// tab three
-	if (dicomObjects1->window_width_slider->has_changed) {
-		dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], dicomObjects1->window_width_slider->curr, dicomObjects1->window_center_slider->curr);
-		dicomObjects1->window_width_slider->has_changed = false;
-	}
-
-	if (dicomObjects1->window_center_slider->has_changed) {
-		dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], dicomObjects1->window_width_slider->curr, dicomObjects1->window_center_slider->curr);
-		dicomObjects1->window_center_slider->has_changed = false;
-	}
-
-	if (dicomObjects1->window_center_slider->has_changed) {
-		dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], dicomObjects1->window_width_slider->curr, dicomObjects1->window_center_slider->curr);
-		dicomObjects1->window_center_slider->has_changed = false;
-	}
+	//glm::vec4 p1 = controller_mm1 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	//glm::vec4 p2 = controller_mm1 * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
+	//glm::vec4 ray = p2 - p1;
+	//
+	//
+	//dicomObjects1->dicom_panel->Interact(controller_mm1, glm::vec3(ray), glm::vec3(p1), controller_press1, true);
+	//
+	//// tab one
+	//if (dicomObjects1->isovalue_slider->has_changed) {
+	//	dicomObjects1->UpdateDicomPointCloud(dicomObjects1->isovalue_slider->curr);
+	//	dicomObjects1->isovalue_slider->has_changed = false;
+	//}
+	//
+	//if (dicomObjects1->isovalue_tol_slider->has_changed) {
+	//	dicomObjects1->points->curr_tolerance = dicomObjects1->isovalue_tol_slider->curr;
+	//	dicomObjects1->isovalue_tol_slider->has_changed = false;
+	//}
+	//
+	//// tab two
+	//if (dicomObjects1->scaleX_slider->has_changed) {
+	//
+	//	dicomObjects1->scaleX_slider->has_changed = false;
+	//}
+	//
+	//if (dicomObjects1->scaleY_slider->has_changed) {
+	//
+	//	dicomObjects1->scaleY_slider->has_changed = false;
+	//}
+	//
+	//if (dicomObjects1->scaleZ_slider->has_changed) {
+	//
+	//	dicomObjects1->scaleZ_slider->has_changed = false;
+	//}
+	//
+	//// tab three
+	//if (dicomObjects1->window_width_slider->has_changed) {
+	//	dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], dicomObjects1->window_width_slider->curr, dicomObjects1->window_center_slider->curr);
+	//	dicomObjects1->window_width_slider->has_changed = false;
+	//}
+	//
+	//if (dicomObjects1->window_center_slider->has_changed) {
+	//	dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], dicomObjects1->window_width_slider->curr, dicomObjects1->window_center_slider->curr);
+	//	dicomObjects1->window_center_slider->has_changed = false;
+	//}
+	//
+	//if (dicomObjects1->window_center_slider->has_changed) {
+	//	dicomObjects1->viewer->orthoslice_texture->Load(dicomObjects1->imaging_data.data[150], dicomObjects1->window_width_slider->curr, dicomObjects1->window_center_slider->curr);
+	//	dicomObjects1->window_center_slider->has_changed = false;
+	//}
 
 
 	//renderer->Interact(controller_mm1, controller_mm2, glm::vec3(ray), glm::vec3(p1), controller_press1);		

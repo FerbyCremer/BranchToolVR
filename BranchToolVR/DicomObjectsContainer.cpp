@@ -22,13 +22,12 @@ DicomObjectsContainer::DicomObjectsContainer(){
 	orthoslice->texture_id = CURR_ORTHOSLICE_TEXTURE;
 	orthoslice->ui_quadrant = 1;
 
-
 	selector2D = new ColorObject;
-	float half_scale = viewer->point_cloud_selector_scale.x * 0.5f;
-	selector2D->Set_scale(glm::vec3(viewer->point_cloud_selector_scale.x, viewer->point_cloud_selector_scale.x, 1.0f));
+	selector2D->Set_scale(Constants::DEFAULT_SELECTOR_SCALE);
 	selector2D->GenerateXYPlane(1.0f, 1.0f, 0.0f, glm::vec3(-0.5f, -0.5f, 0.1f));
 	selector2D->ui_quadrant = 1;
 	selector2D->SetDisplayColor(Constants::UI_SELECTOR_COLOR);
+	selector2D->Set_model_position(glm::vec3(viewer->point_cloud_selector_scale.x*0.5f - 0.5f, viewer->point_cloud_selector_scale.x*0.5f - 0.5f,0.0f));
 	selector2D->level = 1;
 
 	debug1->GenerateXYPlane(1.0f, 1.0f, 0.0f, glm::vec3(-0.5f, -0.5f, 0.1f));
@@ -40,7 +39,16 @@ DicomObjectsContainer::~DicomObjectsContainer(){
 
 }
 
-void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr){//(glm::mat4 & _controllerPose, glm::vec3& _ray, glm::vec3& _pos, bool _pressed) {
+void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr){
+
+	// update sliders
+	if (scaleX_slider->has_changed) {
+		viewer->point_cloud_selector->Set_scale(glm::vec3(scaleX_slider->curr));
+		viewer->point_cloud_selector_scale = glm::vec3(scaleX_slider->curr);
+		selector2D->Set_scale(glm::vec3(scaleX_slider->curr));
+		scaleX_slider->has_changed = false;
+	}
+
 
 	viewer->Update(imaging_data);
 
@@ -50,7 +58,8 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 		points->box_scale = viewer->point_cloud_selector_scale;
 		points->GenerateDicomPointCloud(imaging_data, imaging_data.isovalue, MAX_ISOVALUE_TOLERANCE);
 		viewer->selector_changed = false;
-		std::cout << "cube " << viewer->point_cloud_selector->model_position.x << " " << viewer->point_cloud_selector->model_position.y << std::endl;
+		selector2D->Set_model_positionX(viewer->point_cloud_selector->model_position.x + viewer->point_cloud_selector_scale.x*0.5f-0.5f);
+		selector2D->Set_model_positionY(viewer->point_cloud_selector->model_position.y + viewer->point_cloud_selector_scale.x*0.5f-0.5f);
 	}
 
 	if (points->handle->is_selected) {
@@ -58,6 +67,13 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 		points->handle->Set_append_pose(curr_pose);
 		points->Set_append_pose(curr_pose);
 		points->branch_point_marker->Set_append_pose(curr_pose);
+	}		
+
+	if (viewer->orthoslice->model_position.z >= points->lower_bounds.z && viewer->orthoslice->model_position.z <= points->upper_bounds.z) {
+		selector2D->SetDisplayColor(glm::vec4(0.2f, 0.2f, 1.0f, 0.5f));
+	}
+	else {
+		selector2D->SetDisplayColor(glm::vec4(0.8f,0.8f,0.8f,1.0f));
 	}
 
 	static bool selector2D_ui_selection = false;
@@ -82,8 +98,6 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 
 				selector2D_ui_selection = true;
 
-				std::cout << "quad " << quad1coords.x << " " << quad1coords.y << std::endl;
-
 			}
 			else if (_crsr.normalized_cursor_position.y < 0.0f) {
 				// quadrant 0
@@ -93,8 +107,6 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 				quad0coords -= 1.0f;
 				quad0coords *= dicom_panel->base_panel.half_size.x;
 	
-				//std::cout << quad0coords.x << " " << quad0coords.y<< std::endl;
-
 				if (h_asp > 1.0f) {
 					quad0coords.y /= h_asp;
 				}
@@ -117,16 +129,22 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 
 		if (selector2D_ui_selection) {
 			
-			glm::vec2 selectorTo3d = glm::vec2(selector2D->model_position) + glm::vec2(0.5f,0.5f) - viewer->point_cloud_selector_scale.x*0.5f;
-			
-			//points->lower_bounds = selector2D->model_position + -f;
-			points->upper_bounds = points->lower_bounds + viewer->point_cloud_selector_scale;
+			glm::vec2 selectorTo3dlower = glm::vec2(selector2D->model_position) + glm::vec2(0.5f,0.5f) - viewer->point_cloud_selector_scale.x*0.5f;
+			glm::vec2 selectorTo3dupper = glm::vec2(selector2D->model_position) + glm::vec2(0.5f, 0.5f) + viewer->point_cloud_selector_scale.x*0.5f;
+
+
+			points->lower_bounds = glm::vec3(selectorTo3dlower, viewer->orthoslice->model_position.z - viewer->point_cloud_selector_scale.x*0.5f);
+			points->upper_bounds = glm::vec3(selectorTo3dupper, viewer->orthoslice->model_position.z + viewer->point_cloud_selector_scale.x*0.5f);
+
 			points->box_scale = viewer->point_cloud_selector_scale;
-			viewer->point_cloud_selector->Set_model_positionX(selectorTo3d.x);
-			viewer->point_cloud_selector->Set_model_positionY(selectorTo3d.y);
+			viewer->point_cloud_selector->Set_model_positionX(selectorTo3dlower.x);
+			viewer->point_cloud_selector->Set_model_positionY(selectorTo3dlower.y);
+			viewer->point_cloud_selector->Set_model_positionZ(viewer->orthoslice->model_position.z - viewer->point_cloud_selector_scale.x*0.5f);
 			points->GenerateDicomPointCloud(imaging_data, imaging_data.isovalue, MAX_ISOVALUE_TOLERANCE);
 			selector2D_ui_selection = false;
+			selector2D->SetDisplayColor(glm::vec4(0.2f, 0.2f, 1.0f, 0.5f));
 		}
+
 
 		// release any previously held selections
 		dicom_panel->Interact(glm::mat4(), glm::vec3(), glm::vec3(), false, false);
@@ -145,9 +163,7 @@ void DicomObjectsContainer::AddObjects(Render * _r) {
 	dicom_panel->SetModelOrientation(glm::vec3(0.8f, 0.2f, 0.2f));
 	isovalue_slider = dicom_panel->GetSliderByName("isovalue");
 	isovalue_tol_slider = dicom_panel->GetSliderByName("isovalue tolerance");
-	scaleX_slider = dicom_panel->GetSliderByName("X");
-	scaleY_slider = dicom_panel->GetSliderByName("Y");
-	scaleZ_slider = dicom_panel->GetSliderByName("Z");
+	scaleX_slider = dicom_panel->GetSliderByName("scale");
 	window_width_slider = dicom_panel->GetSliderByName("window width");
 	window_center_slider = dicom_panel->GetSliderByName("window center");
 	clear_branching_slider = dicom_panel->GetSliderByName("reset selection");
