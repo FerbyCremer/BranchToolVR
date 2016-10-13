@@ -39,12 +39,20 @@ Render::Render(GLFWwindow *_window){
 	controller->GenerateController();
 	AddObjectToScene(controller);
 
+	// shadow
+	createFrameBuffer(sm);
+	float shadow_width = 5.0f;
+	sm.P = glm::ortho(-shadow_width, shadow_width, -shadow_width, shadow_width, -100.0f, 100.0f);
+	sm.V = glm::lookAt(glm::vec3(2.5f,20.0f,2.5f),glm::vec3(-0.1f,0.0f,-0.1f),glm::vec3(0.0f,1.0f,0.0f));
+
+	// initializers
+
 	InitVR();
 
 	std::string shader_directory = "./Shaders/";
 
 	color.id = CompileGLShader("color", shader_directory);
-	color.num_uniforms = 7;
+	color.num_uniforms = 11;
 	color.uniforms = new GLuint[color.num_uniforms];
 	color.uniforms[0] = glGetUniformLocation(color.id, "P");
 	color.uniforms[1] = glGetUniformLocation(color.id, "V");
@@ -53,14 +61,19 @@ Render::Render(GLFWwindow *_window){
 	color.uniforms[4] = glGetUniformLocation(color.id, "lights[0].pos"); // change to uniform buffer
 	color.uniforms[5] = glGetUniformLocation(color.id, "lights[1].pos");
 	color.uniforms[6] = glGetUniformLocation(color.id, "lights[2].pos");
+	color.uniforms[7] = glGetUniformLocation(color.id, "shadow");
+	color.uniforms[8] = glGetUniformLocation(color.id, "shadowP");
+	color.uniforms[9] = glGetUniformLocation(color.id, "shadowV");
+	color.uniforms[10] = glGetUniformLocation(color.id, "ambient");
 
 	texture.id = CompileGLShader("texture", shader_directory);
-	texture.num_uniforms = 4;
+	texture.num_uniforms = 5;
 	texture.uniforms = new GLuint[texture.num_uniforms];
 	texture.uniforms[0] = glGetUniformLocation(texture.id, "P");
 	texture.uniforms[1] = glGetUniformLocation(texture.id, "V");
 	texture.uniforms[2] = glGetUniformLocation(texture.id, "M");
 	texture.uniforms[3] = glGetUniformLocation(texture.id, "diffuse_texture");
+	texture.uniforms[4] = glGetUniformLocation(texture.id, "ambient");
 
 	line.id = CompileGLShader("line", shader_directory);
 	line.num_uniforms = 3;
@@ -70,7 +83,7 @@ Render::Render(GLFWwindow *_window){
 	line.uniforms[2] = glGetUniformLocation(line.id, "M");
 
 	dicom_point_cloud.id = CompileGLShader("dicom_point_cloud", shader_directory);
-	dicom_point_cloud.num_uniforms = 13;
+	dicom_point_cloud.num_uniforms = 14;
 	dicom_point_cloud.uniforms = new GLuint[dicom_point_cloud.num_uniforms];
 	dicom_point_cloud.uniforms[0] = glGetUniformLocation(dicom_point_cloud.id, "P");
 	dicom_point_cloud.uniforms[1] = glGetUniformLocation(dicom_point_cloud.id, "V");
@@ -85,6 +98,7 @@ Render::Render(GLFWwindow *_window){
 	dicom_point_cloud.uniforms[10] = glGetUniformLocation(dicom_point_cloud.id, "box_scale");
 	dicom_point_cloud.uniforms[11] = glGetUniformLocation(dicom_point_cloud.id, "scale");
 	dicom_point_cloud.uniforms[12] = glGetUniformLocation(dicom_point_cloud.id, "eye_pos");
+	dicom_point_cloud.uniforms[13] = glGetUniformLocation(dicom_point_cloud.id, "ambient");
 
 	branch_point.id = CompileGLShader("branch_point", shader_directory);
 	branch_point.num_uniforms = 7;
@@ -126,6 +140,13 @@ Render::Render(GLFWwindow *_window){
 	ui_color.uniforms[1] = glGetUniformLocation(ui_color.id, "V");
 	ui_color.uniforms[2] = glGetUniformLocation(ui_color.id, "M");
 	ui_color.uniforms[3] = glGetUniformLocation(ui_color.id, "color");
+
+	shadow.id = CompileGLShader("shadow", shader_directory);
+	shadow.num_uniforms = 3;
+	shadow.uniforms = new GLuint[branch_line.num_uniforms];
+	shadow.uniforms[0] = glGetUniformLocation(shadow.id, "P");
+	shadow.uniforms[1] = glGetUniformLocation(shadow.id, "V");
+	shadow.uniforms[2] = glGetUniformLocation(shadow.id, "M");
 
 	// load textures
 	textures = new Texture*[CURR_NR_TEXTURES];
@@ -310,7 +331,6 @@ void Render::AddObjectToUi(ColorObject * c) {
 }
 
 void Render::RenderEyes() {
-
 	if (!m_pHMD)
 		return;
 
@@ -392,35 +412,104 @@ void Render::UpdateCursor() {
 	}
 }
 
+void Render::RenderShadows() {
+
+	glBindFramebuffer(GL_FRAMEBUFFER, sm.depth);
+	glDisable(GL_SCISSOR_TEST);
+
+	glViewport(0, 0, DEFAULT_SHADOW_RES, DEFAULT_SHADOW_RES);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glUseProgram(shadow.id);
+	glUniformMatrix4fv(shadow.uniforms[0], 1, GL_FALSE, glm::value_ptr(sm.P));
+	glUniformMatrix4fv(shadow.uniforms[1], 1, GL_FALSE, glm::value_ptr(sm.V));
+
+	for (ColorObject* & cObj : color_objects) {
+		if (cObj->is_hidden || !cObj->is_loaded)
+			continue;
+
+		glUniformMatrix4fv(shadow.uniforms[2], 1, GL_FALSE, glm::value_ptr(cObj->GetModelMatrix()));
+
+		glBindVertexArray(cObj->vao);
+		glEnableVertexAttribArray(0);
+
+		glDrawArrays(GL_TRIANGLES, 0, cObj->num_vertices);
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+
+	for (TextureObject* & tObj : texture_objects) {
+		if (tObj->is_hidden || !tObj->is_loaded)
+			continue;
+
+		glUniformMatrix4fv(shadow.uniforms[2], 1, GL_FALSE, glm::value_ptr(tObj->GetModelMatrix()));
+
+		glBindVertexArray(tObj->vao);
+		glEnableVertexAttribArray(0);
+
+		glDrawArrays(GL_TRIANGLES, 0, tObj->num_vertices);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+
+	glUseProgram(dicom_point_cloud.id);
+
+	glUniformMatrix4fv(dicom_point_cloud.uniforms[0], 1, GL_FALSE, glm::value_ptr(sm.P));
+	glUniformMatrix4fv(dicom_point_cloud.uniforms[1], 1, GL_FALSE, glm::value_ptr(sm.V));
+
+	//glm::vec4 head_pos = glm::inverse(m_mat4HMDPose) * glm::vec4(0.01f, 0.05f, 0.0f, 1.0f);
+	glm::vec4 head_pos = controller_pose1 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	glUniform3fv(dicom_point_cloud.uniforms[4], 1, glm::value_ptr(lights[0].position));
+	glUniform3fv(dicom_point_cloud.uniforms[5], 1, glm::value_ptr(lights[1].position));
+	glUniform3fv(dicom_point_cloud.uniforms[6], 1, glm::value_ptr(lights[2].position));
+	glUniform3fv(dicom_point_cloud.uniforms[12], 1, glm::value_ptr(head_pos));
+
+	for (DicomPointCloudObject* & dpco : dicom_point_cloud_objects) {
+
+		if (!dpco->is_loaded)
+			continue;
+
+		glUniformMatrix4fv(dicom_point_cloud.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
+		glUniform1i(dicom_point_cloud.uniforms[3], dpco->curr_tolerance);
+		glUniform3fv(dicom_point_cloud.uniforms[7], 1, glm::value_ptr(dpco->scale));
+		glUniform3fv(dicom_point_cloud.uniforms[8], 1, glm::value_ptr(dpco->lower_bounds));
+		glUniform3fv(dicom_point_cloud.uniforms[9], 1, glm::value_ptr(dpco->upper_bounds));
+		glUniform3fv(dicom_point_cloud.uniforms[10], 1, glm::value_ptr(dpco->box_scale));
+
+		glBindVertexArray(dpco->vao);
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(3);
+		glEnableVertexAttribArray(4);
+		glVertexAttribDivisor(0, 0);
+		glVertexAttribDivisor(1, 0);
+		glVertexAttribDivisor(2, 1);
+		glVertexAttribDivisor(3, 1);
+		glVertexAttribDivisor(4, 1);
+
+		glDrawArraysInstanced(GL_TRIANGLES, 0, dpco->num_vertices, dpco->num_instances);
+
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_SCISSOR_TEST);
+}
+
 void Render::RenderScene() {
 
 	UpdateCursor();
 	UpdateLights();
+	RenderShadows();
 	Interact(vr_info.controller_pose, glm::mat4(1.0f),glm::vec3(vr_info.controller_pose* glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)), glm::vec3(vr_info.controller_pose* glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), vr_info.controller_press);
 
-	//glViewport(0, 0, half_window_size_x, window_size_y);
-	//glScissor(0, 0, half_window_size_x, window_size_y);
-	//glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.0f, 0.0f, 1.0f)));
-	//RenderSceneInternal(ui_projection, ui_view);
 
-	//glViewport(h_width, 0, h_width , h_height);
-	//glScissor(h_width, 0, h_width, h_height);
-	//renderer->RenderSceneInternal(glm::perspective(90.0f, (float)width/(float)height, 0.001f, 1000.0f), glm::inverse(controller_mm1));
 	RenderUI(0);
 	RenderUI(1);
-
-	// render to hmd
-	//RenderEyes();
-
-	// render to glfw window
-	//int width, height;
-	//glfwGetWindowSize(window, &width, &height);
-	//glViewport(0, 0, width/2 , height);
-	//glScissor(0, 0, width / 2, height);
-	//glEnable(GL_SCISSOR_TEST);
-	//RenderSceneInternal(glm::perspective(90.0f, 1.0f, 0.1f, 1000.0f), m_mat4HMDPose);// glm::lookAt(glm::vec3(1.0f,1.0f,1.0f),glm::vec3(0.0f,0.0f,0.0f),glm::vec3(0.0f,1.0f,0.0f)));
-	//glViewport(0, 0, width , height);
-	//RenderSceneInternal(glm::perspective(90.0f, 1.0f, 0.1f, 1000.0f), m_mat4HMDPose);
 
 	UpdateHMDMatrixPose();
 }
@@ -437,7 +526,6 @@ void Render::RenderUI(int level) {
 		else {
 			RenderSceneInternal(glm::perspective(90.0f, aspect*0.5f, 0.1f, 100.0f), glm::inverse(controller->GetModelMatrix()));
 		}
-
 
 		// clear ui quadrant 0
 		glViewport(half_window_size_x, 0,  half_window_size_x, window_size_y);
@@ -534,6 +622,12 @@ void Render::RenderUI(int level) {
 
 void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 
+	if (glfwGetKey(window, GLFW_KEY_F)) {
+		_P = sm.P;
+		_V = sm.V;
+	}
+
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
@@ -565,6 +659,13 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 	glUniform3fv(color.uniforms[4], 1, glm::value_ptr(lights[0].position));
 	glUniform3fv(color.uniforms[5], 1, glm::value_ptr(lights[1].position));
 	glUniform3fv(color.uniforms[6], 1, glm::value_ptr(lights[2].position));
+	glUniform3fv(color.uniforms[10], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
+
+	glActiveTexture(GL_TEXTURE0 + 8);
+	glBindTexture(GL_TEXTURE_2D, sm.depth);
+	glUniform1i(color.uniforms[7], 8);	
+	glUniformMatrix4fv(color.uniforms[8], 1, GL_FALSE, glm::value_ptr(sm.P));
+	glUniformMatrix4fv(color.uniforms[9], 1, GL_FALSE, glm::value_ptr(sm.V));
 	
 	for (ColorObject* & cObj : color_objects) {
 		if (cObj->is_hidden || !cObj->is_loaded)
@@ -590,6 +691,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 
 	glUniformMatrix4fv(texture.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 	glUniformMatrix4fv(texture.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
+	glUniform3fv(texture.uniforms[4], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
 
 	for (TextureObject* & tObj : texture_objects) {
 		if (tObj->is_hidden || !tObj->is_loaded)
@@ -618,6 +720,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 	glUniform3fv(dicom_point_cloud.uniforms[5], 1, glm::value_ptr(lights[1].position));
 	glUniform3fv(dicom_point_cloud.uniforms[6], 1, glm::value_ptr(lights[2].position));
 	glUniform3fv(dicom_point_cloud.uniforms[12], 1, glm::value_ptr(head_pos));
+	glUniform3fv(dicom_point_cloud.uniforms[13], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
 
 	for (DicomPointCloudObject* & dpco : dicom_point_cloud_objects) {
 
@@ -997,6 +1100,30 @@ bool Render::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebu
 		return false;
 	}
 
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	return true;
+}
+
+bool Render::createFrameBuffer(ShadowMap &sm) {
+
+	glGenFramebuffers(1, &sm.fbo);
+
+	glGenTextures(1, &sm.depth);
+	glBindTexture(GL_TEXTURE_2D, sm.depth);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, DEFAULT_SHADOW_RES, DEFAULT_SHADOW_RES, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, sm.fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sm.depth, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	return true;

@@ -246,6 +246,8 @@
     <None Include="Shaders\dicom_point_cloud.vs.glsl" />
     <None Include="Shaders\line.fs.glsl" />
     <None Include="Shaders\line.vs.glsl" />
+    <None Include="Shaders\shadow.fs.glsl" />
+    <None Include="Shaders\shadow.vs.glsl" />
     <None Include="Shaders\texture.fs.glsl" />
     <None Include="Shaders\texture.vs.glsl" />
     <None Include="Shaders\ui_color.fs.glsl" />

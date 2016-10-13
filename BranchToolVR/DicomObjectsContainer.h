@@ -19,6 +19,7 @@ class DicomObjectsContainer{
 		void Interact(glm::mat4 & _controllerPose, glm::vec3& _ray, glm::vec3& _pos, bool _pressed);
 		void AddObjects(Render * _r);
 		void Update(float h_asp, VrData & _vr, CursorData & _crsr);// glm::mat4 & _controllerPose, glm::vec3& _ray, glm::vec3& _pos, bool _pressed);
+		void UpdateSliders();
 
 	//private:
 

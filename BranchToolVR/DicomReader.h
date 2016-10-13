@@ -34,10 +34,12 @@ struct DicomSet {
 	int isovalue_tolerance;
 	int window_center;
 	int window_width;
+	int current_index;
 
 	DicomSet() {
 		series_id = "";
 		scale = glm::vec3(0.0f, 0.0f, 0.0f);
+		current_index = 0;
 		is_loaded = false;
 		isovalue = DEFAULT_ISOVALUE;
 		isovalue_tolerance = DEFAULT_ISOVALUE_TOLERANCE;

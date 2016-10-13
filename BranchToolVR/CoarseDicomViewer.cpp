@@ -141,6 +141,7 @@ void CoarseDicomViewer::Update(DicomSet & _dSet) {
 				float fac1 = glm::clamp(p.z, 0.0f, _dSet.scale.z);
 				float fac2 = fac1 / _dSet.scale.z;
 				int orthoslice_index = (float)(_dSet.data.size()-1) * fac2;
+				_dSet.current_index = orthoslice_index;
 				orthoslice_texture->Load(_dSet.data[orthoslice_index], _dSet.window_width, _dSet.window_center);
 				orthoslice->Set_model_position(glm::vec3(0.0f,0.0f,fac1));
 				orthoslice_handle->Set_model_position(glm::vec3(_dSet.scale.x / 2.0f, 0.0f, fac1));

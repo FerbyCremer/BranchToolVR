@@ -28,12 +28,14 @@ out vec3 oi_pos;
 out vec3 oi_normal;
 out float oi_lighting;
 out float oi_lighting2;
+out vec3 oi_instanced_position;
 
 void main(){
 
 		oi_state = state;
 		oi_pos = vec3(M*vec4(scale*(position + instanced_position), 1.0f));
 		oi_normal = normalize(vec3(M*vec4(normal, 0.0f)));
+		oi_instanced_position = normalize(instanced_position)*1.5f;
 
 		vec3 to_light1 = lights[0].pos - oi_pos;
 		vec3 to_light2 = lights[1].pos - oi_pos;

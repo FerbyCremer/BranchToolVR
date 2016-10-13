@@ -184,12 +184,12 @@ void UiPanel::GenerateDicomPanel(Render * _r) {
 	
 	// tab 2
 	Tab * scale_controls = new Tab;
-	scale_controls->name = "selection scale";
+	scale_controls->name = "scale";
 
 	Slider* scaler_x = new Slider;
 	scaler_x->min = 0;
 	scaler_x->max = 1.0f;
-	scaler_x->name = "scale";
+	scaler_x->name = "selector scale";
 	
 	scale_controls->AddElement(scaler_x);
 

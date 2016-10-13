@@ -160,7 +160,7 @@ void DicomPointCloudObject::Interact(glm::mat4& _controllerPose, glm::vec3& _ray
 }
 
 void DicomPointCloudObject::GenerateSphere(float _scale) {
-	int resolution = 3;
+	int resolution = 5;
 	int num_vertices = resolution * resolution;
 	float t_inc1 = 3.145 / (float)(resolution - 1);
 	float t_inc2 = 6.28 / (float)(resolution);
@@ -214,8 +214,8 @@ void DicomPointCloudObject::GenerateDicomPointCloud(DicomSet & _ds, int _isovalu
 	branch_point_marker->GenerateSphere(10, voxel_scale.x*3.0f, false);
 	
 	if (!is_loaded) {
-		GenerateCube(voxel_scale, glm::vec3(-0.5f,-0.5f,-0.5f));
-		//GenerateSphere(pixel_scale.x);
+		//GenerateCube(voxel_scale, glm::vec3(-0.5f,-0.5f,-0.5f));
+		GenerateSphere(voxel_scale.x);
 	}
 	else {
 		instanced_positions.clear();

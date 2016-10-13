@@ -8,8 +8,10 @@
 #define DEFAULT_ISOVALUE 1340
 #define DEFAULT_ISOVALUE_TOLERANCE 10
 #define MAX_ISOVALUE_TOLERANCE 30
-#define DEFAULT_WINDOW_WIDTH 1000
-#define DEFAULT_WINDOW_CENTER 0
+#define DEFAULT_SHADOW_RES 2048
+#define DEFAULT_WINDOW_CENTER 1191
+#define DEFAULT_WINDOW_WIDTH 1066
+
 
 
 namespace Constants {
@@ -18,4 +20,5 @@ namespace Constants {
 	static const glm::vec3 DICOM_PANEL_DIMENSIONS = glm::vec3(1.5f, 0.5f, 0.025f);
 	static const glm::vec4 UI_SELECTOR_COLOR = glm::vec4(0.25f, 0.25f, 1.0f,0.5f);
 	static const glm::vec3 DEFAULT_SELECTOR_SCALE = glm::vec3(0.2f, 0.2f, 0.2f);
+	static const glm::vec3 AMBIENT_LIGHT = glm::vec3(0.1f, 0.1f, 0.1f);
 }

@@ -39,9 +39,9 @@ DicomObjectsContainer::~DicomObjectsContainer(){
 
 }
 
-void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr){
 
-	// update sliders
+void DicomObjectsContainer::UpdateSliders() {
+
 	if (scaleX_slider->has_changed) {
 		viewer->point_cloud_selector->Set_scale(glm::vec3(scaleX_slider->curr));
 		viewer->point_cloud_selector_scale = glm::vec3(scaleX_slider->curr);
@@ -49,6 +49,24 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 		scaleX_slider->has_changed = false;
 	}
 
+	if (window_width_slider->has_changed) {
+		imaging_data.window_width = window_width_slider->curr;
+		viewer->orthoslice_texture->Load(imaging_data.data[imaging_data.current_index], window_width_slider->curr, window_center_slider->curr);
+		window_width_slider->has_changed = false;
+	}
+	
+	if (window_center_slider->has_changed) {
+		imaging_data.window_center = window_center_slider->curr;
+		viewer->orthoslice_texture->Load(imaging_data.data[imaging_data.current_index], window_width_slider->curr, window_center_slider->curr);
+		window_center_slider->has_changed = false;
+	}
+
+}
+
+
+void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr){
+
+	UpdateSliders();
 
 	viewer->Update(imaging_data);
 

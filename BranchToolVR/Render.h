@@ -89,6 +89,13 @@ struct FramebufferDesc{
 	GLuint m_nResolveFramebufferId;
 };
 
+struct ShadowMap {
+	GLuint depth;
+	GLuint fbo;
+	glm::mat4 P;
+	glm::mat4 V;
+};
+
 class Render{
 
 	public:
@@ -143,6 +150,10 @@ class Render{
 		Light * lights;
 		void UpdateLights();
 
+		// shadows
+		ShadowMap sm;
+		void RenderShadows();
+
 		// shader programs
 		ShaderProgram color;
 		ShaderProgram texture;
@@ -152,6 +163,7 @@ class Render{
 		ShaderProgram branch_line;
 		ShaderProgram ui_color;
 		ShaderProgram ui_texture;
+		ShaderProgram shadow;
 		
 		// object containers
 		std::vector<ColorObject*> color_ui_elements;
@@ -178,6 +190,8 @@ class Render{
 		// internal functions
 		bool InitVR();
 		void RenderEyes();
+
+		bool createFrameBuffer(ShadowMap &sm);
 		void RenderSceneInternal(glm::mat4 _P, glm::mat4 _V);
 		
 		// static helper functions

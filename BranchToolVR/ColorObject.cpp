@@ -30,7 +30,7 @@ void ColorObject::SetSelected(bool _isSelected) {
 
 void ColorObject::GenerateRoom() {
 
-	glm::vec3 scale(10.0f, 5.0f, 10.0f);
+	glm::vec3 scale(10.0f, 0.0f, 10.0f);
 	glm::vec3 _offset = glm::vec3(-5.0f, -0.1f, -5.0f);
 	display_color = glm::vec4(0.2f, 0.2f, 0.3f,1.0f);
 	

@@ -9,7 +9,6 @@ Engine::Engine(){
 	
 	// glew has been initialized
 	renderer = new Render(window);
-	nonVR_camera = new Camera;
 
 	// axis lines
 	LineObject * l = new LineObject;
@@ -27,12 +26,6 @@ Engine::Engine(){
 	ground->GenerateRoom();
 	renderer->AddObjectToScene(ground);
 
-	// controller
-	controller = new ColorObject;
-	controller->GenerateController();
-	controller->world_position = glm::vec3(0.5f, 0.5f, 0.5f);
-	controller->SetDisplayColor(glm::vec4(0.1f, 0.1f, 1.0f,1.0f));
-	//renderer->AddObjectToScene(controller);
 
 	// call final render initializer after all objects have been added
 	renderer->Finalize();

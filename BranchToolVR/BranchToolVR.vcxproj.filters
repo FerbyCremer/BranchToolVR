@@ -382,5 +382,11 @@
     <None Include="Shaders\ui_texture.vs.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\shadow.fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shadow.vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
