@@ -332,11 +332,10 @@ bool DicomPointCloudObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::v
 	glm::mat4 mm = GetModelMatrix();
 	glm::vec3 cg;
 	glm::vec3 b = glm::normalize(_ray);
-	float dist_threshold = voxel_scale.x * 1.5f;
+	float dist_threshold = voxel_scale.x * 5.5f;
 	float curr_min_dist = 0.0f;
 	int curr_min_index = -1;
 	bool first_collision = true;
-
 
 	for (int i = 0; i < branch_points.size(); i++) {
 		//branch_points[i].color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -345,7 +344,7 @@ bool DicomPointCloudObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::v
 		float x = glm::dot(b, a);
 		glm::vec3 y = a - (x*b);
 		float dist1 = glm::length(y);
-		if (x > 0 && dist1 <= (voxel_scale.x *3.0f*scale.x) && (x < curr_min_dist || first_collision)) {
+		if (x > 0 && dist1 <= (voxel_scale.x *3.5f*scale.x) && (x < curr_min_dist || first_collision)) {
 			//branch_points[i].color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 			curr_min_dist = x;
 			curr_min_index = i;
@@ -363,7 +362,6 @@ bool DicomPointCloudObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::v
 		branch_points[curr_min_index].is_selected = true;
 		return true;
 	}
-	
 
 	for (int i = 0; i < instanced_positions.size(); i++) {
 		if (isovalue_differences[i] < curr_tolerance) {
@@ -380,7 +378,6 @@ bool DicomPointCloudObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::v
 			}
 		}
 	}
-
 
 	if (!first_collision) {
 		// new branch point

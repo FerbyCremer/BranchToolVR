@@ -42,12 +42,28 @@ DicomObjectsContainer::~DicomObjectsContainer(){
 
 void DicomObjectsContainer::UpdateSliders() {
 
+	// tab one
+
+	//if (isovalue_slider->has_changed) {
+	//	UpdateDicomPointCloud(isovalue_slider->curr);
+	//	isovalue_slider->has_changed = false;
+	//}
+	//
+	//if (isovalue_tol_slider->has_changed) {
+	//	points->curr_tolerance = isovalue_tol_slider->curr;
+	//	isovalue_tol_slider->has_changed = false;
+	//}
+
+	// tab two
+
 	if (scaleX_slider->has_changed) {
 		viewer->point_cloud_selector->Set_scale(glm::vec3(scaleX_slider->curr));
 		viewer->point_cloud_selector_scale = glm::vec3(scaleX_slider->curr);
 		selector2D->Set_scale(glm::vec3(scaleX_slider->curr));
 		scaleX_slider->has_changed = false;
 	}
+
+	// tab three
 
 	if (window_width_slider->has_changed) {
 		imaging_data.window_width = window_width_slider->curr;
@@ -181,7 +197,7 @@ void DicomObjectsContainer::AddObjects(Render * _r) {
 	dicom_panel->SetModelOrientation(glm::vec3(0.8f, 0.2f, 0.2f));
 	isovalue_slider = dicom_panel->GetSliderByName("isovalue");
 	isovalue_tol_slider = dicom_panel->GetSliderByName("isovalue tolerance");
-	scaleX_slider = dicom_panel->GetSliderByName("scale");
+	scaleX_slider = dicom_panel->GetSliderByName("selector scale");
 	window_width_slider = dicom_panel->GetSliderByName("window width");
 	window_center_slider = dicom_panel->GetSliderByName("window center");
 	clear_branching_slider = dicom_panel->GetSliderByName("reset selection");
