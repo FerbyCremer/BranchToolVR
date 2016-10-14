@@ -174,7 +174,6 @@ Render::Render(GLFWwindow *_window){
 	lights[2].position = glm::vec3(0.0f, 1.0f, 2.0f);
 	lights[2].marker.Set_world_position(lights[2].position);
 
-
 	glLineWidth(2.0f);
 
 }
@@ -495,22 +494,24 @@ void Render::RenderShadows() {
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_SCISSOR_TEST);
 }
 
 void Render::RenderScene() {
 
+	// update state
 	UpdateCursor();
 	UpdateLights();
 	RenderShadows();
 	Interact(vr_info.controller_pose, glm::mat4(1.0f),glm::vec3(vr_info.controller_pose* glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)), glm::vec3(vr_info.controller_pose* glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), vr_info.controller_press);
 
-
+	// ui
 	RenderUI(0);
 	RenderUI(1);
 
+	// vr
+	RenderEyes();
 	UpdateHMDMatrixPose();
 }
 
@@ -933,8 +934,11 @@ void Render::UpdateHMDMatrixPose(){
 		if (glfwGetKey(window, GLFW_KEY_SPACE)) {
 			FakeInput();
 		}
+		controller->is_hidden = true;
 		return;
 	}
+
+	controller->is_hidden = false;
 
 	vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
 
@@ -957,14 +961,15 @@ void Render::UpdateHMDMatrixPose(){
 			continue;
 
 
-		if (m_rTrackedDevicePose[unTrackedDevice].bPoseIsValid)
+		if (!m_rTrackedDevicePose[unTrackedDevice].bPoseIsValid)
 			continue;
 
-		//controller_pose1 = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
+		vr_info.controller_pose = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
+		
 		vr::VRControllerState_t state;
 		if (m_pHMD->GetControllerState(unTrackedDevice, &state))
 		{
-			controller_press1 = state.ulButtonPressed == 0;
+			vr_info.controller_press = state.ulButtonPressed == 0;
 		}
 
 	}
