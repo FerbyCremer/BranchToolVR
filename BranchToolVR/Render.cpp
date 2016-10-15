@@ -336,7 +336,7 @@ void Render::RenderEyes() {
 	// left eye
 	glBindFramebuffer(GL_FRAMEBUFFER, leftEyeDesc.m_nRenderFramebufferId);
 	glViewport(0, 0, m_nRenderWidth, m_nRenderHeight);
-	RenderSceneInternal(vr_info.left_eye_proj, vr_info.left_eye_proj);
+	RenderSceneInternal(vr_info.left_eye_proj, vr_info.right_eye_transform_inv);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glDisable(GL_MULTISAMPLE);
@@ -506,9 +506,12 @@ void Render::RenderScene() {
 	RenderShadows();
 	Interact(vr_info.controller_pose, glm::mat4(1.0f),glm::vec3(vr_info.controller_pose* glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)), glm::vec3(vr_info.controller_pose* glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), vr_info.controller_press);
 
+	glEnable(GL_SCISSOR_TEST);
 	// ui
 	RenderUI(0);
 	RenderUI(1);
+	glDisable(GL_SCISSOR_TEST);
+
 
 	// vr
 	RenderEyes();
@@ -616,9 +619,6 @@ void Render::RenderUI(int level) {
 		glEnableVertexAttribArray(2);
 		glDrawArrays(GL_TRIANGLES, 0, tUiObj->num_vertices);
 	}
-
-
-
 }
 
 void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
@@ -944,7 +944,7 @@ void Render::UpdateHMDMatrixPose(){
 
 	if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid){
 		//m_mat4HMDPose = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking) *ValveMat34ToGlmMat4Inv(m_pHMD->GetSeatedZeroPoseToStandingAbsoluteTrackingPose());
-		vr_info.head_pose_inv = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking) *ValveMat34ToGlmMat4Inv(m_pHMD->GetSeatedZeroPoseToStandingAbsoluteTrackingPose());
+		vr_info.head_pose_inv = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking);// *ValveMat34ToGlmMat4Inv(m_pHMD->GetSeatedZeroPoseToStandingAbsoluteTrackingPose());
 
 		vr_info.left_eye_proj = ValveMat4ToGlmMat4(m_pHMD->GetProjectionMatrix(vr::Eye_Left, 0.1f, 1000.0f, vr::API_OpenGL));
 		vr_info.left_eye_transform_inv = ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Left)) * vr_info.head_pose_inv;
@@ -965,11 +965,12 @@ void Render::UpdateHMDMatrixPose(){
 			continue;
 
 		vr_info.controller_pose = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
+		controller->model_matrix = vr_info.controller_pose;
 		
 		vr::VRControllerState_t state;
 		if (m_pHMD->GetControllerState(unTrackedDevice, &state))
 		{
-			vr_info.controller_press = state.ulButtonPressed == 0;
+			vr_info.controller_press = state.ulButtonPressed != 0;
 		}
 
 	}
