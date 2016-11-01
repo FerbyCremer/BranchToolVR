@@ -44,15 +44,20 @@ void DicomObjectsContainer::UpdateSliders() {
 
 	// tab one
 
-	//if (isovalue_slider->has_changed) {
-	//	UpdateDicomPointCloud(isovalue_slider->curr);
-	//	isovalue_slider->has_changed = false;
-	//}
-	//
-	//if (isovalue_tol_slider->has_changed) {
-	//	points->curr_tolerance = isovalue_tol_slider->curr;
-	//	isovalue_tol_slider->has_changed = false;
-	//}
+	if (isovalue_slider->has_changed) {
+		UpdateDicomPointCloud(isovalue_slider->curr);
+		isovalue_slider->has_changed = false;
+	}
+
+	if (isovalue_tol_slider->has_changed) {
+		points->curr_tolerance = isovalue_tol_slider->curr;
+		isovalue_tol_slider->has_changed = false;
+	}
+
+	if (clear_branching_slider->has_changed) {
+		points->branch_points.clear();
+		clear_branching_slider->has_changed = false;
+	}
 
 	// tab two
 

@@ -99,7 +99,6 @@ bool Texture::Load(std::string _textureName) {
 		}
 	}
 
-
 	if (nError != 0)
 		return false;
 
