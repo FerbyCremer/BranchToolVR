@@ -91,7 +91,7 @@ DicomSingle DicomReader::ReadSingle(std::string _filePath) {
 
 
 	//double[] d = Attribute.getDoubleValues(list, TagFromName.SpacingBetweenSlices);
-	//double[] e = Attribute.getDoubleValues(list, TagFromName.PixelSpacing);
+	//double[] e = Attribute.getDoubleValues(list, TagFromName.PixelSpacing); //0.1mm
 	//
 	//if (d.length > 0 && e.length > 0)
 	//	spacing_ratio = (float)(d[0] / e[0]);
