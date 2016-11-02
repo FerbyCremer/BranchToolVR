@@ -11,3 +11,4 @@ test other dicom sets
 load dicom set by ui
 triangulation
 export triangulation
+dicom height
