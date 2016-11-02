@@ -13,10 +13,9 @@
 #define DEFAULT_WINDOW_WIDTH 1066
 
 
-
 namespace Constants {
 	static const std::string RELATIVE_RESOURCE_PATH = "..//../BranchToolVR/Resources/";
-	static const std::string RELATIVE_DICOM_RESOURCE_PATH = "..//../BranchToolVR/Resources/DICOM/";
+	static const std::string RELATIVE_DICOM_RESOURCE_PATH = "..//../BranchToolVR/Resources";
 	static const glm::vec3 DICOM_PANEL_DIMENSIONS = glm::vec3(1.5f, 0.5f, 0.025f);
 	static const glm::vec4 UI_SELECTOR_COLOR = glm::vec4(0.25f, 0.25f, 1.0f,0.5f);
 	static const glm::vec3 DEFAULT_SELECTOR_SCALE = glm::vec3(0.2f, 0.2f, 0.2f);

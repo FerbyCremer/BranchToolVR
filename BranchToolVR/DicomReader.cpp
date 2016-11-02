@@ -61,8 +61,14 @@ DicomSet DicomReader::ReadSet(std::string _dirPath, bool * finished) {
 	if(finished != NULL)
 	*finished = true;
 
-	if(_dSet.data.size() > 1)
+	if (_dSet.data.size() > 1) {
+
 	_dSet.scale = glm::vec3(1.0f, 1.0f, (float) _dSet.data.size() / (float)_dSet.data[0].width);
+	_dSet.scale.z = (1.0f/(float)_dSet.data.size()) * _dSet.data[0].spacing;
+	_dSet.scale.z = 1.0f;
+	std::cout << _dSet.data[0].spacing << std::endl;
+	}
+
 
 	return _dSet;
 }
@@ -82,6 +88,20 @@ DicomSingle DicomReader::ReadSingle(std::string _filePath) {
 
 	_dSingle.layer = std::atoi(testDataSet->getString(0x0020, 0, 0x0013, 0).c_str());
 	_dSingle.series_id = testDataSet->getString(0x0020, 0, 0x000E, 0);
+
+
+	//double[] d = Attribute.getDoubleValues(list, TagFromName.SpacingBetweenSlices);
+	//double[] e = Attribute.getDoubleValues(list, TagFromName.PixelSpacing);
+	//
+	//if (d.length > 0 && e.length > 0)
+	//	spacing_ratio = (float)(d[0] / e[0]);
+
+
+
+	float spacingBetweenSlices = std::atof(testDataSet->getString(0x0018, 0, 0x0088, 0).c_str());
+	float pixelSpacing = std::atof(testDataSet->getString(0x0028, 0, 0x0030, 0).c_str());
+
+	_dSingle.spacing = spacingBetweenSlices / pixelSpacing;
 
 	ptr<imebra::image> firstImage = testDataSet->getImage(0);
 	std::uint32_t rowSize, channelPixelSize, channelsNumber;

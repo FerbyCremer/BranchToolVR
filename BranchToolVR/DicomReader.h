@@ -22,6 +22,7 @@ struct DicomSingle {
 	int width;
 	int height;
 	int layer;
+	float spacing;
 	std::string series_id;
 };
 
