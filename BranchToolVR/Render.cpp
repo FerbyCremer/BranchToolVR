@@ -814,7 +814,9 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 
 void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, glm::vec3 _ray, glm::vec3 _pos, bool _pressed) {
 
+	static int controllerSelection = -1;
 	static ColorObject * current_selection = NULL;
+	static ColorObject * current_selection2 = NULL;
 	glm::vec4 p1 = _controllerPose1 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	glm::vec4 p2 = _controllerPose1 * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
 	glm::vec3 ray = glm::vec3(p2 - p1);
@@ -833,24 +835,39 @@ void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, gl
 				}
 			}
 		}
-		if (current_selection != NULL) {
+		if (current_selection != NULL && current_selection->controllerSelectorId == -1) {
+			current_selection->controllerSelectorId = 0;
 			current_selection->SetSelected(true);
-			current_selection->Set_cache_pose(_controllerPose1,1);//[1] = _controllerPose1;
-			current_selection->Set_cache_pose(_controllerPose1,2);//[2] = _controllerPose1;
+			current_selection->Set_cache_pose(_controllerPose1, 1);//[1] = _controllerPose1;
+			current_selection->Set_cache_pose(_controllerPose1, 2);//[2] = _controllerPose1;
 			current_selection->Set_cache_pose(current_selection->append_pose,3);//[3] = current_selection->append_pose;
 			current_selection->Set_cache_pose(glm::inverse(_controllerPose1) * current_selection->append_pose,0);//[0] = glm::inverse(_controllerPose1) * current_selection->append_pose;
 		}
 		first_press = false;
 	}
-	else if (_pressed && current_selection != NULL) {
+	else if (_pressed && current_selection != NULL && current_selection->controllerSelectorId == 0) {
 		current_selection->Set_cache_pose( _controllerPose1,1);
 	}
+	else if (_pressed && current_selection != NULL && current_selection->controllerSelectorId == -1) {
+		current_selection->controllerSelectorId = 0;
+		current_selection->SetSelected(true);
+		current_selection->Set_cache_pose(_controllerPose1, 1);//[1] = _controllerPose1;
+		current_selection->Set_cache_pose(_controllerPose1, 2);//[2] = _controllerPose1;
+		current_selection->Set_cache_pose(current_selection->append_pose, 3);//[3] = current_selection->append_pose;
+		current_selection->Set_cache_pose(glm::inverse(_controllerPose1) * current_selection->append_pose, 0);
+	}
 	else if (!_pressed && current_selection != NULL){
+		if (current_selection->controllerSelectorId == 0)
+			current_selection->controllerSelectorId = -1;
 		current_selection->SetSelected(false);
 		current_selection = NULL;
 		first_press = true;
 	}
 	else if (!_pressed) {
+		if (current_selection!=NULL && current_selection->controllerSelectorId == 0)
+			current_selection->controllerSelectorId = -1;
+
+
 		current_selection = NULL;
 		first_press = true;
 	}
@@ -870,8 +887,8 @@ void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, gl
 	}
 
 	/// duplicate code controller 2
+	//tmp
 
-	static ColorObject * current_selection2 = NULL;
 	p1 = controller_pose2 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	p2 = controller_pose2 * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
 	ray = glm::vec3(p2 - p1);
@@ -893,7 +910,8 @@ void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, gl
 				}
 			}
 		}
-		if (current_selection2 != NULL) {
+		if (current_selection2 != NULL && current_selection2->controllerSelectorId == -1) {
+			current_selection2->controllerSelectorId = 1;
 			current_selection2->SetSelected(true);
 			current_selection2->Set_cache_pose(controller_pose2, 1);//[1] = _controllerPose1;
 			current_selection2->Set_cache_pose(controller_pose2, 2);//[2] = _controllerPose1;
@@ -902,15 +920,27 @@ void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, gl
 		}
 		first_press2 = false;
 	}
-	else if (controller_press2 && current_selection2 != NULL) {
+	else if (controller_press2 && current_selection2 != NULL && current_selection2->controllerSelectorId == 1) {
 		current_selection2->Set_cache_pose(controller_pose2, 1);
 	}
+	else if (_pressed && current_selection2 != NULL && current_selection2->controllerSelectorId == -1) {
+		current_selection2->controllerSelectorId = 1;
+		current_selection2->SetSelected(true);
+		current_selection2->Set_cache_pose(controller_pose2, 1);//[1] = _controllerPose1;
+		current_selection2->Set_cache_pose(controller_pose2, 2);//[2] = _controllerPose1;
+		current_selection2->Set_cache_pose(current_selection2->append_pose, 3);//[3] = current_selection->append_pose;
+		current_selection2->Set_cache_pose(glm::inverse(controller_pose2) * current_selection2->append_pose, 0);
+	}
 	else if (!controller_press2 && current_selection2 != NULL) {
+		if (current_selection2->controllerSelectorId == 1)
+			current_selection2->controllerSelectorId = -1;
 		current_selection2->SetSelected(false);
 		current_selection2 = NULL;
 		first_press2 = true;
 	}
 	else if (!controller_press2) {
+		if (current_selection2 != NULL && current_selection2->controllerSelectorId == 1)
+			current_selection2->controllerSelectorId = -1;
 		current_selection2 = NULL;
 		first_press2 = true;
 	}
@@ -927,6 +957,31 @@ void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, gl
 	}
 	else if (!controller_press2) {
 		first_press3 = true;
+	}
+
+	// test same selection	
+	static bool once = true;
+	if (current_selection == current_selection2 && current_selection != NULL) {
+		
+		static float initial_dist;
+		static float new_dist;
+		static float initial_scale;
+
+		if (once) {
+			initial_dist = glm::length(vr_info.controller_world_pos - vr_info.controller_world_pos2);
+			initial_scale = current_selection->scale.x;
+			once = false;
+		}
+		else {
+			float curr_dist = glm::length(vr_info.controller_world_pos - vr_info.controller_world_pos2);
+			float ratio = curr_dist / initial_dist;
+			float new_scale = ratio*initial_scale;
+			std::cout << new_scale << std::endl;
+			current_selection->Set_scale(glm::vec3(new_scale));
+		}
+	}
+	else {
+		once = true;
 	}
 
 }
@@ -1058,6 +1113,7 @@ void Render::UpdateHMDMatrixPose(){
 	}
 
 	controller1->is_hidden = false;
+	controller2->is_hidden = false;
 
 	vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
 
@@ -1066,12 +1122,13 @@ void Render::UpdateHMDMatrixPose(){
 		vr_info.head_pose_inv = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking);// *ValveMat34ToGlmMat4Inv(m_pHMD->GetSeatedZeroPoseToStandingAbsoluteTrackingPose());
 
 		vr_info.left_eye_proj = ValveMat4ToGlmMat4(m_pHMD->GetProjectionMatrix(vr::Eye_Left, 0.1f, 1000.0f, vr::API_OpenGL));
-		vr_info.left_eye_transform_inv = ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Left)) * vr_info.head_pose_inv;
+		vr_info.left_eye_transform_inv = ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Left)) *vr_info.head_pose_inv;
 
 		vr_info.right_eye_proj = ValveMat4ToGlmMat4(m_pHMD->GetProjectionMatrix(vr::Eye_Right, 0.1f, 1000.0f, vr::API_OpenGL));
-		vr_info.right_eye_transform_inv = ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Right)) * vr_info.head_pose_inv;
+		vr_info.right_eye_transform_inv = ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Right)) *vr_info.head_pose_inv;
 	}
 
+	int controllerIndex = 0;
 	for (vr::TrackedDeviceIndex_t unTrackedDevice = vr::k_unTrackedDeviceIndex_Hmd + 1; unTrackedDevice < vr::k_unMaxTrackedDeviceCount; ++unTrackedDevice){
 		if (!m_pHMD->IsTrackedDeviceConnected(unTrackedDevice))
 			continue;
@@ -1083,16 +1140,42 @@ void Render::UpdateHMDMatrixPose(){
 		if (!m_rTrackedDevicePose[unTrackedDevice].bPoseIsValid)
 			continue;
 
-		vr_info.controller_pose = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
-		controller1->model_matrix = vr_info.controller_pose;
-		
-		vr::VRControllerState_t state;
-		if (m_pHMD->GetControllerState(unTrackedDevice, &state))
-		{
-			vr_info.controller_press = state.ulButtonPressed != 0;
-		}
+		if (controllerIndex == 0) {
+			vr_info.controller_pose = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
 
+			vr_info.controller_world_pos = glm::vec3(vr_info.controller_pose * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+			controller1->model_matrix = vr_info.controller_pose;
+		
+			vr::VRControllerState_t state;
+			if (m_pHMD->GetControllerState(unTrackedDevice, &state))
+			{
+				vr_info.controller_press = state.ulButtonPressed != 0;
+			}
+			controllerIndex++;
+		}
+		else if (controllerIndex == 1) {
+			vr_info.controller_pose2 = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
+
+			vr_info.controller_world_pos2 = glm::vec3(vr_info.controller_pose2 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+			controller2->model_matrix = vr_info.controller_pose2;
+
+			vr::VRControllerState_t state;
+			if (m_pHMD->GetControllerState(unTrackedDevice, &state))
+			{
+				vr_info.controller_press2 = state.ulButtonPressed != 0;
+			}
+			controllerIndex++;
+		}
 	}
+
+
+
+
+
+
+	// tmp
+	controller_press2 = vr_info.controller_press2;
+	controller_pose2 = vr_info.controller_pose2;
 }
 
 glm::mat4 Render::ValveMat34ToGlmMat4Inv(vr::HmdMatrix34_t _mIN) {

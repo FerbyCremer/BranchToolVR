@@ -20,18 +20,23 @@
 
 struct VrData {
 	glm::mat4 controller_pose;
+	glm::mat4 controller_pose2;
 	glm::vec3 controller_world_pos;
+	glm::vec3 controller_world_pos2;
 	glm::mat4 head_pose_inv;
 	glm::mat4 left_eye_proj;
 	glm::mat4 right_eye_proj;
 	glm::mat4 left_eye_transform_inv;
 	glm::mat4 right_eye_transform_inv;
 	bool controller_press;
+	bool controller_press2;
 	bool hmd_connected;
 
 	VrData() {
 		controller_pose = glm::mat4(1.0f);
 		controller_world_pos = glm::vec3(0.0f);
+		controller_pose2 = glm::mat4(1.0f);
+		controller_world_pos2 = glm::vec3(0.0f);
 		head_pose_inv = glm::mat4(1.0f);
 		left_eye_proj = glm::mat4(1.0f);
 		right_eye_proj = glm::mat4(1.0f);
@@ -39,6 +44,7 @@ struct VrData {
 		right_eye_transform_inv = glm::mat4(1.0f);
 		hmd_connected = false;
 		controller_press = false;
+		controller_press2 = false;
 	}
 };
 
@@ -53,7 +59,6 @@ struct CursorData {
 		first_press = true;
 	}
 };
-
 
 struct Light {
 	glm::vec3 position;

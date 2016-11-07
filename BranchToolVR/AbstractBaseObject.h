@@ -40,6 +40,7 @@ class AbstractBaseObject
 		int id;
 		short ui_quadrant;
 		int level;
+		int controllerSelectorId;
 		glm::mat4 ui_transform;
 		static int id_counter;
 		glm::mat4 GetModelMatrix();

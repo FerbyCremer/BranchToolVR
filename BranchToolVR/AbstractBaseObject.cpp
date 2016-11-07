@@ -18,6 +18,7 @@ AbstractBaseObject::AbstractBaseObject(){
 	ui_quadrant = 0;
 	ui_transform = glm::mat4(1.0f);
 	id = id_counter++;
+	controllerSelectorId = -1;
 	level = 0;
 }
 
