@@ -13,10 +13,9 @@ struct less_than_key
 
 DicomSet DicomReader::ReadSet(std::string _dirPath, bool * finished) {
 
-	DicomSet _dSet;
+	_dirPath = Path_MakeAbsolute(_dirPath, Path_GetWorkingDirectory(), '/');
 
-	//_dirPath = Path_MakeAbsolute(_dirPath, Path_GetWorkingDirectory(), '/');
-	//std::cout << _dirPath << std::endl;
+	DicomSet _dSet;
 
 	tinydir_dir dir;
 	tinydir_open(&dir, _dirPath.c_str()); 
@@ -62,11 +61,17 @@ DicomSet DicomReader::ReadSet(std::string _dirPath, bool * finished) {
 	*finished = true;
 
 	if (_dSet.data.size() > 1) {
+		float perPixel = 1.0f / (_dSet.data[0].pixel_spacing * _dSet.data[0].width);
+		float heightToWidthRatio = _dSet.data[0].spacing / _dSet.data[0].pixel_spacing;
 
-	_dSet.scale = glm::vec3(1.0f, 1.0f, (float) _dSet.data.size() / (float)_dSet.data[0].width);
-	_dSet.scale.z = (1.0f/(float)_dSet.data.size()) * _dSet.data[0].spacing;
-	_dSet.scale.z = 1.0f;
-	std::cout << _dSet.data[0].spacing << std::endl;
+		float scaledHeight = perPixel * heightToWidthRatio;
+
+		_dSet.scale = glm::vec3(1.0f, 1.0f, (float) _dSet.data.size() / (float)_dSet.data[0].width);
+		_dSet.scale.z = (1.0f/(float)_dSet.data.size()) * _dSet.data[0].spacing;
+		_dSet.scale.z = (float)_dSet.data.size() * scaledHeight;
+		std::cout << _dSet.scale.z << std::endl;
+		std::cout << _dSet.data[0].spacing << std::endl;
+		std::cout << std::endl << "spacing: " << _dSet.data[0].spacing << " pixelSpacing: " << _dSet.data[0].pixel_spacing << std::endl;
 	}
 
 
@@ -89,19 +94,17 @@ DicomSingle DicomReader::ReadSingle(std::string _filePath) {
 	_dSingle.layer = std::atoi(testDataSet->getString(0x0020, 0, 0x0013, 0).c_str());
 	_dSingle.series_id = testDataSet->getString(0x0020, 0, 0x000E, 0);
 
-
 	//double[] d = Attribute.getDoubleValues(list, TagFromName.SpacingBetweenSlices);
 	//double[] e = Attribute.getDoubleValues(list, TagFromName.PixelSpacing); //0.1mm
 	//
 	//if (d.length > 0 && e.length > 0)
 	//	spacing_ratio = (float)(d[0] / e[0]);
 
+	float spacingBetweenSlices = abs(std::atof(testDataSet->getString(0x0018, 0, 0x0088, 0).c_str()));
+	float pixelSpacing = abs(std::atof(testDataSet->getString(0x0028, 0, 0x0030, 0).c_str()));
 
-
-	float spacingBetweenSlices = std::atof(testDataSet->getString(0x0018, 0, 0x0088, 0).c_str());
-	float pixelSpacing = std::atof(testDataSet->getString(0x0028, 0, 0x0030, 0).c_str());
-
-	_dSingle.spacing = spacingBetweenSlices / pixelSpacing;
+	_dSingle.spacing = spacingBetweenSlices;
+	_dSingle.pixel_spacing = pixelSpacing;
 
 	ptr<imebra::image> firstImage = testDataSet->getImage(0);
 	std::uint32_t rowSize, channelPixelSize, channelsNumber;
@@ -110,6 +113,7 @@ DicomSingle DicomReader::ReadSingle(std::string _filePath) {
 	std::uint32_t sizeX, sizeY;
 	firstImage->getSize(&sizeX, &sizeY);
 
+	// pixel skipping code
 	//static int skip = 2;
 	//_dSingle.width = sizeX / skip;
 	//_dSingle.height = sizeY /skip;

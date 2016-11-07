@@ -23,6 +23,7 @@ struct DicomSingle {
 	int height;
 	int layer;
 	float spacing;
+	float pixel_spacing;
 	std::string series_id;
 };
 

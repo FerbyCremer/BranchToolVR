@@ -183,9 +183,15 @@ class Render{
 		glm::mat4 m_mat4HMDPose;
 		uint32_t m_nRenderWidth;
 		uint32_t m_nRenderHeight;
+		
+		// motion controller
 		glm::mat4 controller_pose1;
-		ColorObject * controller;
+		ColorObject * controller1;
 		bool controller_press1;
+
+		glm::mat4 controller_pose2;
+		ColorObject * controller2;
+		bool controller_press2;
 		
 		// internal functions
 		bool InitVR();

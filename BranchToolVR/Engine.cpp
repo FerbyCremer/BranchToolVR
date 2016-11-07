@@ -19,7 +19,7 @@ Engine::Engine(){
 	// TEMP: set dicom directory and panel values
 	dicomObjects1 = new DicomObjectsContainer;
 	dicomObjects1->AddObjects(renderer);
-	dicomObjects1->Load("Resources\\DICOM\\torso\\DCM0");	
+	dicomObjects1->Load(Constants::RELATIVE_DICOM_RESOURCE_PATH);	//"Resources\\DICOM\\torso\\DCM0"
 	
 	// scene
 	ground = new ColorObject;

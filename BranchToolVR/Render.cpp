@@ -35,9 +35,16 @@ Render::Render(GLFWwindow *_window){
 
 	// ui
 	glEnable(GL_SCISSOR_TEST);
-	controller = new ColorObject;
-	controller->GenerateController();
-	AddObjectToScene(controller);
+
+	// controller
+	controller1 = new ColorObject;
+	controller1->GenerateController();
+	AddObjectToScene(controller1);
+
+	controller2 = new ColorObject;
+	controller2->GenerateController();
+	AddObjectToScene(controller2);
+	controller2->SetDisplayColor(glm::vec4(0.5f, 0.25f, 0.1f, 1.0f));
 
 	// shadow
 	createFrameBuffer(sm);
@@ -238,7 +245,7 @@ bool Render::InitVR() {
 		char buf[1024];
 		sprintf_s(buf, sizeof(buf), "Unable to init VR runtime: %s", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
 		vr_info.hmd_connected = false;
-		controller->is_hidden = true;
+		controller1->is_hidden = true;
 		return false;
 	}
 
@@ -528,7 +535,7 @@ void Render::RenderUI(int level) {
 			RenderSceneInternal(glm::perspective(90.0f,1.0f,0.1f,100.0f), vr_info.head_pose_inv);
 		}
 		else {
-			RenderSceneInternal(glm::perspective(90.0f, aspect*0.5f, 0.1f, 100.0f), glm::inverse(controller->GetModelMatrix()));
+			RenderSceneInternal(glm::perspective(90.0f, aspect*0.5f, 0.1f, 100.0f), glm::inverse(controller1->GetModelMatrix()));
 		}
 
 		// clear ui quadrant 0
@@ -623,7 +630,7 @@ void Render::RenderUI(int level) {
 
 void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 
-	if (glfwGetKey(window, GLFW_KEY_F)) {
+	if (glfwGetKey(window, GLFW_KEY_Z)) {
 		_P = sm.P;
 		_V = sm.V;
 	}
@@ -848,18 +855,78 @@ void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, gl
 		first_press = true;
 	}
 
-	static bool first_press2 = true;
+	static bool first_press21 = true;
 
-	if (current_selection == NULL && _pressed && first_press2) {
+	if (current_selection == NULL && _pressed && first_press21) {
 		for (DicomPointCloudObject* & dpcObj : dicom_point_cloud_objects) {
 			if (dpcObj->TestCollision(_ray, _pos, collision_point)) {
 
 			}
 		}
-		first_press2 = false;
+		first_press21 = false;
 	}
 	else if (!_pressed) {
+		first_press21 = true;
+	}
+
+	/// duplicate code controller 2
+
+	static ColorObject * current_selection2 = NULL;
+	p1 = controller_pose2 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	p2 = controller_pose2 * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
+	ray = glm::vec3(p2 - p1);
+	static glm::vec3 collision_point2;
+	static bool first_press2 = true;
+
+	_pos = glm::vec3(p1);
+	_ray = ray;
+
+	if (controller_press2 && first_press2) {
+		current_selection2 = NULL;
+		float min_dist = 999999999.0f;
+		for (ColorObject* & cObj : color_objects) {
+			if (cObj->is_selectable && cObj->TestCollision(_ray, _pos, collision_point2, true)) {
+				float curr_dist = glm::length(collision_point2 - _pos);
+				if (glm::dot(ray, collision_point2 - _pos) > 0 && curr_dist < min_dist) {
+					min_dist = curr_dist;
+					current_selection2 = cObj;
+				}
+			}
+		}
+		if (current_selection2 != NULL) {
+			current_selection2->SetSelected(true);
+			current_selection2->Set_cache_pose(controller_pose2, 1);//[1] = _controllerPose1;
+			current_selection2->Set_cache_pose(controller_pose2, 2);//[2] = _controllerPose1;
+			current_selection2->Set_cache_pose(current_selection2->append_pose, 3);//[3] = current_selection->append_pose;
+			current_selection2->Set_cache_pose(glm::inverse(controller_pose2) * current_selection2->append_pose, 0);//[0] = glm::inverse(_controllerPose1) * current_selection->append_pose;
+		}
+		first_press2 = false;
+	}
+	else if (controller_press2 && current_selection2 != NULL) {
+		current_selection2->Set_cache_pose(controller_pose2, 1);
+	}
+	else if (!controller_press2 && current_selection2 != NULL) {
+		current_selection2->SetSelected(false);
+		current_selection2 = NULL;
 		first_press2 = true;
+	}
+	else if (!controller_press2) {
+		current_selection2 = NULL;
+		first_press2 = true;
+	}
+
+	static bool first_press3 = true;
+
+	if (current_selection2 == NULL && controller_press2 && first_press3) {
+		for (DicomPointCloudObject* & dpcObj : dicom_point_cloud_objects) {
+			if (dpcObj->TestCollision(_ray, _pos, collision_point2)) {
+
+			}
+		}
+		first_press3 = false;
+	}
+	else if (!controller_press2) {
+		first_press3 = true;
 	}
 
 }
@@ -880,22 +947,23 @@ void Render::FakeInput() {
 	//move_rate *= delta_time_factor;
 	//rot_rate *= delta_time_factor;
 
-	glm::vec4 p1 = controller->GetModelMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 p2 = controller->GetModelMatrix() * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
+	// controller 1
+	glm::vec4 p1 = controller1->GetModelMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 p2 = controller1->GetModelMatrix() * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
 	glm::vec3 ray = glm::vec3(p2 - p1);
 	
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		controller->world_position += move_rate*ray;
+		controller1->world_position += move_rate*ray;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		controller->world_position.x -= move_rate;
+		controller1->world_position.x -= move_rate;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		controller->world_position -= move_rate*ray;
+		controller1->world_position -= move_rate*ray;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		controller->world_position.x += move_rate;
+		controller1->world_position.x += move_rate;
 	}
 
 	int width, height;
@@ -912,19 +980,70 @@ void Render::FakeInput() {
 	
 	if (focused) {
 		glfwSetCursorPos(window, width / 4, height / 2);
-		controller->model_orientation.x += rot_rate*mpos.x;
-		controller->model_orientation.y += glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f);
-		controller->CalcModelMatrix();
+		controller1->model_orientation.x += rot_rate*mpos.x;
+		controller1->model_orientation.y += glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f);
+		controller1->CalcModelMatrix();
 		controller_press1 = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-		controller->SetSelected(controller_press1);
-		vr_info.controller_pose = controller->GetModelMatrix();
+		controller1->SetSelected(controller_press1);
+		vr_info.controller_pose = controller1->GetModelMatrix();
 		vr_info.controller_press = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1);
-		glm::mat4 tmp = controller->GetModelMatrix();
+		glm::mat4 tmp = controller1->GetModelMatrix();
 		vr_info.controller_world_pos = glm::vec3(tmp[0][3], tmp[1][3], tmp[2][3]);
 	}
 	else {
 	
 	}
+
+	// controller 2
+
+	p1 = controller2->GetModelMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	p2 = controller2->GetModelMatrix() * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
+	ray = glm::vec3(p2 - p1);
+
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {
+		controller2->world_position += move_rate*ray;
+	}
+	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+		controller2->world_position.x -= move_rate;
+	}
+	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+		controller2->world_position -= move_rate*ray;
+	}
+	if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
+		controller2->world_position.x += move_rate;
+	}
+	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+		controller2->model_orientation.x += move_rate;
+	}
+	if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS) {
+		controller2->model_orientation.x -= move_rate;
+	}
+	if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) {
+		controller2->model_orientation.y += move_rate;
+	}
+	if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
+		controller2->model_orientation.y -= move_rate;
+	}
+	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) {
+		controller2->world_position.y += move_rate;
+	}
+	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+		controller2->world_position.y -= move_rate;
+	}
+
+	static bool once = true;
+	if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && once) {
+		controller_press2 = !controller_press2;
+		controller2->SetSelected(controller_press2);
+		once = false;
+	}
+	else if(!glfwGetKey(window, GLFW_KEY_N)) {
+		once = true;
+	}
+
+
+	controller2->CalcModelMatrix();
+	controller_pose2 = controller2->GetModelMatrix();
 }
 
 
@@ -934,11 +1053,11 @@ void Render::UpdateHMDMatrixPose(){
 		if (glfwGetKey(window, GLFW_KEY_SPACE)) {
 			FakeInput();
 		}
-		controller->is_hidden = true;
+		controller1->is_hidden = true;
 		return;
 	}
 
-	controller->is_hidden = false;
+	controller1->is_hidden = false;
 
 	vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
 
@@ -965,7 +1084,7 @@ void Render::UpdateHMDMatrixPose(){
 			continue;
 
 		vr_info.controller_pose = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
-		controller->model_matrix = vr_info.controller_pose;
+		controller1->model_matrix = vr_info.controller_pose;
 		
 		vr::VRControllerState_t state;
 		if (m_pHMD->GetControllerState(unTrackedDevice, &state))
