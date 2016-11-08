@@ -264,6 +264,9 @@ bool Render::InitVR() {
 	CreateFrameBuffer(m_nRenderWidth, m_nRenderHeight, rightEyeDesc);
 	
 	vr_info.hmd_connected = true;
+
+	SetupRenderModels();
+
 	return true;
 }
 
@@ -805,6 +808,35 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+
+	for (uint32_t unTrackedDevice = 0; unTrackedDevice < vr::k_unMaxTrackedDeviceCount; unTrackedDevice++)
+	{
+		if (!m_rTrackedDeviceToRenderModel[unTrackedDevice] || !m_rbShowTrackedDevice[unTrackedDevice])
+			continue;
+
+		const vr::TrackedDevicePose_t & pose = m_rTrackedDevicePose[unTrackedDevice];
+		if (!pose.bPoseIsValid)
+			continue;
+
+		glUniformMatrix4fv(texture.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
+		glUniformMatrix4fv(texture.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
+		glUniform3fv(texture.uniforms[4], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
+
+		glm::mat4 matDeviceToTracking = m_rmat4DevicePose[unTrackedDevice];
+		glUniformMatrix4fv(texture.uniforms[2], 1, GL_FALSE, glm::value_ptr(matDeviceToTracking));
+		
+
+		glBindVertexArray(m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_glVertArray);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_glTexture);
+		glUniform1i(texture.uniforms[3], 0);
+		glDrawElements(GL_TRIANGLES, m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_unVertexCount, GL_UNSIGNED_SHORT, 0);
+		
+
+	}
+
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
@@ -1335,4 +1367,120 @@ bool Render::createFrameBuffer(ShadowMap &sm) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	return true;
+}
+
+std::string GetTrackedDeviceString(vr::IVRSystem *pHmd, vr::TrackedDeviceIndex_t unDevice, vr::TrackedDeviceProperty prop, vr::TrackedPropertyError *peError = NULL)
+{
+	uint32_t unRequiredBufferLen = pHmd->GetStringTrackedDeviceProperty(unDevice, prop, NULL, 0, peError);
+	if (unRequiredBufferLen == 0)
+		return "";
+
+	char *pchBuffer = new char[unRequiredBufferLen];
+	unRequiredBufferLen = pHmd->GetStringTrackedDeviceProperty(unDevice, prop, pchBuffer, unRequiredBufferLen, peError);
+	std::string sResult = pchBuffer;
+	delete[] pchBuffer;
+	return sResult;
+}
+
+void Render::SetupRenderModelForTrackedDevice(vr::TrackedDeviceIndex_t unTrackedDeviceIndex)
+{
+	if (unTrackedDeviceIndex >= vr::k_unMaxTrackedDeviceCount)
+		return;
+
+	// try to find a model we've already set up
+	std::string sRenderModelName = GetTrackedDeviceString(m_pHMD, unTrackedDeviceIndex, vr::Prop_RenderModelName_String);
+	CGLRenderModel *pRenderModel = FindOrLoadRenderModel(sRenderModelName.c_str());
+	if (!pRenderModel)
+	{
+		std::string sTrackingSystemName = GetTrackedDeviceString(m_pHMD, unTrackedDeviceIndex, vr::Prop_TrackingSystemName_String);
+		MiscFunctions::dprintf("Unable to load render model for tracked device %d (%s.%s)", unTrackedDeviceIndex, sTrackingSystemName.c_str(), sRenderModelName.c_str());
+	}
+	else
+	{
+		m_rTrackedDeviceToRenderModel[unTrackedDeviceIndex] = pRenderModel;
+		m_rbShowTrackedDevice[unTrackedDeviceIndex] = true;
+	}
+}
+
+void Render::SetupRenderModels()
+{
+	memset(m_rTrackedDeviceToRenderModel, 0, sizeof(m_rTrackedDeviceToRenderModel));
+
+	if (!m_pHMD)
+		return;
+
+	for (uint32_t unTrackedDevice = vr::k_unTrackedDeviceIndex_Hmd + 1; unTrackedDevice < vr::k_unMaxTrackedDeviceCount; unTrackedDevice++)
+	{
+		if (!m_pHMD->IsTrackedDeviceConnected(unTrackedDevice))
+			continue;
+
+		SetupRenderModelForTrackedDevice(unTrackedDevice);
+	}
+
+}
+
+CGLRenderModel* Render::FindOrLoadRenderModel(const char *pchRenderModelName)
+{
+	CGLRenderModel *pRenderModel = NULL;
+	for (std::vector< CGLRenderModel * >::iterator i = m_vecRenderModels.begin(); i != m_vecRenderModels.end(); i++)
+	{
+		if (!_stricmp((*i)->GetName().c_str(), pchRenderModelName))
+		{
+			pRenderModel = *i;
+			break;
+		}
+	}
+
+	// load the model if we didn't find one
+	if (!pRenderModel)
+	{
+		vr::RenderModel_t *pModel;
+		vr::EVRRenderModelError error;
+		while (1)
+		{
+			error = vr::VRRenderModels()->LoadRenderModel_Async(pchRenderModelName, &pModel);
+			if (error != vr::VRRenderModelError_Loading)
+				break;
+
+			MiscFunctions::ThreadSleep(1);
+		}
+
+		if (error != vr::VRRenderModelError_None)
+		{
+			MiscFunctions::dprintf("Unable to load render model %s - %s\n", pchRenderModelName, vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(error));
+			return NULL; // move on to the next tracked device
+		}
+
+		vr::RenderModel_TextureMap_t *pTexture;
+		while (1)
+		{
+			error = vr::VRRenderModels()->LoadTexture_Async(pModel->diffuseTextureId, &pTexture);
+			if (error != vr::VRRenderModelError_Loading)
+				break;
+
+			MiscFunctions::ThreadSleep(1);
+		}
+
+		if (error != vr::VRRenderModelError_None)
+		{
+			MiscFunctions::dprintf("Unable to load render texture id:%d for render model %s\n", pModel->diffuseTextureId, pchRenderModelName);
+			vr::VRRenderModels()->FreeRenderModel(pModel);
+			return NULL; // move on to the next tracked device
+		}
+
+		pRenderModel = new CGLRenderModel(pchRenderModelName);
+		if (!pRenderModel->BInit(*pModel, *pTexture))
+		{
+			MiscFunctions::dprintf("Unable to create GL model from render model %s\n", pchRenderModelName);
+			delete pRenderModel;
+			pRenderModel = NULL;
+		}
+		else
+		{
+			m_vecRenderModels.push_back(pRenderModel);
+		}
+		vr::VRRenderModels()->FreeRenderModel(pModel);
+		vr::VRRenderModels()->FreeTexture(pTexture);
+	}
+	return pRenderModel;
 }

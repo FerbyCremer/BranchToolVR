@@ -214,6 +214,7 @@
     <ClCompile Include="ColorObject.cpp" />
     <ClCompile Include="MarchingCubesVars.cpp" />
     <ClCompile Include="Render.cpp" />
+    <ClCompile Include="RenderModel.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureObject.cpp" />
     <ClCompile Include="UiPanel.cpp" />
@@ -231,6 +232,7 @@
     <ClInclude Include="LineObject.h" />
     <ClInclude Include="MiscFunctions.h" />
     <ClInclude Include="Render.h" />
+    <ClInclude Include="RenderModel.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureObject.h" />
     <ClInclude Include="UiPanel.h" />

@@ -4,12 +4,15 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <streambuf>
 #include <vector>
 #include <openvr.h>
+#include <stdio.h>
+#include <cstdlib>
 
 #include "ColorObject.h"
 #include "LineObject.h"
@@ -17,6 +20,8 @@
 #include "AbstractBaseObject.h"
 #include "TextureObject.h"
 #include "Texture.h"
+#include "RenderModel.h"
+#include "MiscFunctions.h"
 
 struct VrData {
 	glm::mat4 controller_pose;
@@ -184,6 +189,7 @@ class Render{
 		vr::IVRSystem *m_pHMD;
 		vr::IVRRenderModels *m_pRenderModels;
 		vr::TrackedDevicePose_t m_rTrackedDevicePose[vr::k_unMaxTrackedDeviceCount];
+		bool m_rbShowTrackedDevice[vr::k_unMaxTrackedDeviceCount];
 		glm::mat4 m_rmat4DevicePose[vr::k_unMaxTrackedDeviceCount];
 		glm::mat4 m_mat4HMDPose;
 		uint32_t m_nRenderWidth;
@@ -204,6 +210,12 @@ class Render{
 
 		bool createFrameBuffer(ShadowMap &sm);
 		void RenderSceneInternal(glm::mat4 _P, glm::mat4 _V);
+
+		std::vector<CGLRenderModel*> m_vecRenderModels;
+		CGLRenderModel *m_rTrackedDeviceToRenderModel[vr::k_unMaxTrackedDeviceCount];
+		CGLRenderModel* FindOrLoadRenderModel(const char *pchRenderModelName);
+		void SetupRenderModels();
+		void SetupRenderModelForTrackedDevice(vr::TrackedDeviceIndex_t unTrackedDeviceIndex);
 		
 		// static helper functions
 		static void PrintMat4(glm::mat4 m);
@@ -215,4 +227,5 @@ class Render{
 		static std::string ReadFile(std::string _filePath);
 		static GLuint CreateShader(GLint target, std::string& src);
 		static GLuint CompileGLShader(std::string programName, std::string shaderDir);
+
 };

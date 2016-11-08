@@ -52,4 +52,27 @@ namespace MiscFunctions {
 		* v1[1]);
 	}
 
+	static inline void ThreadSleep(unsigned long nMilliseconds)
+	{
+		#if defined(_WIN32)
+				::Sleep(nMilliseconds);
+		#elif defined(POSIX)
+				usleep(nMilliseconds * 1000);
+		#endif
+	}
+
+	static inline void dprintf(const char *fmt, ...)
+	{
+		va_list args;
+		char buffer[2048];
+
+		va_start(args, fmt);
+		vsprintf_s(buffer, fmt, args);
+		va_end(args);
+
+		printf("%s", buffer);
+
+		OutputDebugStringA(buffer);
+	}
+
 };
