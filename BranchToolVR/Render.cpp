@@ -346,7 +346,7 @@ void Render::RenderEyes() {
 	// left eye
 	glBindFramebuffer(GL_FRAMEBUFFER, leftEyeDesc.m_nRenderFramebufferId);
 	glViewport(0, 0, m_nRenderWidth, m_nRenderHeight);
-	RenderSceneInternal(vr_info.left_eye_proj, vr_info.right_eye_transform_inv);
+	RenderSceneInternal(vr_info.left_eye_proj, vr_info.left_eye_transform_inv);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glDisable(GL_MULTISAMPLE);
@@ -808,7 +808,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+	glUseProgram(texture.id);
 
 	for (uint32_t unTrackedDevice = 0; unTrackedDevice < vr::k_unMaxTrackedDeviceCount; unTrackedDevice++)
 	{
@@ -829,6 +829,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 
 		glBindVertexArray(m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_glVertArray);
 
+		//std::cout << m_rTrackedDeviceToRenderModel[unTrackedDevice]->GetName() << std::endl;
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_glTexture);
 		glUniform1i(texture.uniforms[3], 0);
@@ -1172,11 +1173,14 @@ void Render::UpdateHMDMatrixPose(){
 		if (!m_rTrackedDevicePose[unTrackedDevice].bPoseIsValid)
 			continue;
 
+		m_rmat4DevicePose[unTrackedDevice] = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
+
 		if (controllerIndex == 0) {
 			vr_info.controller_pose = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
 
 			vr_info.controller_world_pos = glm::vec3(vr_info.controller_pose * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 			controller1->model_matrix = vr_info.controller_pose;
+			//controller1->is_hidden = true;
 		
 			vr::VRControllerState_t state;
 			if (m_pHMD->GetControllerState(unTrackedDevice, &state))
@@ -1190,6 +1194,7 @@ void Render::UpdateHMDMatrixPose(){
 
 			vr_info.controller_world_pos2 = glm::vec3(vr_info.controller_pose2 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 			controller2->model_matrix = vr_info.controller_pose2;
+			//controller2->is_hidden = true;
 
 			vr::VRControllerState_t state;
 			if (m_pHMD->GetControllerState(unTrackedDevice, &state))
@@ -1199,11 +1204,6 @@ void Render::UpdateHMDMatrixPose(){
 			controllerIndex++;
 		}
 	}
-
-
-
-
-
 
 	// tmp
 	controller_press2 = vr_info.controller_press2;
@@ -1397,6 +1397,7 @@ void Render::SetupRenderModelForTrackedDevice(vr::TrackedDeviceIndex_t unTracked
 	}
 	else
 	{
+		std::cout << "setting up: " << sRenderModelName << std::endl;
 		m_rTrackedDeviceToRenderModel[unTrackedDeviceIndex] = pRenderModel;
 		m_rbShowTrackedDevice[unTrackedDeviceIndex] = true;
 	}
