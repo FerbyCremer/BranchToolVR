@@ -5,6 +5,8 @@ int Render::window_size_x = 0;
 int Render::window_size_y = 0;
 int Render::half_window_size_x = 0;
 int Render::half_window_size_y = 0;
+int Render::fourth_window_size_x = 0;
+int Render::fourth_window_size_y = 0;
 float Render::aspect = 1.0f;
 float Render::half_aspect = 1.0f;
 glm::vec4 Render::ui_quadrant_ortho[4];
@@ -14,7 +16,8 @@ CursorData Render::cursor_info;
 glm::mat4 Render::ui_view;
 glm::mat4 Render::ui_projection;
 
-Render::Render(GLFWwindow *_window){
+Render::Render(GLFWwindow *_window)
+{
 
 	// configure glfw vars
 	window = _window;
@@ -36,15 +39,21 @@ Render::Render(GLFWwindow *_window){
 	// ui
 	glEnable(GL_SCISSOR_TEST);
 
-	// controller
-	controller1 = new ColorObject;
-	controller1->GenerateController();
-	AddObjectToScene(controller1);
+	// initialize controllers
+	controller_pointer1 = new ColorObject;
+	controller_pointer1->GenerateController();
+	AddObjectToScene(controller_pointer1);
 
-	controller2 = new ColorObject;
-	controller2->GenerateController();
-	AddObjectToScene(controller2);
-	controller2->SetDisplayColor(glm::vec4(0.5f, 0.25f, 0.1f, 1.0f));
+	controller_pointer2 = new ColorObject;
+	controller_pointer2->GenerateController();
+	AddObjectToScene(controller_pointer2);
+	controller_pointer2->SetDisplayColor(glm::vec4(0.5f, 0.25f, 0.1f, 1.0f));
+
+	vr_info.controller1.id = 0;
+	vr_info.controller2.id = 1;
+
+	selected_element1 = NULL;
+	selected_element2 = NULL;
 
 	// shadow
 	createFrameBuffer(sm);
@@ -183,24 +192,30 @@ Render::Render(GLFWwindow *_window){
 
 	glLineWidth(2.0f);
 
-}
-
-Render::~Render(){
 
 }
 
-void Render::Finalize() {
+Render::~Render()
+{
+
+}
+
+void Render::Finalize()
+{
 	// initialize glfw window variables
 	int width, height;
 	glfwGetWindowSize(window, &width, &height);
 	window_size_callback(window, width, height);
 }
 
-void Render::window_size_callback(GLFWwindow* window, int width, int height){
+void Render::window_size_callback(GLFWwindow* window, int width, int height)
+{
 	window_size_x = width;
 	window_size_y = height;
 	half_window_size_x = window_size_x / 2;
 	half_window_size_y = window_size_y / 2;
+	fourth_window_size_x = window_size_x / 4;
+	fourth_window_size_y = window_size_y / 4;
 	aspect = (float)window_size_x / (float)window_size_y;
 	half_aspect = (float)half_window_size_x / (float)half_window_size_y;
 	float inverse_half_aspect = (float)half_window_size_y / (float)half_window_size_x;
@@ -217,24 +232,29 @@ void Render::window_size_callback(GLFWwindow* window, int width, int height){
 	
 	float tmpX00 = ui_quadrant_ortho[0].y * half_aspect;
 
-	if (tmpY0 < ui_quadrant_ortho[0].y) {
+	if (tmpY0 < ui_quadrant_ortho[0].y) 
+	{
 		ui_quadrant_ortho_aspect[0] = glm::vec4(-tmpX00, tmpX00, -ui_quadrant_ortho[0].y, ui_quadrant_ortho[0].y);
 	}
-	else {
+	else 
+	{
 		ui_quadrant_ortho_aspect[0] = glm::vec4(-ui_quadrant_ortho[0].x, ui_quadrant_ortho[0].x, -tmpY0, tmpY0);
 	}
 
 	float tmpX11 = ui_quadrant_ortho[1].y * half_aspect;
 
-	if (tmpY1 < ui_quadrant_ortho[1].y) {
+	if (tmpY1 < ui_quadrant_ortho[1].y) 
+	{
 		ui_quadrant_ortho_aspect[1] = glm::vec4(-tmpX11, tmpX11, -ui_quadrant_ortho[1].y, ui_quadrant_ortho[1].y);
 	}
-	else {
+	else 
+	{
 		ui_quadrant_ortho_aspect[1] = glm::vec4(-ui_quadrant_ortho[1].x, ui_quadrant_ortho[1].x, -tmpY1, tmpY1);
 	}
 }
 
-bool Render::InitVR() {
+bool Render::InitVR() 
+{
 
 	// Loading the SteamVR Runtime
 	vr::EVRInitError eError = vr::VRInitError_None;
@@ -245,7 +265,6 @@ bool Render::InitVR() {
 		char buf[1024];
 		sprintf_s(buf, sizeof(buf), "Unable to init VR runtime: %s", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
 		vr_info.hmd_connected = false;
-		controller1->is_hidden = true;
 		return false;
 	}
 
@@ -270,76 +289,101 @@ bool Render::InitVR() {
 	return true;
 }
 
-void Render::AddObjectToScene(std::vector<AbstractBaseObject*> cObjs) {
-	for (AbstractBaseObject* co : cObjs) {
-		AddObjectToScene(co);
+void Render::AddObjectToScene(std::vector<AbstractBaseObject*> abstractBaseObjs) 
+{
+	for (AbstractBaseObject* aobj : abstractBaseObjs) 
+	{
+		AddObjectToScene(aobj);
 	}
 }
 
-void Render::AddObjectToScene(AbstractBaseObject* abso) {
-	if (abso == NULL) {
+void Render::AddObjectToScene(AbstractBaseObject* abso) 
+{
+	if (abso == NULL) 
+	{
 		return;
 	}
-	if (abso->Type() == 0) {
+
+	if (abso->Type() == 0) 
+	{
 		ColorObject * s = static_cast<ColorObject*>(abso);
 		AddObjectToScene(s);
 	}
-	if (abso->Type() == 1) {
+	else if (abso->Type() == 1) 
+	{
 		TextureObject * s = static_cast<TextureObject*>(abso);
 		AddObjectToScene(s);
 	}
+
+	all_objects.push_back(abso);
 }
 
-void Render::AddObjectToUi(AbstractBaseObject* abso) {
-	if (abso == NULL) {
+void Render::AddObjectToUi(AbstractBaseObject* abso) 
+{
+	if (abso == NULL)
+	{
 		return;
 	}
-	if (abso->Type() == 0) {
+
+	if (abso->Type() == 0) 
+	{
 		ColorObject * s = static_cast<ColorObject*>(abso);
 		AddObjectToUi(s);
 	}
-	if (abso->Type() == 1) {
+	else if (abso->Type() == 1) 
+	{
 		TextureObject * s = static_cast<TextureObject*>(abso);
 		AddObjectToUi(s);
 	}
 }
 
-void Render::AddObjectToScene(ColorObject * co) {
-	if (co != NULL) {
-
+void Render::AddObjectToScene(ColorObject * co)
+{
+	if (co != NULL) 
+	{
 		color_objects.push_back(co);
+		all_objects.push_back(co);
 	}
 }
 
-void Render::AddObjectToScene(DicomPointCloudObject * dpco) {
-	if (dpco != NULL) {
+void Render::AddObjectToScene(DicomPointCloudObject * dpco)
+{
+	if (dpco != NULL)
+	{
 		dicom_point_cloud_objects.push_back(dpco);
-		if (dpco->handle != NULL)
-		color_objects.push_back(dpco->handle);
+		AddObjectToScene(dpco->handle);
 	}
 }
 
-void Render::AddObjectToScene(LineObject * l) {
+void Render::AddObjectToScene(LineObject * l) 
+{
 	if (l != NULL)
 		line_objects.push_back(l);
 }
 
-void Render::AddObjectToScene(TextureObject * t) {
-	if (t != NULL)
-		texture_objects.push_back(t);
+void Render::AddObjectToScene(TextureObject * t) 
+{
+	if (t == NULL)
+		return;
+
+	texture_objects.push_back(t);
+	all_objects.push_back(t);
 }
 
-void Render::AddObjectToUi(TextureObject * t) {
+void Render::AddObjectToUi(TextureObject * t) 
+{
 	if (t != NULL)
 		texture_ui_elements.push_back(t);
 }
 
-void Render::AddObjectToUi(ColorObject * c) {
+void Render::AddObjectToUi(ColorObject * c)
+{
 	if (c != NULL)
 		color_ui_elements.push_back(c);
 }
 
-void Render::RenderEyes() {
+void Render::RenderEyes() 
+{
 	if (!m_pHMD)
 		return;
 
@@ -375,28 +419,37 @@ void Render::RenderEyes() {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
+	// send to HMD
+
 	vr::Texture_t leftEyeTexture = { (void*)leftEyeDesc.m_nResolveTextureId, vr::API_OpenGL, vr::ColorSpace_Gamma };
 	vr::VRCompositor()->Submit(vr::Eye_Left, &leftEyeTexture);
+	
 	vr::Texture_t rightEyeTexture = { (void*)rightEyeDesc.m_nResolveTextureId, vr::API_OpenGL, vr::ColorSpace_Gamma };
 	vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
 }
 
-void Render::ResetSeatedPose() {
+void Render::ResetSeatedPose() 
+{
 	m_pHMD->ResetSeatedZeroPose();
 }
 
-void Render::UpdateLights() {
-	for (int i = 0; i < num_lights; ++i) {
-		if (lights[i].marker.is_selected) {
+void Render::UpdateLights() 
+{
+	for (int i = 0; i < num_lights; ++i) 
+	{
+		if (lights[i].marker.is_selected) 
+		{
 			lights[i].marker.Set_append_pose(lights[i].marker.cache_pose[1] * lights[i].marker.cache_pose[0]);
 			lights[i].position = glm::vec3(lights[i].marker.GetModelMatrix()*glm::vec4(0.0f,0.0f,0.0f,1.0f));
 		}
 	}
 }
 
-void Render::UpdateCursor() {
+void Render::UpdateCursor() 
+{
 	static bool fp = true;
-	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1)) {
+	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1)) 
+	{
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
 
@@ -406,22 +459,27 @@ void Render::UpdateCursor() {
 		cursor_info.normalized_cursor_position = glm::vec2(nx, ny);
 		cursor_info.is_pressed = true;
 		
-		if (fp) {
+		if (fp) 
+		{
 			cursor_info.first_press = true;
 			fp = false;
 		}
-		else {
+
+		else 
+		{
 			cursor_info.first_press = false;
 		}
 	}
-	else {
+	else 
+	{
 		fp = true;
 		cursor_info.first_press = false;
 		cursor_info.is_pressed = false;
 	}
 }
 
-void Render::RenderShadows() {
+void Render::RenderShadows() 
+{
 
 	glBindFramebuffer(GL_FRAMEBUFFER, sm.depth);
 	glDisable(GL_SCISSOR_TEST);
@@ -433,7 +491,8 @@ void Render::RenderShadows() {
 	glUniformMatrix4fv(shadow.uniforms[0], 1, GL_FALSE, glm::value_ptr(sm.P));
 	glUniformMatrix4fv(shadow.uniforms[1], 1, GL_FALSE, glm::value_ptr(sm.V));
 
-	for (ColorObject* & cObj : color_objects) {
+	for (ColorObject* & cObj : color_objects) 
+	{
 		if (cObj->is_hidden || !cObj->is_loaded)
 			continue;
 
@@ -447,7 +506,8 @@ void Render::RenderShadows() {
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 
-	for (TextureObject* & tObj : texture_objects) {
+	for (TextureObject* & tObj : texture_objects) 
+	{
 		if (tObj->is_hidden || !tObj->is_loaded)
 			continue;
 
@@ -465,14 +525,10 @@ void Render::RenderShadows() {
 
 	glUniformMatrix4fv(dicom_point_cloud.uniforms[0], 1, GL_FALSE, glm::value_ptr(sm.P));
 	glUniformMatrix4fv(dicom_point_cloud.uniforms[1], 1, GL_FALSE, glm::value_ptr(sm.V));
-
-	//glm::vec4 head_pos = glm::inverse(m_mat4HMDPose) * glm::vec4(0.01f, 0.05f, 0.0f, 1.0f);
-	glm::vec4 head_pos = controller_pose1 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
 	glUniform3fv(dicom_point_cloud.uniforms[4], 1, glm::value_ptr(lights[0].position));
 	glUniform3fv(dicom_point_cloud.uniforms[5], 1, glm::value_ptr(lights[1].position));
 	glUniform3fv(dicom_point_cloud.uniforms[6], 1, glm::value_ptr(lights[2].position));
-	glUniform3fv(dicom_point_cloud.uniforms[12], 1, glm::value_ptr(head_pos));
+	glUniform3fv(dicom_point_cloud.uniforms[12], 1, glm::value_ptr(vr_info.head_position));
 
 	for (DicomPointCloudObject* & dpco : dicom_point_cloud_objects) {
 
@@ -508,20 +564,19 @@ void Render::RenderShadows() {
 	glEnable(GL_SCISSOR_TEST);
 }
 
-void Render::RenderScene() {
-
+void Render::RenderScene() 
+{
 	// update state
 	UpdateCursor();
 	UpdateLights();
 	RenderShadows();
-	Interact(vr_info.controller_pose, glm::mat4(1.0f),glm::vec3(vr_info.controller_pose* glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)), glm::vec3(vr_info.controller_pose* glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), vr_info.controller_press);
+	Interact();
 
-	glEnable(GL_SCISSOR_TEST);
 	// ui
+	glEnable(GL_SCISSOR_TEST);
 	RenderUI(0);
 	RenderUI(1);
 	glDisable(GL_SCISSOR_TEST);
-
 
 	// vr
 	RenderEyes();
@@ -530,15 +585,19 @@ void Render::RenderScene() {
 
 void Render::RenderUI(int level) {
 
-	if (level == 0) {
+	if (level == 0) 
+	{
 		// clear and render HMD view, or if no hmd is connected, show controllers perspective
 		glViewport(0, 0, half_window_size_x, window_size_y);
 		glScissor(0, 0, half_window_size_x, window_size_y);
-		if (vr_info.hmd_connected) {
+
+		if (vr_info.hmd_connected) 
+		{
 			RenderSceneInternal(glm::perspective(90.0f,1.0f,0.1f,100.0f), vr_info.head_pose_inv);
 		}
-		else {
-			RenderSceneInternal(glm::perspective(90.0f, aspect*0.5f, 0.1f, 100.0f), glm::inverse(controller1->GetModelMatrix()));
+		else 
+		{
+			RenderSceneInternal(glm::perspective(90.0f, aspect *0.5f, 0.1f, 100.0f), spoofControllerView);
 		}
 
 		// clear ui quadrant 0
@@ -597,9 +656,7 @@ void Render::RenderUI(int level) {
 
 	glUseProgram(ui_texture.id);
 
-	for (int i = 0; i < CURR_NR_TEXTURES; ++i) {
-		textures[i]->Bind();
-	}
+	BindTextures();
 
 	glUniformMatrix4fv(ui_texture.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 
@@ -628,6 +685,13 @@ void Render::RenderUI(int level) {
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
 		glDrawArrays(GL_TRIANGLES, 0, tUiObj->num_vertices);
+	}
+}
+
+void Render::BindTextures() {
+	for (int i = 0; i < CURR_NR_TEXTURES; ++i)
+	{
+		textures[i]->Bind();
 	}
 }
 
@@ -724,13 +788,10 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 	glUniformMatrix4fv(dicom_point_cloud.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 	glUniformMatrix4fv(dicom_point_cloud.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 
-	//glm::vec4 head_pos = glm::inverse(m_mat4HMDPose) * glm::vec4(0.01f, 0.05f, 0.0f, 1.0f);
-	glm::vec4 head_pos = controller_pose1 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
 	glUniform3fv(dicom_point_cloud.uniforms[4], 1, glm::value_ptr(lights[0].position));
 	glUniform3fv(dicom_point_cloud.uniforms[5], 1, glm::value_ptr(lights[1].position));
 	glUniform3fv(dicom_point_cloud.uniforms[6], 1, glm::value_ptr(lights[2].position));
-	glUniform3fv(dicom_point_cloud.uniforms[12], 1, glm::value_ptr(head_pos));
+	glUniform3fv(dicom_point_cloud.uniforms[12], 1, glm::value_ptr(vr_info.head_position));
 	glUniform3fv(dicom_point_cloud.uniforms[13], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
 
 	for (DicomPointCloudObject* & dpco : dicom_point_cloud_objects) {
@@ -845,66 +906,95 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 	glDisableVertexAttribArray(4);
 }
 
-void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, glm::vec3 _ray, glm::vec3 _pos, bool _pressed) {
+// DetectCollision helpers
 
-	static int controllerSelection = -1;
-	static ColorObject * current_selection = NULL;
-	static ColorObject * current_selection2 = NULL;
-	glm::vec4 p1 = _controllerPose1 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 p2 = _controllerPose1 * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
-	glm::vec3 ray = glm::vec3(p2 - p1);
-	static glm::vec3 collision_point;
-	static bool first_press = true;
+struct foundCollision 
+{
+	AbstractBaseObject * obj;
+	glm::vec3 intersection_point;
+	float distance;
 
-	if (_pressed && first_press) {
-		current_selection = NULL;
-		float min_dist = 999999999.0f;
-		for (ColorObject* & cObj : color_objects) {
-			if (cObj->is_selectable && cObj->TestCollision(_ray, _pos, collision_point, true)) {
-				float curr_dist = glm::length(collision_point - _pos);
-				if (glm::dot(ray, collision_point - _pos) > 0 && curr_dist < min_dist) {
-					min_dist = curr_dist;
-					current_selection = cObj;
-				}
+	foundCollision(AbstractBaseObject* abo, glm::vec3 _ip, float _dist) 
+	{
+		obj = abo;
+		intersection_point = _ip;
+		distance = _dist;
+	}
+};
+
+struct less_than_key
+{
+	inline bool operator() (const foundCollision& struct1, const foundCollision& struct2)
+	{
+		return (struct1.distance < struct2.distance);
+	}
+};
+
+void Render::DetectCollision(VrMotionController & _controller) 
+{
+	AbstractBaseObject *& currSelection = _controller.id == 0 ? selected_element1 : selected_element2;
+
+	// controller trigger is held down with previous selection
+	if (_controller.is_pressed && currSelection != NULL) 
+	{
+		if (currSelection->Type() == 0) 
+		{
+			ColorObject * s = static_cast<ColorObject*>(currSelection);
+			s->SetSelected(true);
+		}
+	}
+	// controller trigger pressed for the first time without previous selection
+	else if (_controller.first_press && currSelection == NULL) 
+	{
+		std::vector<foundCollision> found_collisions;
+
+		for (AbstractBaseObject * absObj : all_objects) 
+		{
+			glm::vec3 collision_point;
+			if(absObj != &lights[0].marker && !absObj->is_hidden && absObj->is_selectable &&  absObj->TestCollision(_controller.ray, _controller.position, collision_point))
+			{
+				found_collisions.push_back(foundCollision(absObj, collision_point, glm::length(collision_point - _controller.position)));
 			}
 		}
-		if (current_selection != NULL && current_selection->controllerSelectorId == -1) {
-			current_selection->controllerSelectorId = 0;
-			current_selection->SetSelected(true);
-			current_selection->Set_cache_pose(_controllerPose1, 1);//[1] = _controllerPose1;
-			current_selection->Set_cache_pose(_controllerPose1, 2);//[2] = _controllerPose1;
-			current_selection->Set_cache_pose(current_selection->append_pose,3);//[3] = current_selection->append_pose;
-			current_selection->Set_cache_pose(glm::inverse(_controllerPose1) * current_selection->append_pose,0);//[0] = glm::inverse(_controllerPose1) * current_selection->append_pose;
+
+		if (found_collisions.size() > 0) 
+		{
+			std::sort(found_collisions.begin(), found_collisions.end(), less_than_key());
+			//lights[0].marker.Set_world_position(found_collisions[0].intersection_point);
+			currSelection = found_collisions[0].obj;
 		}
-		first_press = false;
 	}
-	else if (_pressed && current_selection != NULL && current_selection->controllerSelectorId == 0) {
-		current_selection->Set_cache_pose( _controllerPose1,1);
-	}
-	else if (_pressed && current_selection != NULL && current_selection->controllerSelectorId == -1) {
-		current_selection->controllerSelectorId = 0;
-		current_selection->SetSelected(true);
-		current_selection->Set_cache_pose(_controllerPose1, 1);//[1] = _controllerPose1;
-		current_selection->Set_cache_pose(_controllerPose1, 2);//[2] = _controllerPose1;
-		current_selection->Set_cache_pose(current_selection->append_pose, 3);//[3] = current_selection->append_pose;
-		current_selection->Set_cache_pose(glm::inverse(_controllerPose1) * current_selection->append_pose, 0);
-	}
-	else if (!_pressed && current_selection != NULL){
-		if (current_selection->controllerSelectorId == 0)
-			current_selection->controllerSelectorId = -1;
-		current_selection->SetSelected(false);
-		current_selection = NULL;
-		first_press = true;
-	}
-	else if (!_pressed) {
-		if (current_selection!=NULL && current_selection->controllerSelectorId == 0)
-			current_selection->controllerSelectorId = -1;
-
-
-		current_selection = NULL;
-		first_press = true;
+	// trigger released with a selection
+	else if (!_controller.is_pressed && currSelection != NULL)
+	{
+		if (currSelection->Type() == 0)
+		{
+			ColorObject * s = static_cast<ColorObject*>(currSelection);
+			s->SetSelected(false);
+		}
+		currSelection = NULL;
 	}
 
+
+	
+
+
+
+	if (glfwGetKey(window, GLFW_KEY_P)) 
+	{
+		std::cout << "cpos: " << _controller.position.x << " " << _controller.position.y << " " << _controller.position.z << std::endl;
+		std::cout << "cray: " << _controller.ray.x << " " << _controller.ray.y << " " << _controller.ray.z << std::endl;
+		std::cout << std::endl;
+	}
+
+}
+
+void Render::Interact() {
+
+	DetectCollision(vr_info.controller1);
+
+	/*
+	// dicom point cloud interaction
 	static bool first_press21 = true;
 
 	if (current_selection == NULL && _pressed && first_press21) {
@@ -1001,12 +1091,12 @@ void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, gl
 		static float initial_scale;
 
 		if (once) {
-			initial_dist = glm::length(vr_info.controller_world_pos - vr_info.controller_world_pos2);
+			initial_dist = glm::length(vr_info.controller_world_pos1 - vr_info.controller_world_pos2);
 			initial_scale = current_selection->scale.x;
 			once = false;
 		}
 		else {
-			float curr_dist = glm::length(vr_info.controller_world_pos - vr_info.controller_world_pos2);
+			float curr_dist = glm::length(vr_info.controller_world_pos1 - vr_info.controller_world_pos2);
 			float ratio = curr_dist / initial_dist;
 			float new_scale = ratio*initial_scale;
 			std::cout << new_scale << std::endl;
@@ -1016,6 +1106,7 @@ void Render::Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, gl
 	else {
 		once = true;
 	}
+	*/
 
 }
 
@@ -1026,132 +1117,127 @@ void Render::PrintMat4(glm::mat4 m) {
 	std::cout << m[3][0] << " " << m[3][1] << " " << m[3][2] << " " << m[3][3] << std::endl;
 }
 
-void Render::FakeInput() {
-	float move_rate = 0.025f;
-	float rot_rate = 0.025f;
+void Render::FakeInput(int controllerIndex) 
+{
+	static float move_rate = 0.025f;
+	static float rot_rate = 0.025f;
+
+	VrMotionController & currController = controllerIndex == 0 ? vr_info.controller1 : vr_info.controller2;
 
 	// time based movement
 	//float delta_time_factor = (_deltaT + 1.0f) / 16.67f;
 	//move_rate *= delta_time_factor;
 	//rot_rate *= delta_time_factor;
 
-	// controller 1
-	glm::vec4 p1 = controller1->GetModelMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 p2 = controller1->GetModelMatrix() * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
-	glm::vec3 ray = glm::vec3(p2 - p1);
-	
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		controller1->world_position += move_rate*ray;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
+	{
+		currController.SetPosSpoof(currController.position + move_rate*currController.ray);
 	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		controller1->world_position.x -= move_rate;
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		controller1->world_position -= move_rate*ray;
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		controller1->world_position.x += move_rate;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) 
+	{
+		currController.SetPosSpoof(currController.position - move_rate*currController.ray);
 	}
 
-	int width, height;
-	glfwGetWindowSize(window, &width, &height);
+	glm::vec3 strafe = glm::normalize(glm::cross(Constants::Y_AXIS, currController.ray));
+
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		currController.SetPosSpoof(currController.position + move_rate*strafe);
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		currController.SetPosSpoof(currController.position - move_rate*strafe);
+	}
+
+	// temp: switch to cursor data struct
 	
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
 	
 	glm::vec2 mpos;
-	mpos.x = width / 4 - xpos;
-	mpos.y = height / 2 - ypos;
-
-	int focused = glfwGetWindowAttrib(window, GLFW_FOCUSED);
+	mpos.x = window_size_x / 4 - xpos;
+	mpos.y = window_size_y / 2 - ypos;
 	
-	if (focused) {
-		glfwSetCursorPos(window, width / 4, height / 2);
-		controller1->model_orientation.x += rot_rate*mpos.x;
-		controller1->model_orientation.y += glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f);
-		controller1->CalcModelMatrix();
-		controller_press1 = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-		controller1->SetSelected(controller_press1);
-		vr_info.controller_pose = controller1->GetModelMatrix();
-		vr_info.controller_press = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1);
-		glm::mat4 tmp = controller1->GetModelMatrix();
-		vr_info.controller_world_pos = glm::vec3(tmp[0][3], tmp[1][3], tmp[2][3]);
-	}
-	else {
+	glfwSetCursorPos(window, fourth_window_size_x, half_window_size_y);
+
+	currController.SetOrientationSpoof(currController.orientation + glm::vec3(rot_rate*mpos.x, glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f), 0.0f));
 	
+	static bool once[] = { true, true };
+	
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1))
+	{
+		if (once[controllerIndex]) 
+		{
+			//std::cout << "pressed: " << !currController.is_pressed << std::endl;
+			currController.first_press = !currController.is_pressed;
+			currController.is_pressed = !currController.is_pressed;
+			once[controllerIndex] = false;
+		}
+		else 
+		{
+			currController.first_press = false;
+		}
+
+		
+	}
+	else if(!glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1))
+	{
+		once[controllerIndex] = true;
 	}
 
-	// controller 2
+	//PrintMat4(currController.pose);
+	//std::cout << std::endl;
+	//std::cout << std::endl << mpos.x << " " << mpos.y << " " << currController.orientation.x << " " << currController.orientation.y << " " << currController.orientation.z << std::endl << std::endl;
 
-	p1 = controller2->GetModelMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	p2 = controller2->GetModelMatrix() * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
-	ray = glm::vec3(p2 - p1);
+	spoofControllerView = glm::inverse(currController.pose);
 
-	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {
-		controller2->world_position += move_rate*ray;
-	}
-	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
-		controller2->world_position.x -= move_rate;
-	}
-	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
-		controller2->world_position -= move_rate*ray;
-	}
-	if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
-		controller2->world_position.x += move_rate;
-	}
-	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
-		controller2->model_orientation.x += move_rate;
-	}
-	if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS) {
-		controller2->model_orientation.x -= move_rate;
-	}
-	if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) {
-		controller2->model_orientation.y += move_rate;
-	}
-	if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
-		controller2->model_orientation.y -= move_rate;
-	}
-	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) {
-		controller2->world_position.y += move_rate;
-	}
-	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-		controller2->world_position.y -= move_rate;
-	}
+	controller_pointer1->model_matrix = vr_info.controller1.pose;
+	controller_pointer2->model_matrix = vr_info.controller2.pose;
 
-	static bool once = true;
-	if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && once) {
-		controller_press2 = !controller_press2;
-		controller2->SetSelected(controller_press2);
-		once = false;
-	}
-	else if(!glfwGetKey(window, GLFW_KEY_N)) {
-		once = true;
-	}
+	controller_pointer1->SetSelected(vr_info.controller1.is_pressed);
+	controller_pointer2->SetSelected(vr_info.controller2.is_pressed);
 
-
-	controller2->CalcModelMatrix();
-	controller_pose2 = controller2->GetModelMatrix();
 }
 
-
-void Render::UpdateHMDMatrixPose(){
-	if (!m_pHMD) {
+void Render::UpdateHMDMatrixPose()
+{
+	if (!m_pHMD) 
+	{
 		vr_info.hmd_connected = false;
-		if (glfwGetKey(window, GLFW_KEY_SPACE)) {
-			FakeInput();
+
+		// without the HMD connected, default to keyboard control over spoofed motion controllers
+
+		static int currController = 0;
+		static bool once = true;			
+		
+		controller_pointer1->is_hidden = currController == 0;
+		controller_pointer2->is_hidden = currController == 1;
+
+		if (glfwGetKey(window, GLFW_KEY_Q) && once)
+		{
+			currController = !currController;
+			once = false;
 		}
-		controller1->is_hidden = true;
+		else if(!glfwGetKey(window, GLFW_KEY_Q))
+		{
+			once = true;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_SPACE) && glfwGetWindowAttrib(window, GLFW_FOCUSED)) 
+		{
+			FakeInput(currController);
+		}
+
 		return;
 	}
 
-	controller1->is_hidden = false;
-	controller2->is_hidden = false;
+	controller_pointer1->is_hidden = false;
+	controller_pointer2->is_hidden = false;
 
 	vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
 
-	if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid){
-		//m_mat4HMDPose = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking) *ValveMat34ToGlmMat4Inv(m_pHMD->GetSeatedZeroPoseToStandingAbsoluteTrackingPose());
+	if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
+	{
 		vr_info.head_pose_inv = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking);// *ValveMat34ToGlmMat4Inv(m_pHMD->GetSeatedZeroPoseToStandingAbsoluteTrackingPose());
 
 		vr_info.left_eye_proj = ValveMat4ToGlmMat4(m_pHMD->GetProjectionMatrix(vr::Eye_Left, 0.1f, 1000.0f, vr::API_OpenGL));
@@ -1162,7 +1248,8 @@ void Render::UpdateHMDMatrixPose(){
 	}
 
 	int controllerIndex = 0;
-	for (vr::TrackedDeviceIndex_t unTrackedDevice = vr::k_unTrackedDeviceIndex_Hmd + 1; unTrackedDevice < vr::k_unMaxTrackedDeviceCount; ++unTrackedDevice){
+	for (vr::TrackedDeviceIndex_t unTrackedDevice = vr::k_unTrackedDeviceIndex_Hmd + 1; unTrackedDevice < vr::k_unMaxTrackedDeviceCount; ++unTrackedDevice)
+	{
 		if (!m_pHMD->IsTrackedDeviceConnected(unTrackedDevice))
 			continue;
 
@@ -1174,40 +1261,21 @@ void Render::UpdateHMDMatrixPose(){
 			continue;
 
 		m_rmat4DevicePose[unTrackedDevice] = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
-
-		if (controllerIndex == 0) {
-			vr_info.controller_pose = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
-
-			vr_info.controller_world_pos = glm::vec3(vr_info.controller_pose * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-			controller1->model_matrix = vr_info.controller_pose;
-			//controller1->is_hidden = true;
 		
-			vr::VRControllerState_t state;
-			if (m_pHMD->GetControllerState(unTrackedDevice, &state))
-			{
-				vr_info.controller_press = state.ulButtonPressed != 0;
-			}
-			controllerIndex++;
+		VrMotionController & currController = (controllerIndex == 0) ? vr_info.controller1 : vr_info.controller2;
+		currController.SetPose(ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking));
+		
+		vr::VRControllerState_t state;
+		if (m_pHMD->GetControllerState(unTrackedDevice, &state))
+		{
+			currController.is_pressed = state.ulButtonPressed != 0;
 		}
-		else if (controllerIndex == 1) {
-			vr_info.controller_pose2 = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
 
-			vr_info.controller_world_pos2 = glm::vec3(vr_info.controller_pose2 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-			controller2->model_matrix = vr_info.controller_pose2;
-			//controller2->is_hidden = true;
-
-			vr::VRControllerState_t state;
-			if (m_pHMD->GetControllerState(unTrackedDevice, &state))
-			{
-				vr_info.controller_press2 = state.ulButtonPressed != 0;
-			}
-			controllerIndex++;
+		// increment and check if both controllers have been updated
+		if (++controllerIndex == 2) {
+			return;
 		}
 	}
-
-	// tmp
-	controller_press2 = vr_info.controller_press2;
-	controller_pose2 = vr_info.controller_pose2;
 }
 
 glm::mat4 Render::ValveMat34ToGlmMat4Inv(vr::HmdMatrix34_t _mIN) {
@@ -1443,7 +1511,7 @@ CGLRenderModel* Render::FindOrLoadRenderModel(const char *pchRenderModelName)
 			if (error != vr::VRRenderModelError_Loading)
 				break;
 
-			MiscFunctions::ThreadSleep(1);
+			MiscFunctions::thread_sleep(1);
 		}
 
 		if (error != vr::VRRenderModelError_None)
@@ -1459,7 +1527,7 @@ CGLRenderModel* Render::FindOrLoadRenderModel(const char *pchRenderModelName)
 			if (error != vr::VRRenderModelError_Loading)
 				break;
 
-			MiscFunctions::ThreadSleep(1);
+			MiscFunctions::thread_sleep(1);
 		}
 
 		if (error != vr::VRRenderModelError_None)

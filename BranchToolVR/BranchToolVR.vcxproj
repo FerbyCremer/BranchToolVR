@@ -231,6 +231,7 @@
     <ClInclude Include="ColorObject.h" />
     <ClInclude Include="LineObject.h" />
     <ClInclude Include="MiscFunctions.h" />
+    <ClInclude Include="MiscStructs.h" />
     <ClInclude Include="Render.h" />
     <ClInclude Include="RenderModel.h" />
     <ClInclude Include="Texture.h" />

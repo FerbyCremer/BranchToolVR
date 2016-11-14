@@ -1,24 +1,30 @@
 #include "ColorObject.h"
 
-ColorObject::ColorObject(){
+ColorObject::ColorObject()
+{
 	display_color = glm::vec4(0.2f, 0.8f, 0.2f,1.0f);
 	display_color_modifier = 0.0f;
 }
 
-ColorObject::~ColorObject(){
+ColorObject::~ColorObject()
+{
 
 }
 
-glm::vec4 ColorObject::GetDisplayColor() {
+glm::vec4 ColorObject::GetDisplayColor() 
+{
 	return display_color + display_color_modifier*glm::vec4(1.0f,1.0f,1.0f,1.0f);
 }
 
-void ColorObject::SetDisplayColor(const glm::vec4 & _inColor) {
+void ColorObject::SetDisplayColor(const glm::vec4 & _inColor) 
+{
 	display_color = _inColor;
 }
 
-void ColorObject::SetSelected(bool _isSelected) {
-	if (_isSelected) {
+void ColorObject::SetSelected(bool _isSelected) 
+{
+	if (_isSelected)
+	{
 		is_selected = true;
 		display_color_modifier = 0.5f;
 		return;
@@ -28,7 +34,8 @@ void ColorObject::SetSelected(bool _isSelected) {
 	display_color_modifier = 0.0f;
 }
 
-void ColorObject::GenerateRoom() {
+void ColorObject::GenerateRoom() 
+{
 
 	glm::vec3 scale(10.0f, 0.0f, 10.0f);
 	glm::vec3 _offset = glm::vec3(-5.0f, -0.1f, -5.0f);
@@ -58,29 +65,32 @@ void ColorObject::GenerateRoom() {
 	Finalize();
 }
 
-void ColorObject::GenerateController() {
+void ColorObject::GenerateController() 
+{
 
 	float len = 0.05f;
 	float pointer_width = 0.005f;
 
-	//AddRectangularPrism(glm::vec3(len, len, len*2.5f), glm::vec3(-len/2.0f, -len/2.0f, 0.0f));
+	AddRectangularPrism(glm::vec3(len, len, len*2.5f), glm::vec3(-len/2.0f, -len/2.0f, 0.0f));
 	AddRectangularPrism(glm::vec3(pointer_width, pointer_width, -30.0f), glm::vec3(-pointer_width/2.0f, -pointer_width/2.0f, 0.0f));
 
 	Finalize();
 }
 
-void ColorObject::Finalize() {
-	SetBoundingBox();
+void ColorObject::Finalize() 
+{
+	SetBoundingSphere();
 	num_vertices = positions.size();
 	Load();
 }
 
-int ColorObject::Type() {
+int ColorObject::Type() 
+{
 	return 0;
 }
 
-void ColorObject::Load() {
-
+void ColorObject::Load() 
+{
 	is_loaded = true;
 
 	glGenVertexArrays(1, &vao);
@@ -105,10 +115,10 @@ void ColorObject::Load() {
 	glBindVertexArray(0);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
-
 }
 
-void ColorObject::AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset) {
+void ColorObject::AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset) 
+{
 
 	int prev_num_positions = positions.size();
 
@@ -212,16 +222,19 @@ void ColorObject::AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset) {
 	normals.push_back(glm::vec3(0.0f, -1.0f, 0.0f));
 	normals.push_back(glm::vec3(0.0f, -1.0f, 0.0f));
 
-	for (unsigned int i = prev_num_positions; i < positions.size(); ++i) {
+	for (unsigned int i = prev_num_positions; i < positions.size(); ++i) 
+	{
 		positions[i].z += 1.0f;
 		positions[i] *= _scale;
 		positions[i] += _offset;
 	}
 }
 
-void ColorObject::GenerateXYPrism(float _scaleX, float _scaleY, float _scaleZ, glm::vec2 _padding, glm::vec3 _offset) {
+void ColorObject::GenerateXYPrism(float _scaleX, float _scaleY, float _scaleZ, glm::vec2 _padding, glm::vec3 _offset) 
+{
 	AddRectangularPrism(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));	
-	for (unsigned int i = 0; i < positions.size(); ++i) {
+	for (unsigned int i = 0; i < positions.size(); ++i) 
+	{
 		positions[i].x *= _scaleX - _padding.x*2.0f;
 		positions[i].y *= _scaleY - _padding.y*2.0f;
 		positions[i].z *= _scaleZ;
@@ -232,9 +245,11 @@ void ColorObject::GenerateXYPrism(float _scaleX, float _scaleY, float _scaleZ, g
 	Finalize();
 }
 
-void ColorObject::GenerateXYPrism(glm::vec3 _scale, glm::vec2 _padding, glm::vec3 _offset) {
+void ColorObject::GenerateXYPrism(glm::vec3 _scale, glm::vec2 _padding, glm::vec3 _offset) 
+{
 	AddRectangularPrism(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	for (unsigned int i = 0; i < positions.size(); ++i) {
+	for (unsigned int i = 0; i < positions.size(); ++i) 
+	{
 		positions[i].x *= _scale.x - _padding.x*2.0f;
 		positions[i].y *= _scale.y - _padding.y*2.0f;
 		positions[i].z *= _scale.z;
@@ -245,12 +260,13 @@ void ColorObject::GenerateXYPrism(glm::vec3 _scale, glm::vec2 _padding, glm::vec
 	Finalize();
 }
 
-void ColorObject::GenerateXYPlane(float _scaleX, float _scaleY, float _padding, glm::vec3 _offset) {
+void ColorObject::GenerateXYPlane(float _scaleX, float _scaleY, float _padding, glm::vec3 _offset) 
+{
 	GenerateXYPlane(_scaleX,  _scaleY, glm::vec2(_padding,_padding), _offset);
 }
 
-void ColorObject::GenerateXYPlane(float _scaleX, float _scaleY, glm::vec2 _padding, glm::vec3 _offset) {
-
+void ColorObject::GenerateXYPlane(float _scaleX, float _scaleY, glm::vec2 _padding, glm::vec3 _offset)
+{
 	positions.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
 	positions.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
 	positions.push_back(glm::vec3(1.0f, 1.0f, 0.0f));
@@ -267,7 +283,8 @@ void ColorObject::GenerateXYPlane(float _scaleX, float _scaleY, glm::vec2 _paddi
 	normals.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
 	normals.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
 
-	for (unsigned int i = 0; i < positions.size(); ++i) {
+	for (unsigned int i = 0; i < positions.size(); ++i) 
+	{
 		positions[i].x *= _scaleX - _padding.x*2.0f;
 		positions[i].y *= _scaleY - _padding.y*2.0f;
 		positions[i] += glm::vec3(_padding.x, _padding.y, 0.0f);
@@ -313,7 +330,6 @@ void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel
 	if (_dSet.data.size() < 1) {
 		return;
 	}
-
 
 	positions.clear();
 	normals.clear();
@@ -499,91 +515,6 @@ void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel
 
 }
 
-void ColorObject::SetBoundingBox() {
-
-	for (int i = 0; i < positions.size(); ++i) {
-
-		// init max and min
-		if (i == 0) {
-			min = positions[i];
-			max = positions[i];
-		}
-
-		// min
-		if (positions[i].x < min.x) {
-			min.x = positions[i].x;
-		}
-		if (positions[i].y < min.y) {
-			min.y = positions[i].y;
-		}
-		if (positions[i].z < min.z) {
-			min.z = positions[i].z;
-		}
-
-		// max
-		if (positions[i].x > max.x) {
-			max.x = positions[i].x;
-		}
-		if (positions[i].y > max.y) {
-			max.y = positions[i].y;
-		}
-		if (positions[i].z > max.z) {
-			max.z = positions[i].z;
-		}
-	}
-
-}
-
-bool ColorObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _cp, bool world_space) {
-
-	glm::mat4 mm;
-
-	if (world_space) {
-		mm = GetModelMatrix();
-	}
-	else {
-		mm = ui_model_matrix;
-	}
-
-	glm::vec3 cg;
-
-	for (int i = 0; i < positions.size(); i += 3) {
-		glm::vec4 tri[3];
-		tri[0] = mm * glm::vec4(positions[i + 0], 1.0f);
-		tri[1] = mm * glm::vec4(positions[i + 1], 1.0f);
-		tri[2] = mm * glm::vec4(positions[i + 2], 1.0f);
-		MiscFunctions::ray_triangle_intersection(glm::value_ptr(tri[0]), glm::value_ptr(tri[1]), glm::value_ptr(tri[2]), glm::value_ptr(_pos), glm::value_ptr(_ray), glm::value_ptr(cg));
-		_cp = glm::vec3(cg.x * tri[0] + cg.y * tri[1] + cg.z * tri[2]);
-		if (cg.x >= 0 && cg.y >= 0 && cg.z > 0) {
-			return true;
-		}
-	}
-
-	return false;
-
-}
-
-bool ColorObject::TestCollision(glm::vec3 _inPos) {
-
-	// bounding box check
-	glm::mat4 mm = GetModelMatrix();
-	glm::vec3 world_min = glm::vec3(mm*glm::vec4(min, 1.0f));
-	glm::vec3 world_max = glm::vec3(mm*glm::vec4(max, 1.0f));
-
-
-	float tol = 0.01f;
-
-	if (_inPos.x >= (world_min.x - tol) && _inPos.x <= (world_max.x + tol)) {
-		if (_inPos.y >= (world_min.y - tol) && _inPos.y <= (world_max.y + tol)) {
-			if (_inPos.z >= (world_min.z - tol) && _inPos.z <= (world_max.z + tol)) {
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
 void ColorObject::GenerateSphere(int _res, float _radius, bool _invNormals) {
 
 	positions.clear();
@@ -595,7 +526,8 @@ void ColorObject::GenerateSphere(int _res, float _radius, bool _invNormals) {
 	float t_inc2 = 6.28 / (float)(resolution);
 	glm::vec3* vertices = new glm::vec3[num_vertices];
 
-	for (int i = 0; i < num_vertices; ++i) {
+	for (int i = 0; i < num_vertices; ++i)
+	{
 		float layer = i / resolution;
 		float curr_radius = sin(t_inc1*layer);
 		float t = t_inc2*(float)((resolution-1)- (i % resolution));

@@ -20,4 +20,8 @@ namespace Constants {
 	static const glm::vec4 UI_SELECTOR_COLOR = glm::vec4(0.25f, 0.25f, 1.0f,0.5f);
 	static const glm::vec3 DEFAULT_SELECTOR_SCALE = glm::vec3(0.2f, 0.2f, 0.2f);
 	static const glm::vec3 AMBIENT_LIGHT = glm::vec3(0.1f, 0.1f, 0.1f);
+	static const glm::vec3 X_AXIS = glm::vec3(1.0f,0.0f,0.0f);
+	static const glm::vec3 Y_AXIS = glm::vec3(0.0f,1.0f,0.0f);
+	static const glm::vec3 Z_AXIS = glm::vec3(0.0f,0.0f,1.0f);
+	static const glm::vec3 ZERO_VEC3 = glm::vec3(0.0f, 0.0f, 0.0f);
 }

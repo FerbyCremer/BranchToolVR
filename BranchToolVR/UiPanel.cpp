@@ -10,28 +10,28 @@ UiPanel::~UiPanel(){
 
 UiElement* UiPanel::GetSelectedElement(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos, bool world_space) {
 
-	for (int i = 0; i < all_elements.size(); ++i) 
-	{
-		if (world_space && all_elements[i]->type == CTRLHANDLE) {
-			Handle * h = static_cast<Handle*>(all_elements[i]);
-			if (h->obj.TestCollision(_ray, _pos, collision_point, world_space)) {
-				m = glm::inverse(_controllerPose) * h->obj.append_pose;
-				return h;
-			}
-		}
-		else if (all_elements[i]->type == SLIDER) {
-			Slider* s = static_cast<Slider*>(all_elements[i]);
-			if (!s->knob.is_hidden && s->knob.TestCollision(_ray, _pos, collision_point, world_space)) {
-				return s;
-			}
-		}
-		else if (all_elements[i]->type == TAB) {
-			Tab* t = static_cast<Tab*>(all_elements[i]);
-			if (!t->activator.button.is_hidden && t->activator.button.TestCollision(_ray, _pos, collision_point, world_space)) {
-				return t;
-			}
-		}
-	}
+	//for (int i = 0; i < all_elements.size(); ++i) 
+	//{
+	//	if (world_space && all_elements[i]->type == CTRLHANDLE) {
+	//		Handle * h = static_cast<Handle*>(all_elements[i]);
+	//		if (h->obj.TestCollision(_ray, _pos, collision_point, world_space)) {
+	//			m = glm::inverse(_controllerPose) * h->obj.append_pose;
+	//			return h;
+	//		}
+	//	}
+	//	else if (all_elements[i]->type == SLIDER) {
+	//		Slider* s = static_cast<Slider*>(all_elements[i]);
+	//		if (!s->knob.is_hidden && s->knob.TestCollision(_ray, _pos, collision_point, world_space)) {
+	//			return s;
+	//		}
+	//	}
+	//	else if (all_elements[i]->type == TAB) {
+	//		Tab* t = static_cast<Tab*>(all_elements[i]);
+	//		if (!t->activator.button.is_hidden && t->activator.button.TestCollision(_ray, _pos, collision_point, world_space)) {
+	//			return t;
+	//		}
+	//	}
+	//}
 
 	return NULL;
 }

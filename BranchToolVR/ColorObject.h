@@ -30,31 +30,15 @@ class ColorObject : public AbstractBaseObject{
 		void GenerateRoom();
 		void SetDisplayColor(const glm::vec4 & _inColor);
 		void SetSelected(bool _isSelected);
-		bool TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _cp, bool world_space);
-		bool TestCollision(glm::vec3 _inPos);
 		glm::vec4 GetDisplayColor();
-
-		// vertex attributes TODO privatize
-		std::vector<glm::vec3> positions;
-		std::vector<glm::vec3> normals;
 
 	//private:
 
-		void SetBoundingBox();
 		void AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset);
 		void Finalize();
 		void Load();
 		int Type();
 
-		glm::vec3 min;
-		glm::vec3 max;
 		glm::vec4 display_color;
 		float display_color_modifier;
-
-		// opengl vars
-		GLuint num_vertices;
-		GLuint vao;
-		GLuint positions_buffer;
-		GLuint normals_buffer;
-
 };

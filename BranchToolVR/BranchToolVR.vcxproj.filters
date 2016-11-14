@@ -338,6 +338,9 @@
     <ClInclude Include="RenderModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MiscStructs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\dicom_point_cloud.fs.glsl">

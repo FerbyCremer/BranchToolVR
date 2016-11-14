@@ -31,18 +31,5 @@ class TextureObject : public AbstractBaseObject{
 		void Finalize();
 		void AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset);
 		void AddLetter(float _scaleX, float _scaleY, glm::vec2 _uvPadding, glm::vec2 _padding, glm::vec3 _offset, int _ascii);
-
-		// vertex attributes
-		std::vector<glm::vec3> positions;
-		std::vector<glm::vec3> normals;
-		std::vector<glm::vec2> uvs;
-
-		// opengl vars
-		GLuint texture_id;
-		GLuint num_vertices;
-		GLuint vao;
-		GLuint positions_buffer;
-		GLuint normals_buffer;
-		GLuint uvs_buffer;
 };
 

@@ -54,7 +54,6 @@ DicomSet DicomReader::ReadSet(std::string _dirPath, bool * finished) {
 		_dSet.data.push_back(d.get());
 	}
 	
-	
 	std::sort(_dSet.data.begin(), _dSet.data.end(), less_than_key());
 
 	if(finished != NULL)

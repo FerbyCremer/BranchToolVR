@@ -1,20 +1,25 @@
 #include "TextureObject.h"
 
-TextureObject::TextureObject(){
+TextureObject::TextureObject()
+{
 	texture_id = 0;
 }
 
-TextureObject::~TextureObject(){
+TextureObject::~TextureObject()
+{
 
 }
 
-void TextureObject::Finalize() {
+void TextureObject::Finalize() 
+{
+	SetBoundingSphere();
 	is_loaded = true;
 	num_vertices = positions.size();
 	Load();
 }
 
-void TextureObject::Load() {
+void TextureObject::Load() 
+{
 
 	is_loaded = true;
 
@@ -52,9 +57,11 @@ void TextureObject::Load() {
 
 }
 
-void TextureObject::GenerateText(std::string _text, glm::vec2 _scale, glm::vec2 _padding, glm::vec3 _offset) {
+void TextureObject::GenerateText(std::string _text, glm::vec2 _scale, glm::vec2 _padding, glm::vec3 _offset) 
+{
 
-	if (is_loaded) {
+	if (is_loaded) 
+	{
 		positions.clear();
 		normals.clear();
 		uvs.clear();
@@ -64,7 +71,8 @@ void TextureObject::GenerateText(std::string _text, glm::vec2 _scale, glm::vec2 
 	
 	float x_inc = 1.0f / (float)_text.length();
 
-	for (int i = 0; i < _text.length(); ++i) {
+	for (int i = 0; i < _text.length(); ++i) 
+	{
 		AddLetter(x_inc, 1.0f, glm::vec2(0.0f), glm::vec2(0.0f), glm::vec3(x_inc * (float)i, 0.0f, 0.0f), _text[i]);
 	}
 
@@ -78,9 +86,11 @@ void TextureObject::GenerateText(std::string _text, glm::vec2 _scale, glm::vec2 
 	Finalize();
 }
 
-void TextureObject::GenerateText(std::string _text, float _scale, glm::vec2 _padding, glm::vec3 _offset) {
+void TextureObject::GenerateText(std::string _text, float _scale, glm::vec2 _padding, glm::vec3 _offset) 
+{
 
-	if (is_loaded) {
+	if (is_loaded) 
+	{
 		positions.clear();
 		normals.clear();
 		uvs.clear();
@@ -101,7 +111,8 @@ void TextureObject::GenerateText(std::string _text, float _scale, glm::vec2 _pad
 	Finalize();
 }
 
-void TextureObject::GenerateXYPlane(float _scaleX, float _scaleY, float _padding, glm::vec3 _offset) {
+void TextureObject::GenerateXYPlane(float _scaleX, float _scaleY, float _padding, glm::vec3 _offset) 
+{
 	GenerateXYPlane(_scaleX, _scaleY, glm::vec2(_padding, _padding), _offset);
 }
 
@@ -172,21 +183,23 @@ void TextureObject::AddLetter(float _scaleX, float _scaleY, glm::vec2 _uvPadding
 	uvs.push_back(uv_per_letter*(glm::vec2(1.0f, 1.0f) + indices) + glm::vec2(-_uvPadding.x, -_uvPadding.y));
 	uvs.push_back(uv_per_letter*(glm::vec2(0.0f, 1.0f) + indices) + glm::vec2( _uvPadding.x, -_uvPadding.y));
 
-	for (unsigned int i = num_positions_prev; i < positions.size(); ++i) {
+	for (unsigned int i = num_positions_prev; i < positions.size(); ++i) 
+	{
 		positions[i].x *= _scaleX - _padding.x*2.0f;
 		positions[i].y *= _scaleY - _padding.y*2.0f;
 		positions[i] += glm::vec3(_padding.x, _padding.y, 0.0f);
 		positions[i] += _offset;
-
 	}
 
 }
 
-int TextureObject::Type() {
+int TextureObject::Type() 
+{
 	return 1;
 }
 
-void TextureObject::AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset) {
+void TextureObject::AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset) 
+{
 
 	int prev_num_positions = positions.size();
 
@@ -342,7 +355,8 @@ void TextureObject::AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset) {
 	uvs.push_back(glm::vec2(0.0f, 1.0f));
 
 
-	for (unsigned int i = prev_num_positions; i < positions.size(); ++i) {
+	for (unsigned int i = prev_num_positions; i < positions.size(); ++i) 
+	{
 		positions[i].z += 1.0f;
 		positions[i] *= _scale;
 		positions[i] += _offset;

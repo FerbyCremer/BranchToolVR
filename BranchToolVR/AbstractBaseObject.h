@@ -9,6 +9,9 @@
 #include <vector>
 #include <string>
 
+#include "MiscFunctions.h"
+#include "Constants.h"
+
 template <typename T>
 struct vertex_attribute {
 	std::vector<T> raw_data;
@@ -57,7 +60,12 @@ class AbstractBaseObject
 		void Set_scale(const glm::vec3& v);
 		void Set_append_pose(const glm::mat4& m);
 		void Set_cache_pose(const glm::mat4& m, int index);
+
+		bool TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _collisionPoint);
+		bool TestBoundingSphere(glm::vec3 _ray, glm::vec3 _pos);
+
 	//private:
+
 		// model matrix components
 		void CalcModelMatrix();
 		glm::vec3 world_position;
@@ -67,5 +75,24 @@ class AbstractBaseObject
 		glm::mat4 append_pose;
 		glm::mat4 cache_pose[4];
 
+		// opengl and triangulation data
+
+		std::vector<glm::vec3> positions;
+		std::vector<glm::vec3> normals;
+		std::vector<glm::vec2> uvs;
+
+		GLuint texture_id;
+		GLuint num_vertices;
+		GLuint vao;
+		GLuint positions_buffer;
+		GLuint normals_buffer;
+		GLuint uvs_buffer;
+
+
+		// bounding box variables
+		glm::vec3 model_max;
+		glm::vec3 center;
+		float model_max_length;
+		void SetBoundingSphere();
 };
 

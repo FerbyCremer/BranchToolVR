@@ -1,5 +1,12 @@
 #pragma once
 
+#include <stdio.h> 
+#include <stdarg.h> 
+#include <string>
+#include <cstdlib>
+#include <chrono>
+#include <thread>
+
 namespace MiscFunctions {
 
 	template <typename T>
@@ -52,13 +59,9 @@ namespace MiscFunctions {
 		* v1[1]);
 	}
 
-	static inline void ThreadSleep(unsigned long nMilliseconds)
+	static inline void thread_sleep(unsigned long nMilliseconds)
 	{
-		#if defined(_WIN32)
-				::Sleep(nMilliseconds);
-		#elif defined(POSIX)
-				usleep(nMilliseconds * 1000);
-		#endif
+		std::this_thread::sleep_for(std::chrono::milliseconds(nMilliseconds));
 	}
 
 	static inline void dprintf(const char *fmt, ...)
@@ -71,8 +74,6 @@ namespace MiscFunctions {
 		va_end(args);
 
 		printf("%s", buffer);
-
-		OutputDebugStringA(buffer);
 	}
 
 };

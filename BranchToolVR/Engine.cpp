@@ -145,6 +145,24 @@ void Engine::Update() {
 
 void Engine::Loop() {
 
+
+	glm::vec3 p1(0.0f,0.0f,-1.0f);
+	glm::vec3 p2(1.0f,0.0f,-1.0f);
+	glm::vec3 c1(0.0f,0.0f,0.0f);
+	glm::vec3 c2(1.0f,0.0f,0.0f);
+
+	glm::vec3 q1(0.0f, 0.0f, -1.0f);
+	glm::vec3 q2(0.0f, 1.0f, -1.0f);
+	glm::vec3 d1(0.0f, 0.0f, 0.0f);
+	glm::vec3 d2(0.0f, 1.0f, 0.0f);
+
+	glm::mat4 m;
+	glm::column(m, 0, glm::vec4(p1, 1.0f));
+	glm::column(m, 0, glm::vec4(p2, 1.0f));
+	glm::column(m, 0, glm::vec4(c1, 1.0f));
+	glm::column(m, 0, glm::vec4(c2, 1.0f));
+
+
 	auto begin = std::chrono::high_resolution_clock::now();
 	auto end = std::chrono::high_resolution_clock::now();
 

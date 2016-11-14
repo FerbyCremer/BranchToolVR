@@ -186,11 +186,11 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 
 
 		// release any previously held selections
-		dicom_panel->Interact(glm::mat4(), glm::vec3(), glm::vec3(), false, false);
+		//dicom_panel->Interact(glm::mat4(), glm::vec3(), glm::vec3(), false, false);
 	}
 
 	// controller interactions
-	dicom_panel->Interact(_vr.controller_pose, glm::vec3(_vr.controller_pose* glm::vec4(0.0f, 0.0f, -1.0f,0.0f)), glm::vec3(_vr.controller_pose* glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), _vr.controller_press, true);
+	//dicom_panel->Interact(_vr.controller_pose1, glm::vec3(_vr.controller_pose1* glm::vec4(0.0f, 0.0f, -1.0f,0.0f)), glm::vec3(_vr.controller_pose1* glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), _vr.controller_press1, true);
 	//glm::vec3 ray = glm::vec3(p2 - p1);
 }
 

@@ -22,76 +22,42 @@
 #include "Texture.h"
 #include "RenderModel.h"
 #include "MiscFunctions.h"
+#include "MiscStructs.h"
 
-struct VrData {
-	glm::mat4 controller_pose;
-	glm::mat4 controller_pose2;
-	glm::vec3 controller_world_pos;
-	glm::vec3 controller_world_pos2;
-	glm::mat4 head_pose_inv;
-	glm::mat4 left_eye_proj;
-	glm::mat4 right_eye_proj;
-	glm::mat4 left_eye_transform_inv;
-	glm::mat4 right_eye_transform_inv;
-	bool controller_press;
-	bool controller_press2;
-	bool hmd_connected;
-
-	VrData() {
-		controller_pose = glm::mat4(1.0f);
-		controller_world_pos = glm::vec3(0.0f);
-		controller_pose2 = glm::mat4(1.0f);
-		controller_world_pos2 = glm::vec3(0.0f);
-		head_pose_inv = glm::mat4(1.0f);
-		left_eye_proj = glm::mat4(1.0f);
-		right_eye_proj = glm::mat4(1.0f);
-		left_eye_transform_inv = glm::mat4(1.0f);
-		right_eye_transform_inv = glm::mat4(1.0f);
-		hmd_connected = false;
-		controller_press = false;
-		controller_press2 = false;
-	}
-};
-
-struct CursorData {
-	glm::vec2 normalized_cursor_position;
-	bool is_pressed;
-	bool first_press;
-
-	CursorData() {
-		normalized_cursor_position = glm::vec2(0.0f, 0.0f);
-		is_pressed = false;
-		first_press = true;
-	}
-};
-
-struct Light {
+struct Light 
+{
 	glm::vec3 position;
 	ColorObject marker;
+	float intensity;
 
-	Light() {
-		marker.GenerateSphere(11, 0.05f, true);
+	Light()
+	{
+		marker.GenerateSphere(11, 0.01f, true);
 	}
 
-	Light(float _radius) {
+	Light(float _radius) 
+	{
 		marker.GenerateSphere(11, _radius, true);
 	}
 };
 
-enum TexturesEnum {
+enum TexturesEnum 
+{
 	WOOD_TEXTURE,
 	FONT_TEXTURE,
 	CURR_ORTHOSLICE_TEXTURE,
 	CURR_NR_TEXTURES, // keep as last element of enum
 };
 
-struct ShaderProgram {
+struct ShaderProgram 
+{
 	GLuint id;
 	GLuint * uniforms;
 	GLuint num_uniforms;
 };
 
-struct FramebufferDesc{
+struct FramebufferDesc 
+{
 	GLuint m_nDepthBufferId;
 	GLuint m_nRenderTextureId;
 	GLuint m_nRenderFramebufferId;
@@ -99,16 +65,19 @@ struct FramebufferDesc{
 	GLuint m_nResolveFramebufferId;
 };
 
-struct ShadowMap {
+struct ShadowMap
+{
 	GLuint depth;
 	GLuint fbo;
 	glm::mat4 P;
 	glm::mat4 V;
 };
 
-class Render{
+class Render
+{
 
 	public:
+
 		Render(GLFWwindow* _window);
 		~Render();
 		void AddObjectToScene(std::vector<AbstractBaseObject*> bsos);
@@ -121,17 +90,21 @@ class Render{
 		void AddObjectToUi(TextureObject * t);
 		void AddObjectToUi(ColorObject * c);
 		void RenderScene();
-		void Interact(glm::mat4 _controllerPose1, glm::mat4 _controllerPose2, glm::vec3 _ray, glm::vec3 _pos, bool _pressed);
+		void Interact();
 		void UpdateHMDMatrixPose();
 		void ResetSeatedPose();
 		void Finalize();
 		void RenderUI(int level);
-		void FakeInput();
+		void FakeInput(int controllerIndex);
+		void DetectCollision(VrMotionController & _controller);
+		void BindTextures();
 		static void window_size_callback(GLFWwindow* window, int width, int height);
 		static int window_size_x;
 		static int window_size_y;
 		static int half_window_size_x;
 		static int half_window_size_y;
+		static int fourth_window_size_x;
+		static int fourth_window_size_y;
 		static float aspect;
 		static float half_aspect;
 		static VrData vr_info;
@@ -176,6 +149,7 @@ class Render{
 		ShaderProgram shadow;
 		
 		// object containers
+		std::vector<AbstractBaseObject*> all_objects;
 		std::vector<ColorObject*> color_ui_elements;
 		std::vector<TextureObject*> texture_ui_elements;
 		std::vector<ColorObject*> color_objects;
@@ -196,13 +170,11 @@ class Render{
 		uint32_t m_nRenderHeight;
 		
 		// motion controller
-		glm::mat4 controller_pose1;
-		ColorObject * controller1;
-		bool controller_press1;
-
-		glm::mat4 controller_pose2;
-		ColorObject * controller2;
-		bool controller_press2;
+		ColorObject * controller_pointer1;
+		ColorObject * controller_pointer2;
+		AbstractBaseObject * selected_element1;
+		AbstractBaseObject * selected_element2;
+		glm::mat4 spoofControllerView;
 		
 		// internal functions
 		bool InitVR();

@@ -29,6 +29,7 @@ CoarseDicomViewer::~CoarseDicomViewer(){
 }
 
 void CoarseDicomViewer::AddObjects(Render * _r) {
+	//static_mesh->is_hidden = true;
 	_r->AddObjectToScene(static_mesh);
 	_r->AddObjectToScene(base_handle);
 	_r->AddObjectToScene(orthoslice);
