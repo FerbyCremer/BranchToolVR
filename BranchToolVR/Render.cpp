@@ -166,7 +166,8 @@ Render::Render(GLFWwindow *_window)
 
 	// load textures
 	textures = new Texture*[CURR_NR_TEXTURES];
-	for (int i = 0; i < CURR_NR_TEXTURES - 1; ++i) {
+	for (int i = 0; i < CURR_NR_TEXTURES - 1; ++i) 
+	{
 		textures[i] = new Texture;
 	}
 	textures[WOOD_TEXTURE]->Load("wood");
@@ -175,7 +176,8 @@ Render::Render(GLFWwindow *_window)
 	// set up lights
 	num_lights = 3; // must be same as shader declarations
 	lights = new Light[num_lights];
-	for (int i = 0; i < num_lights; ++i) {
+	for (int i = 0; i < num_lights; ++i) 
+	{
 		lights[i].marker.is_selectable = true;
 		lights[i].marker.SetDisplayColor(glm::vec4(1.0f, 0.8f, 0.3f,1.0f));
 		AddObjectToScene(&lights[i].marker);
@@ -932,6 +934,8 @@ struct less_than_key
 
 void Render::DetectCollision(VrMotionController & _controller)
 {
+	//if(_controller.id == 0)
+	//std::cout << _controller.position.x << " " << _controller.position.y << " " <<_controller.position.z << std::endl;
 	AbstractBaseObject *& currSelection = _controller.id == 0 ? selected_element1 : selected_element2;
 	AbstractBaseObject *& otherSelection = _controller.id != 0 ? selected_element1 : selected_element2;
 
@@ -979,7 +983,9 @@ void Render::DetectCollision(VrMotionController & _controller)
 	}
 	// controller trigger pressed for the first time without previous selection
 	else if (_controller.first_press && currSelection == NULL) 
+
 	{
+		//std::cout << "fp" << std::endl;
 		std::vector<foundCollision> found_collisions;
 
 		for (AbstractBaseObject * absObj : all_objects) 
@@ -1050,6 +1056,8 @@ void Render::DetectCollision(VrMotionController & _controller)
 		currSelection = NULL;
 	}
 
+
+	//std::cout << selected_element1 << " " << selected_element2 << std::endl;
 
 	
 
@@ -1278,6 +1286,7 @@ void Render::UpdateHMDMatrixPose()
 {
 	if (!m_pHMD) 
 	{
+		std::cout << "never" << std::endl;
 		vr_info.hmd_connected = false;
 
 		// without the HMD connected, default to keyboard control over spoofed motion controllers
@@ -1352,19 +1361,40 @@ void Render::UpdateHMDMatrixPose()
 		
 		VrMotionController & currController = (controllerIndex == 0) ? vr_info.controller1 : vr_info.controller2;
 		currController.SetPose(ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking));
-		
+		controllerIndex++;
 		vr::VRControllerState_t state;
 		if (m_pHMD->GetControllerState(unTrackedDevice, &state))
 		{
-			currController.is_pressed = state.ulButtonPressed != 0;
+			//currController.first_press = currController.first_press;
+			//currController.is_pressed = state.ulButtonPressed != 0;
+
+			if (state.ulButtonPressed != 0) 
+			{
+
+				if(!currController.is_pressed)
+				std::cout << "fp " << currController.id << ": " << !currController.is_pressed << std::endl;
+				currController.first_press = !currController.is_pressed;
+				currController.is_pressed = true;
+			}
+			else {
+				currController.first_press = false;
+				currController.is_pressed = false;
+			}
 		}
 
 		// increment and check if both controllers have been updated
-		if (++controllerIndex == 2) 
-		{
-			return;
-		}
+		//if (true || ++controllerIndex == 2) 
+		//{
+		//
+		//	//return;
+		//}
 	}
+			controller_pointer1->model_matrix = vr_info.controller1.pose;
+			controller_pointer2->model_matrix = vr_info.controller2.pose;
+
+			controller_pointer1->SetSelected(vr_info.controller1.is_pressed);
+			controller_pointer2->SetSelected(vr_info.controller2.is_pressed);
+
 }
 
 glm::mat4 Render::ValveMat34ToGlmMat4Inv(vr::HmdMatrix34_t _mIN) {

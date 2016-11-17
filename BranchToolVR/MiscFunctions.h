@@ -209,7 +209,7 @@ namespace MiscFunctions {
 
 		
 
-		return glm::rotate(glm::mat4(1.0f), (XZplaneAngleY(b) - XZplaneAngleY(a)), Constants::Y_AXIS) *glm::rotate(glm::mat4(1.0f), (XZplaneAngleZ(b, a) - XZplaneAngleZ(a, a)), Constants::Z_AXIS);// *glm::scale(glm::mat4(1.0f), glm::vec3(glm::length(b) / glm::length(a)));
+		return glm::rotate(glm::mat4(1.0f), (XZplaneAngleY(b) - XZplaneAngleY(a)), Constants::Y_AXIS) *glm::rotate(glm::mat4(1.0f), (XZplaneAngleZ(b, a) - XZplaneAngleZ(a, a)), Constants::Z_AXIS) *glm::scale(glm::mat4(1.0f), glm::vec3(glm::length(b) / glm::length(a)));
 
 		//return glm::rotate(glm::mat4(1.0f), (XZplaneAngleZ(b)), Constants::Z_AXIS)*glm::rotate(glm::mat4(1.0f), (XZplaneAngleY(b) - XZplaneAngleY(a)), Constants::Y_AXIS);// *glm::scale(glm::mat4(1.0f), glm::vec3(glm::length(b) / glm::length(a)));
 

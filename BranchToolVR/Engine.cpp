@@ -125,7 +125,7 @@ void Engine::Update()
 		{
 			if (box->is_double_selected) 
 			{
-				//std::cout << "here" << std::endl;
+				std::cout << "here11" << std::endl;
 				glm::mat4 rot = MiscFunctions::RotateTo(box->cache_vec[5], box->cache_vec[6]);
 
 				debug1->Set_world_position(box->cache_vec[5]);

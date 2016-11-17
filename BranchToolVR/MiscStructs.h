@@ -36,7 +36,8 @@ struct VrMotionController
 	{
 		pose = _inPose;
 		ray = glm::vec3(pose * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
-		position = glm::vec3(pose[0][3], pose[1][3], pose[2][3]);
+		//position = glm::vec3(pose[0][3], pose[1][3], pose[2][3]);
+		position = glm::vec3(pose * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	}
 
 	//  spoof functions used to fake controller input for testing
