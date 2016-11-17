@@ -1,8 +1,7 @@
 #include "DicomObjectsContainer.h"
 
-ColorObject * debug1 = new ColorObject;
-
-DicomObjectsContainer::DicomObjectsContainer(){
+DicomObjectsContainer::DicomObjectsContainer()
+{
 	points = new DicomPointCloudObject;
 	viewer = new CoarseDicomViewer;
 	dicom_panel = new UiPanel;
@@ -29,39 +28,37 @@ DicomObjectsContainer::DicomObjectsContainer(){
 	selector2D->SetDisplayColor(Constants::UI_SELECTOR_COLOR);
 	selector2D->Set_model_position(glm::vec3(viewer->point_cloud_selector_scale.x*0.5f - 0.5f, viewer->point_cloud_selector_scale.x*0.5f - 0.5f,0.0f));
 	selector2D->level = 1;
-
-	debug1->GenerateXYPlane(1.0f, 1.0f, 0.0f, glm::vec3(-0.5f, -0.5f, 0.1f));
-	debug1->Set_scale(glm::vec3(0.2f, 0.2f, 1.0f));
-	debug1->ui_quadrant = 0;
 }
 
-DicomObjectsContainer::~DicomObjectsContainer(){
+DicomObjectsContainer::~DicomObjectsContainer()
+{
 
 }
 
 
-void DicomObjectsContainer::UpdateSliders() {
+void DicomObjectsContainer::UpdateSliders() 
+{
 
 	// tab one
-
-	if (isovalue_slider->has_changed) {
+	if (isovalue_slider->has_changed)
+	{
 		UpdateDicomPointCloud(isovalue_slider->curr);
 		isovalue_slider->has_changed = false;
 	}
-
-	if (isovalue_tol_slider->has_changed) {
+	if (isovalue_tol_slider->has_changed) 
+	{
 		points->curr_tolerance = isovalue_tol_slider->curr;
 		isovalue_tol_slider->has_changed = false;
 	}
-
-	if (clear_branching_slider->has_changed) {
+	if (clear_branching_slider->has_changed)
+	{
 		points->branch_points.clear();
 		clear_branching_slider->has_changed = false;
 	}
 
 	// tab two
-
-	if (scaleX_slider->has_changed) {
+	if (scaleX_slider->has_changed) 
+	{
 		viewer->point_cloud_selector->Set_scale(glm::vec3(scaleX_slider->curr));
 		viewer->point_cloud_selector_scale = glm::vec3(scaleX_slider->curr);
 		selector2D->Set_scale(glm::vec3(scaleX_slider->curr));
@@ -69,14 +66,15 @@ void DicomObjectsContainer::UpdateSliders() {
 	}
 
 	// tab three
-
-	if (window_width_slider->has_changed) {
+	if (window_width_slider->has_changed)
+	{
 		imaging_data.window_width = window_width_slider->curr;
 		viewer->orthoslice_texture->Load(imaging_data.data[imaging_data.current_index], window_width_slider->curr, window_center_slider->curr);
 		window_width_slider->has_changed = false;
 	}
 	
-	if (window_center_slider->has_changed) {
+	if (window_center_slider->has_changed) 
+	{
 		imaging_data.window_center = window_center_slider->curr;
 		viewer->orthoslice_texture->Load(imaging_data.data[imaging_data.current_index], window_width_slider->curr, window_center_slider->curr);
 		window_center_slider->has_changed = false;
@@ -91,7 +89,8 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 
 	viewer->Update(imaging_data);
 
-	if (viewer->selector_changed) {	
+	if (viewer->selector_changed) 
+	{	
 		points->lower_bounds = viewer->point_cloud_selector->model_position;
 		points->upper_bounds = viewer->point_cloud_selector->model_position + viewer->point_cloud_selector_scale;
 		points->box_scale = viewer->point_cloud_selector_scale;
@@ -101,34 +100,42 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 		selector2D->Set_model_positionY(viewer->point_cloud_selector->model_position.y + viewer->point_cloud_selector_scale.x*0.5f-0.5f);
 	}
 
-	if (points->handle->is_selected) {
+	if (points->handle->is_selected) 
+	{
 		glm::mat4 curr_pose = points->handle->cache_pose[1] * points->handle->cache_pose[0];
 		points->handle->Set_append_pose(curr_pose);
 		points->Set_append_pose(curr_pose);
 		points->branch_point_marker->Set_append_pose(curr_pose);
 	}		
 
-	if (viewer->orthoslice->model_position.z >= points->lower_bounds.z && viewer->orthoslice->model_position.z <= points->upper_bounds.z) {
+	if (viewer->orthoslice->model_position.z >= points->lower_bounds.z && viewer->orthoslice->model_position.z <= points->upper_bounds.z) 
+	{
 		selector2D->SetDisplayColor(glm::vec4(0.2f, 0.2f, 1.0f, 0.5f));
 	}
-	else {
+	else 
+	{
 		selector2D->SetDisplayColor(glm::vec4(0.8f,0.8f,0.8f,1.0f));
 	}
 
 	static bool selector2D_ui_selection = false;
 
 	// ui interactions
-	if (_crsr.is_pressed) {
-		if (_crsr.normalized_cursor_position.x > 0.0f){
-			if (_crsr.normalized_cursor_position.y > 0.0f) {
+	if (_crsr.is_pressed) 
+	{
+		if (_crsr.normalized_cursor_position.x > 0.0f)
+		{
+			if (_crsr.normalized_cursor_position.y > 0.0f) 
+			{
 				
 				// quadrant 1
 				glm::vec2 quad1coords = 1.0f*(_crsr.normalized_cursor_position) - 0.5f;
 
-				if (h_asp > 1.0f) {
+				if (h_asp > 1.0f) 
+				{
 					quad1coords.x *= h_asp;
 				}
-				else {
+				else 
+				{
 					quad1coords.y /= h_asp;
 				}
 				
@@ -138,7 +145,8 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 				selector2D_ui_selection = true;
 
 			}
-			else if (_crsr.normalized_cursor_position.y < 0.0f) {
+			else if (_crsr.normalized_cursor_position.y < 0.0f) 
+			{
 				// quadrant 0
 				glm::vec2 quad0coords = _crsr.normalized_cursor_position;
 				quad0coords.y += 1.0f;
@@ -146,10 +154,12 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 				quad0coords -= 1.0f;
 				quad0coords *= dicom_panel->base_panel.half_size.x;
 	
-				if (h_asp > 1.0f) {
+				if (h_asp > 1.0f) 
+				{
 					quad0coords.y /= h_asp;
 				}
-				else {
+				else 
+				{
 					quad0coords.x *= h_asp;
 				}
 
@@ -157,16 +167,16 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 				glm::vec3 ray = glm::vec3(0.0f,0.0f,-1.0f);
 				glm::vec3 pos = glm::vec3(quad0coords.x, quad0coords.y, 1.0f);
 
-				debug1->Set_model_position(glm::vec3(quad0coords.x, quad0coords.y, 0.5f));
-
 				dicom_panel->Interact(pose,ray,pos,_crsr.is_pressed,false);
 			}
 		}
 	}
-	else {
+	else 
+	{
 		// update selection box if 2d selector was moved
 
-		if (selector2D_ui_selection) {
+		if (selector2D_ui_selection)
+		{
 			
 			glm::vec2 selectorTo3dlower = glm::vec2(selector2D->model_position) + glm::vec2(0.5f,0.5f) - viewer->point_cloud_selector_scale.x*0.5f;
 			glm::vec2 selectorTo3dupper = glm::vec2(selector2D->model_position) + glm::vec2(0.5f, 0.5f) + viewer->point_cloud_selector_scale.x*0.5f;

@@ -842,28 +842,28 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 			glDrawArrays(GL_TRIANGLES, 0, dpco->branch_point_marker->num_vertices);
 		}
 
-		glUseProgram(branch_line.id);
-		glUniformMatrix4fv(branch_line.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
-		glUniformMatrix4fv(branch_line.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
-		glUniformMatrix4fv(branch_line.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
-		glUniform3fv(branch_line.uniforms[3], 1, glm::value_ptr(dpco->lower_bounds));
-		glUniform3fv(branch_line.uniforms[4], 1, glm::value_ptr(dpco->scale));
+glUseProgram(branch_line.id);
+glUniformMatrix4fv(branch_line.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
+glUniformMatrix4fv(branch_line.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
+glUniformMatrix4fv(branch_line.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
+glUniform3fv(branch_line.uniforms[3], 1, glm::value_ptr(dpco->lower_bounds));
+glUniform3fv(branch_line.uniforms[4], 1, glm::value_ptr(dpco->scale));
 
-		for (BranchPoint & bp : dpco->branch_points) {
-			for (int j = 0; j < bp.neighbors.size(); ++j) {
+for (BranchPoint & bp : dpco->branch_points) {
+	for (int j = 0; j < bp.neighbors.size(); ++j) {
 
-				if (bp.neighbors[j] < bp.id) {
-					BranchPoint* neighbor1 = dpco->GetBranchPointByID(bp.neighbors[j]);
-					if (neighbor1 != NULL) {
-						glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(bp.position));
-						glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(neighbor1->position));
-						//glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(glm::vec3(0.0f,0.0f,0.0f)));
-						//glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(glm::vec3(5.0f,5.0f,5.0f)));
-						glDrawArrays(GL_LINES, 0, 2);
-					}
-				}
+		if (bp.neighbors[j] < bp.id) {
+			BranchPoint* neighbor1 = dpco->GetBranchPointByID(bp.neighbors[j]);
+			if (neighbor1 != NULL) {
+				glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(bp.position));
+				glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(neighbor1->position));
+				//glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(glm::vec3(0.0f,0.0f,0.0f)));
+				//glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(glm::vec3(5.0f,5.0f,5.0f)));
+				glDrawArrays(GL_LINES, 0, 2);
 			}
 		}
+	}
+}
 
 	}
 
@@ -886,7 +886,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 
 		glm::mat4 matDeviceToTracking = m_rmat4DevicePose[unTrackedDevice];
 		glUniformMatrix4fv(texture.uniforms[2], 1, GL_FALSE, glm::value_ptr(matDeviceToTracking));
-		
+
 
 		glBindVertexArray(m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_glVertArray);
 
@@ -895,7 +895,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 		glBindTexture(GL_TEXTURE_2D, m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_glTexture);
 		glUniform1i(texture.uniforms[3], 0);
 		glDrawElements(GL_TRIANGLES, m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_unVertexCount, GL_UNSIGNED_SHORT, 0);
-		
+
 
 	}
 
@@ -908,13 +908,13 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 
 // DetectCollision helpers
 
-struct foundCollision 
+struct foundCollision
 {
 	AbstractBaseObject * obj;
 	glm::vec3 intersection_point;
 	float distance;
 
-	foundCollision(AbstractBaseObject* abo, glm::vec3 _ip, float _dist) 
+	foundCollision(AbstractBaseObject* abo, glm::vec3 _ip, float _dist)
 	{
 		obj = abo;
 		intersection_point = _ip;
@@ -930,17 +930,51 @@ struct less_than_key
 	}
 };
 
-void Render::DetectCollision(VrMotionController & _controller) 
+void Render::DetectCollision(VrMotionController & _controller)
 {
 	AbstractBaseObject *& currSelection = _controller.id == 0 ? selected_element1 : selected_element2;
+	AbstractBaseObject *& otherSelection = _controller.id != 0 ? selected_element1 : selected_element2;
 
 	// controller trigger is held down with previous selection
-	if (_controller.is_pressed && currSelection != NULL) 
-	{
-		if (currSelection->Type() == 0) 
+	if (_controller.is_pressed && currSelection != NULL)
+	{			
+		// other controller has just released previously shared object
+		if (currSelection->controllerSelectorId == -1)
 		{
-			ColorObject * s = static_cast<ColorObject*>(currSelection);
-			s->SetSelected(true);
+			currSelection->is_double_selected = false;
+			currSelection->controllerSelectorId = _controller.id;
+			currSelection->Set_cache_pose(glm::inverse(_controller.pose) * currSelection->append_pose, 0);
+			currSelection->Set_cache_pose(_controller.pose, 1);
+			currSelection->Set_cache_pose(_controller.pose, 2);
+			currSelection->Set_cache_pose(currSelection->append_pose, 3);
+
+			if (currSelection->Type() == 0)
+			{
+				ColorObject * s = static_cast<ColorObject*>(currSelection);
+				s->SetSelected(true);
+			}
+		}
+		// two controllers with same object selected
+		else if (currSelection == otherSelection)
+		{
+			// first clicker of selection
+			if (currSelection->controllerSelectorId == _controller.id) 
+			{
+				glm::vec3 pointer_ws = glm::vec3(_controller.pose * glm::vec4(currSelection->cache_vec[0],1.0f));
+				currSelection->Set_cache_vec(pointer_ws, 2);
+				currSelection->Set_cache_pose(_controller.pose, 2);
+			}
+			// second clicker
+			else
+			{
+				glm::vec3 pointer_ws = glm::vec3(_controller.pose * glm::vec4(currSelection->cache_vec[3], 1.0f));
+				currSelection->Set_cache_vec(pointer_ws - currSelection->cache_vec[2], 6);
+				currSelection->Set_cache_vec(pointer_ws, 8);
+			}
+		}
+		else
+		{
+			currSelection->Set_cache_pose(_controller.pose, 1);
 		}
 	}
 	// controller trigger pressed for the first time without previous selection
@@ -951,7 +985,7 @@ void Render::DetectCollision(VrMotionController & _controller)
 		for (AbstractBaseObject * absObj : all_objects) 
 		{
 			glm::vec3 collision_point;
-			if(absObj != &lights[0].marker && !absObj->is_hidden && absObj->is_selectable &&  absObj->TestCollision(_controller.ray, _controller.position, collision_point))
+			if(!absObj->is_hidden && absObj->is_selectable && absObj->TestCollision(_controller.ray, _controller.position, collision_point))
 			{
 				found_collisions.push_back(foundCollision(absObj, collision_point, glm::length(collision_point - _controller.position)));
 			}
@@ -959,9 +993,47 @@ void Render::DetectCollision(VrMotionController & _controller)
 
 		if (found_collisions.size() > 0) 
 		{
+			// find closest element to controller
 			std::sort(found_collisions.begin(), found_collisions.end(), less_than_key());
-			//lights[0].marker.Set_world_position(found_collisions[0].intersection_point);
-			currSelection = found_collisions[0].obj;
+			
+			// calculate length of pointer intersection
+			glm::mat4 inverse_controller_pose = glm::inverse(_controller.pose);
+			glm::vec3 intersection_point_controller_space = glm::vec3(inverse_controller_pose * glm::vec4(found_collisions[0].intersection_point, 1.0f));
+
+			// selected element already selected by other controller
+			if (found_collisions[0].obj == otherSelection) 
+			{
+				currSelection = found_collisions[0].obj;
+				currSelection->is_double_selected = true;
+				currSelection->Set_cache_vec(intersection_point_controller_space, 3);
+				currSelection->Set_cache_vec(found_collisions[0].intersection_point, 4);
+				
+				glm::vec3 tmp = glm::vec3(currSelection->cache_pose[1] * glm::vec4(currSelection->cache_vec[0],1.0f));
+				currSelection->Set_cache_vec(tmp, 1);
+				currSelection->Set_cache_vec(tmp, 2);
+				currSelection->Set_cache_vec(found_collisions[0].intersection_point - currSelection->cache_vec[1], 5);
+			}
+			else 
+			{
+				
+				currSelection = found_collisions[0].obj;
+				currSelection->controllerSelectorId = _controller.id;
+				currSelection->Set_cache_pose(inverse_controller_pose * currSelection->append_pose, 0);
+				currSelection->Set_cache_pose(_controller.pose, 1);
+				currSelection->Set_cache_pose(_controller.pose, 2);
+				currSelection->Set_cache_pose(currSelection->append_pose, 3);		
+
+				currSelection->Set_cache_vec(intersection_point_controller_space, 0);
+				currSelection->Set_cache_vec(found_collisions[0].intersection_point, 1);
+				currSelection->Set_cache_vec(found_collisions[0].intersection_point, 2);
+			
+
+			}				
+			if (currSelection->Type() == 0) 
+			{
+				ColorObject * s = static_cast<ColorObject*>(currSelection);
+				s->SetSelected(true);
+			}
 		}
 	}
 	// trigger released with a selection
@@ -972,6 +1044,8 @@ void Render::DetectCollision(VrMotionController & _controller)
 			ColorObject * s = static_cast<ColorObject*>(currSelection);
 			s->SetSelected(false);
 		}
+
+		currSelection->controllerSelectorId = -1;
 		currSelection = NULL;
 	}
 
@@ -989,9 +1063,11 @@ void Render::DetectCollision(VrMotionController & _controller)
 
 }
 
-void Render::Interact() {
+void Render::Interact() 
+{
 
 	DetectCollision(vr_info.controller1);
+	DetectCollision(vr_info.controller2);
 
 	/*
 	// dicom point cloud interaction
@@ -1157,7 +1233,7 @@ void Render::FakeInput(int controllerIndex)
 	glm::vec2 mpos;
 	mpos.x = window_size_x / 4 - xpos;
 	mpos.y = window_size_y / 2 - ypos;
-	
+
 	glfwSetCursorPos(window, fourth_window_size_x, half_window_size_y);
 
 	currController.SetOrientationSpoof(currController.orientation + glm::vec3(rot_rate*mpos.x, glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f), 0.0f));
@@ -1177,8 +1253,6 @@ void Render::FakeInput(int controllerIndex)
 		{
 			currController.first_press = false;
 		}
-
-		
 	}
 	else if(!glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1))
 	{
@@ -1208,24 +1282,37 @@ void Render::UpdateHMDMatrixPose()
 		// without the HMD connected, default to keyboard control over spoofed motion controllers
 
 		static int currController = 0;
-		static bool once = true;			
+		static bool once1 = true;			
 		
 		controller_pointer1->is_hidden = currController == 0;
 		controller_pointer2->is_hidden = currController == 1;
 
-		if (glfwGetKey(window, GLFW_KEY_Q) && once)
+		if (glfwGetKey(window, GLFW_KEY_Q) && once1)
 		{
 			currController = !currController;
-			once = false;
+			once1 = false;
 		}
 		else if(!glfwGetKey(window, GLFW_KEY_Q))
 		{
-			once = true;
+			once1 = true;
 		}
 
+		static bool once2 = true;
 		if (glfwGetKey(window, GLFW_KEY_SPACE) && glfwGetWindowAttrib(window, GLFW_FOCUSED)) 
 		{
-			FakeInput(currController);
+			if (once2) 
+			{
+				glfwSetCursorPos(window, fourth_window_size_x, half_window_size_y);
+				once2 = false;
+			}
+			else 
+			{
+				FakeInput(currController);
+			}
+		}
+		else 
+		{
+			once2 = true;
 		}
 
 		return;
@@ -1236,17 +1323,17 @@ void Render::UpdateHMDMatrixPose()
 
 	vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
 
+	// update HMD variables
 	if (m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
 	{
-		vr_info.head_pose_inv = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking);// *ValveMat34ToGlmMat4Inv(m_pHMD->GetSeatedZeroPoseToStandingAbsoluteTrackingPose());
-
+		vr_info.head_pose_inv = ValveMat34ToGlmMat4Inv(m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking);
 		vr_info.left_eye_proj = ValveMat4ToGlmMat4(m_pHMD->GetProjectionMatrix(vr::Eye_Left, 0.1f, 1000.0f, vr::API_OpenGL));
 		vr_info.left_eye_transform_inv = ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Left)) *vr_info.head_pose_inv;
-
 		vr_info.right_eye_proj = ValveMat4ToGlmMat4(m_pHMD->GetProjectionMatrix(vr::Eye_Right, 0.1f, 1000.0f, vr::API_OpenGL));
 		vr_info.right_eye_transform_inv = ValveMat34ToGlmMat4Inv(m_pHMD->GetEyeToHeadTransform(vr::Eye_Right)) *vr_info.head_pose_inv;
 	}
 
+	// update controllers
 	int controllerIndex = 0;
 	for (vr::TrackedDeviceIndex_t unTrackedDevice = vr::k_unTrackedDeviceIndex_Hmd + 1; unTrackedDevice < vr::k_unMaxTrackedDeviceCount; ++unTrackedDevice)
 	{
@@ -1272,7 +1359,8 @@ void Render::UpdateHMDMatrixPose()
 		}
 
 		// increment and check if both controllers have been updated
-		if (++controllerIndex == 2) {
+		if (++controllerIndex == 2) 
+		{
 			return;
 		}
 	}

@@ -24,4 +24,6 @@ namespace Constants {
 	static const glm::vec3 Y_AXIS = glm::vec3(0.0f,1.0f,0.0f);
 	static const glm::vec3 Z_AXIS = glm::vec3(0.0f,0.0f,1.0f);
 	static const glm::vec3 ZERO_VEC3 = glm::vec3(0.0f, 0.0f, 0.0f);
+	static const float TWOPI = 6.28318530718f;
+	static const float PI = 3.14159265359f;
 }

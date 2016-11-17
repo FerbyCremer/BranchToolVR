@@ -13,12 +13,14 @@
 #include "Constants.h"
 
 template <typename T>
-struct vertex_attribute {
+struct vertex_attribute 
+{
 	std::vector<T> raw_data;
 	GLuint buffer_id;
 	std::string name;
 
-	void Load() {
+	void Load() 
+	{
 		glGenBuffers(1, &buffer_id);
 		glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(T)*raw_data.size(), &raw_data[0], GL_STATIC_DRAW);
@@ -40,6 +42,7 @@ class AbstractBaseObject
 		bool is_hidden;
 		bool is_selectable;
 		bool is_selected;
+		bool is_double_selected;
 		int id;
 		short ui_quadrant;
 		int level;
@@ -60,6 +63,8 @@ class AbstractBaseObject
 		void Set_scale(const glm::vec3& v);
 		void Set_append_pose(const glm::mat4& m);
 		void Set_cache_pose(const glm::mat4& m, int index);
+		void Set_cache_vec(const glm::vec3& v, int index);
+		void ResetPositionAndRotation();
 
 		bool TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _collisionPoint);
 		bool TestBoundingSphere(glm::vec3 _ray, glm::vec3 _pos);
@@ -67,20 +72,21 @@ class AbstractBaseObject
 	//private:
 
 		// model matrix components
-		void CalcModelMatrix();
 		glm::vec3 world_position;
 		glm::vec3 model_orientation;
 		glm::vec3 model_position;
 		glm::vec3 scale;
 		glm::mat4 append_pose;
-		glm::mat4 cache_pose[4];
+		static glm::mat4 cache_pose[18];
+		static glm::vec3 cache_vec[18];
+		void CalcModelMatrix();
 
-		// opengl and triangulation data
-
+		// vertex data
 		std::vector<glm::vec3> positions;
 		std::vector<glm::vec3> normals;
 		std::vector<glm::vec2> uvs;
 
+		// opengl vars
 		GLuint texture_id;
 		GLuint num_vertices;
 		GLuint vao;
@@ -88,8 +94,7 @@ class AbstractBaseObject
 		GLuint normals_buffer;
 		GLuint uvs_buffer;
 
-
-		// bounding box variables
+		// bounding sphere variables
 		glm::vec3 model_max;
 		glm::vec3 center;
 		float model_max_length;

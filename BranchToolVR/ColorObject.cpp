@@ -253,6 +253,7 @@ void ColorObject::GenerateXYPrism(glm::vec3 _scale, glm::vec2 _padding, glm::vec
 		positions[i].x *= _scale.x - _padding.x*2.0f;
 		positions[i].y *= _scale.y - _padding.y*2.0f;
 		positions[i].z *= _scale.z;
+		//positions[i].y += (float)i * 0.025f;
 		positions[i] += glm::vec3(_padding.x, _padding.y, 0.0f);
 		positions[i] += _offset;
 	}

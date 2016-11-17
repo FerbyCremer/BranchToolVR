@@ -1,6 +1,8 @@
 #include "AbstractBaseObject.h"
 
 int AbstractBaseObject::id_counter = 0;
+glm::mat4 AbstractBaseObject::cache_pose[18];
+glm::vec3 AbstractBaseObject::cache_vec[18];
 
 AbstractBaseObject::AbstractBaseObject()
 {
@@ -16,6 +18,7 @@ AbstractBaseObject::AbstractBaseObject()
 	is_hidden = false;
 	is_selectable = false;
 	is_selected = false;
+	is_double_selected = false;
 	ui_quadrant = 0;
 	ui_transform = glm::mat4(1.0f);
 	id = id_counter++;
@@ -35,35 +38,35 @@ glm::mat4 AbstractBaseObject::GetModelMatrix()
 
 void AbstractBaseObject::CalcModelMatrix()
 {
-	base_model_matrix = glm::translate(glm::mat4(), model_position) * glm::scale(glm::mat4(1.0f),scale);
+	base_model_matrix = glm::translate(glm::mat4(), model_position) * glm::scale(glm::mat4(1.0f), scale);
 	model_matrix = append_pose
-				 * glm::translate(glm::mat4(), world_position)
-				 * glm::yawPitchRoll(model_orientation.x, model_orientation.y, model_orientation.z)
-				 * base_model_matrix;
+		* glm::translate(glm::mat4(), world_position)
+		* glm::yawPitchRoll(model_orientation.x, model_orientation.y, model_orientation.z)
+		* base_model_matrix;
 	ui_model_matrix = ui_transform * base_model_matrix;
 
 	center = glm::vec3(model_matrix[0][3], model_matrix[1][3], model_matrix[2][3]);
 }
 
-void AbstractBaseObject::Set_world_position(const glm::vec3& v) 
+void AbstractBaseObject::Set_world_position(const glm::vec3& v)
 {
 	world_position = v;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_orientation(const glm::vec3& v) 
+void AbstractBaseObject::Set_model_orientation(const glm::vec3& v)
 {
 	model_orientation = v;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_position(const glm::vec3& v) 
+void AbstractBaseObject::Set_model_position(const glm::vec3& v)
 {
 	model_position = v;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_positionX(const float _x) 
+void AbstractBaseObject::Set_model_positionX(const float _x)
 {
 	model_position.x = _x;
 	CalcModelMatrix();
@@ -75,7 +78,7 @@ void AbstractBaseObject::Set_model_positionY(const float _y)
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_positionZ(const float _z) 
+void AbstractBaseObject::Set_model_positionZ(const float _z)
 {
 	model_position.z = _z;
 	CalcModelMatrix();
@@ -84,7 +87,7 @@ void AbstractBaseObject::Set_model_positionZ(const float _z)
 void AbstractBaseObject::Set_scale(const glm::vec3& v)
 {
 	scale = v;
-	
+
 	CalcModelMatrix();
 }
 
@@ -94,21 +97,33 @@ void AbstractBaseObject::Set_append_pose(const glm::mat4& m)
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_cache_pose(const glm::mat4& m, const int index) 
+void AbstractBaseObject::Set_cache_pose(const glm::mat4& m, const int index)
 {
 	cache_pose[index] = m;
+}
+
+void AbstractBaseObject::Set_cache_vec(const glm::vec3& v, const int index)
+{
+	cache_vec[index] = v;
+}
+
+void AbstractBaseObject::ResetPositionAndRotation() {
+	world_position = glm::vec3(0.0f);
+	model_orientation = glm::vec3(0.0f);
+	model_position = glm::vec3(0.0f);
 	CalcModelMatrix();
 }
 
 bool AbstractBaseObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _collisionPoint)
 {
+	bool found_collision = false;
+	float collision_dist = 0.0f;
 	if (TestBoundingSphere(_ray, _pos) || true) // TODO FIX BOUNDING SPHERE CHECK
 	{
 		glm::mat4 mm = GetModelMatrix();
 		glm::vec3 cg;
-		
-		// loop over mesh triangles, does not account for multiple collisions
-		for (int i = 0; i < positions.size(); i += 3) 
+
+		for (int i = 0; i < positions.size(); i += 3)
 		{
 			glm::vec4 tri[3];
 			tri[0] = mm * glm::vec4(positions[i + 0], 1.0f);
@@ -116,17 +131,30 @@ bool AbstractBaseObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3
 			tri[2] = mm * glm::vec4(positions[i + 2], 1.0f);
 
 			MiscFunctions::ray_triangle_intersection(glm::value_ptr(tri[0]), glm::value_ptr(tri[1]), glm::value_ptr(tri[2]), glm::value_ptr(_pos), glm::value_ptr(_ray), glm::value_ptr(cg));
-			_collisionPoint = glm::vec3(cg.x * tri[0] + cg.y * tri[1] + cg.z * tri[2]);
 			
-			if (cg.x >= 0 && cg.y >= 0 && cg.z > 0 && glm::dot(_ray, _collisionPoint - _pos) > 0)
+
+			if (cg.x >= 0 && cg.y >= 0 && cg.z > 0)
 			{
-				return true;
+				glm::vec3 tmp = glm::vec3(cg.x * tri[0] + cg.y * tri[1] + cg.z * tri[2]);
+				float distTMP = glm::length(_pos - tmp);
+				if (glm::dot(_ray, tmp - _pos) > 0 && (!found_collision || collision_dist > distTMP))
+				{
+					collision_dist = distTMP;
+					_collisionPoint = tmp;
+					found_collision = true;
+				}
 			}
 		}
 	}
 
+	if (found_collision) 
+	{
+		return true;
+	}
+
 	_collisionPoint = glm::vec3(0.0f, 0.0f, 0.0f);
 	return false;
+
 }
 
 bool AbstractBaseObject::TestBoundingSphere(glm::vec3 _ray, glm::vec3 _pos) 
