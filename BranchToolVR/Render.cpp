@@ -1012,6 +1012,7 @@ void Render::DetectCollision(VrMotionController & _controller)
 				currSelection->Set_cache_vec(tmp, 1);
 				currSelection->Set_cache_vec(tmp, 2);
 				currSelection->Set_cache_vec(found_collisions[0].intersection_point - currSelection->cache_vec[1], 5);
+				currSelection->Set_cache_vec(found_collisions[0].intersection_point, 11);
 			}
 			else 
 			{

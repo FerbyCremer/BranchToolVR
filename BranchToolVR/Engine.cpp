@@ -109,12 +109,14 @@ void Engine::Update()
 		static float rot = 0.025f;
 		static float t = 0.0f;
 		if (glfwGetKey(window, GLFW_KEY_G)) {
-			box->Set_model_orientation(glm::vec3(t, 0.0f, 0.0f));
-			t += rot;
+			//box->Set_model_orientation(glm::vec3(t, 0.0f, 0.0f));
+			//t += rot;
 		}
 		if (glfwGetKey(window, GLFW_KEY_H)) {
-			box->Set_model_orientation(glm::vec3(t, 0.0f, 0.0f));
-			t -= rot;
+			//box->Set_model_orientation(glm::vec3(t, 0.0f, 0.0f));
+			//t -= rot;
+
+			box->Set_append_pose(glm::mat4(1.0f));
 			
 		}
 //std::cout << (t*360.0f)/6.14 << std::endl;
@@ -128,7 +130,7 @@ void Engine::Update()
 
 				debug1->Set_world_position(box->cache_vec[5]);
 				debug2->Set_world_position(box->cache_vec[6]);
-				debug3->Set_world_position(box->cache_vec[8]);
+				//debug1->Set_world_position(box->cache_vec[11]);
 
 				//std::cout << box->cache_vec[4].x << " " << box->cache_vec[4].y << " " << box->cache_vec[4].z << std::endl;
 				//std::cout << box->cache_vec[6].x << " " << box->cache_vec[6].y << " " << box->cache_vec[6].z << std::endl;
@@ -137,7 +139,9 @@ void Engine::Update()
 				glm::mat4 curr_pose = box->cache_pose[2] *glm::translate(glm::mat4(1.0f), box->cache_vec[0]) *rot* glm::translate(glm::mat4(1.0f), -box->cache_vec[0]) * box->cache_pose[0];
 				//curr_pose = glm::translate(glm::mat4(1.0f), -box->cache_vec[0]) * box->cache_pose[0];
 				glm::vec3 tmp = glm::vec3(box->cache_pose[2] * glm::vec4(box->cache_vec[0],1.0f));
-				curr_pose = glm::translate(glm::mat4(1.0f), tmp)* rot*glm::mat4(glm::mat3(box->cache_pose[2]))* glm::translate(glm::mat4(1.0f), -box->cache_vec[0]) * box->cache_pose[0];
+				glm::mat4 tmpm = glm::mat4(glm::mat3(box->cache_pose[2]));
+				tmpm[3][3] = 1.0f;
+				curr_pose = glm::translate(glm::mat4(1.0f), tmp)* rot*tmpm* glm::translate(glm::mat4(1.0f), -box->cache_vec[0]) * box->cache_pose[0];
 				//curr_pose = glm::translate(glm::mat4(1.0f), tmp)* rot* glm::translate(glm::mat4(1.0f), -box->cache_vec[0]) * box->cache_pose[0];
 				box->Set_append_pose(curr_pose);
 

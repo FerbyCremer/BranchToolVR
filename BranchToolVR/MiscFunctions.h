@@ -138,20 +138,49 @@ namespace MiscFunctions {
 		}
 	}
 
-	static inline float XZplaneAngleZ(glm::vec3 a)
+	static inline float XZplaneAngleZ(glm::vec3 a, glm::vec3 b)
 	{
 		glm::vec3 z = glm::normalize(a);
 		glm::vec3 zflat = glm::normalize(glm::vec3(a.x, 0.0f, a.z));
 
 		float zDotXaxis = acos(glm::dot(z, zflat));
 
+		float fac = 1.0f;
+
+		if (b.x < 0.0f) {
+			fac = -1.0f;
+		}
+
 		if (z.y > 0.0f)
 		{
-			return zDotXaxis;
+			return fac*zDotXaxis;
 		}
 		else
 		{
-			return -zDotXaxis;
+			return fac*-zDotXaxis;
+		}
+
+		if (z.x < 0)
+		{
+			if (z.y > 0.0f)
+			{
+				return -zDotXaxis;
+			}
+			else
+			{
+				return zDotXaxis;
+			}
+		}
+		else
+		{
+			if (z.y > 0.0f)
+			{
+				return zDotXaxis;
+			}
+			else
+			{
+				return -zDotXaxis;
+			}
 		}
 
 
@@ -176,9 +205,13 @@ namespace MiscFunctions {
 
 		//std::cout << XZplaneAngleY(b) << std::endl;
 
-		return glm::rotate(glm::mat4(1.0f), (XZplaneAngleY(b) - XZplaneAngleY(a)), Constants::Y_AXIS) *glm::rotate(glm::mat4(1.0f), (XZplaneAngleZ(b) - XZplaneAngleZ(a)), Constants::Z_AXIS);// *glm::scale(glm::mat4(1.0f), glm::vec3(glm::length(b) / glm::length(a)));
+		//std::cout << (XZplaneAngleZ(b) - XZplaneAngleZ(a)) << std::endl;
 
+		
 
+		return glm::rotate(glm::mat4(1.0f), (XZplaneAngleY(b) - XZplaneAngleY(a)), Constants::Y_AXIS) *glm::rotate(glm::mat4(1.0f), (XZplaneAngleZ(b, a) - XZplaneAngleZ(a, a)), Constants::Z_AXIS);// *glm::scale(glm::mat4(1.0f), glm::vec3(glm::length(b) / glm::length(a)));
+
+		//return glm::rotate(glm::mat4(1.0f), (XZplaneAngleZ(b)), Constants::Z_AXIS)*glm::rotate(glm::mat4(1.0f), (XZplaneAngleY(b) - XZplaneAngleY(a)), Constants::Y_AXIS);// *glm::scale(glm::mat4(1.0f), glm::vec3(glm::length(b) / glm::length(a)));
 
 	}
 
