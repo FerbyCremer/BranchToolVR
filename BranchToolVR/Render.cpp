@@ -1033,8 +1033,6 @@ void Render::DetectCollision(VrMotionController & _controller)
 				currSelection->Set_cache_vec(intersection_point_controller_space, 0);
 				currSelection->Set_cache_vec(found_collisions[0].intersection_point, 1);
 				currSelection->Set_cache_vec(found_collisions[0].intersection_point, 2);
-			
-
 			}				
 			if (currSelection->Type() == 0) 
 			{
@@ -1055,21 +1053,6 @@ void Render::DetectCollision(VrMotionController & _controller)
 		currSelection->controllerSelectorId = -1;
 		currSelection = NULL;
 	}
-
-
-	//std::cout << selected_element1 << " " << selected_element2 << std::endl;
-
-	
-
-
-
-	if (glfwGetKey(window, GLFW_KEY_P)) 
-	{
-		std::cout << "cpos: " << _controller.position.x << " " << _controller.position.y << " " << _controller.position.z << std::endl;
-		std::cout << "cray: " << _controller.ray.x << " " << _controller.ray.y << " " << _controller.ray.z << std::endl;
-		std::cout << std::endl;
-	}
-
 }
 
 void Render::Interact() 
