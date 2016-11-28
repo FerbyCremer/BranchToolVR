@@ -844,28 +844,28 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 			glDrawArrays(GL_TRIANGLES, 0, dpco->branch_point_marker->num_vertices);
 		}
 
-glUseProgram(branch_line.id);
-glUniformMatrix4fv(branch_line.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
-glUniformMatrix4fv(branch_line.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
-glUniformMatrix4fv(branch_line.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
-glUniform3fv(branch_line.uniforms[3], 1, glm::value_ptr(dpco->lower_bounds));
-glUniform3fv(branch_line.uniforms[4], 1, glm::value_ptr(dpco->scale));
+		glUseProgram(branch_line.id);
+		glUniformMatrix4fv(branch_line.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
+		glUniformMatrix4fv(branch_line.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
+		glUniformMatrix4fv(branch_line.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
+		glUniform3fv(branch_line.uniforms[3], 1, glm::value_ptr(dpco->lower_bounds));
+		glUniform3fv(branch_line.uniforms[4], 1, glm::value_ptr(dpco->scale));
 
-for (BranchPoint & bp : dpco->branch_points) {
-	for (int j = 0; j < bp.neighbors.size(); ++j) {
+		for (BranchPoint & bp : dpco->branch_points) {
+			for (int j = 0; j < bp.neighbors.size(); ++j) {
 
-		if (bp.neighbors[j] < bp.id) {
-			BranchPoint* neighbor1 = dpco->GetBranchPointByID(bp.neighbors[j]);
-			if (neighbor1 != NULL) {
-				glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(bp.position));
-				glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(neighbor1->position));
-				//glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(glm::vec3(0.0f,0.0f,0.0f)));
-				//glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(glm::vec3(5.0f,5.0f,5.0f)));
-				glDrawArrays(GL_LINES, 0, 2);
+				if (bp.neighbors[j] < bp.id) {
+					BranchPoint* neighbor1 = dpco->GetBranchPointByID(bp.neighbors[j]);
+					if (neighbor1 != NULL) {
+						glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(bp.position));
+						glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(neighbor1->position));
+						//glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(glm::vec3(0.0f,0.0f,0.0f)));
+						//glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(glm::vec3(5.0f,5.0f,5.0f)));
+						glDrawArrays(GL_LINES, 0, 2);
+					}
+				}
 			}
 		}
-	}
-}
 
 	}
 
@@ -934,58 +934,58 @@ struct less_than_key
 
 void Render::DetectCollision(VrMotionController & _controller)
 {
-	//if(_controller.id == 0)
-	//std::cout << _controller.position.x << " " << _controller.position.y << " " <<_controller.position.z << std::endl;
-	AbstractBaseObject *& currSelection = _controller.id == 0 ? selected_element1 : selected_element2;
-	AbstractBaseObject *& otherSelection = _controller.id != 0 ? selected_element1 : selected_element2;
+	// current controllers selected object and other controllers selected object
+	AbstractBaseObject *& curr = _controller.id == 0 ? selected_element1 : selected_element2;
+	AbstractBaseObject *& oth = _controller.id != 0 ? selected_element1 : selected_element2;
 
 	// controller trigger is held down with previous selection
-	if (_controller.is_pressed && currSelection != NULL)
+	if (_controller.is_pressed && curr != NULL)
 	{			
 		// other controller has just released previously shared object
-		if (currSelection->controllerSelectorId == -1)
+		if (curr->controllerSelectorId == -1)
 		{
-			currSelection->is_double_selected = false;
-			currSelection->controllerSelectorId = _controller.id;
-			currSelection->Set_cache_pose(glm::inverse(_controller.pose) * currSelection->append_pose, 0);
-			currSelection->Set_cache_pose(_controller.pose, 1);
-			currSelection->Set_cache_pose(_controller.pose, 2);
-			currSelection->Set_cache_pose(currSelection->append_pose, 3);
+			curr->is_double_selected = false;
+			curr->controllerSelectorId = _controller.id;
+			curr->Set_cache_pose(glm::inverse(_controller.pose) * curr->append_pose, 0);
+			curr->Set_cache_pose(_controller.pose, 1);
+			curr->Set_cache_pose(_controller.pose, 2);
+			curr->Set_cache_pose(curr->append_pose, 3);
 
-			if (currSelection->Type() == 0)
+			if (curr->Type() == 0)
 			{
-				ColorObject * s = static_cast<ColorObject*>(currSelection);
+				ColorObject * s = static_cast<ColorObject*>(curr);
 				s->SetSelected(true);
 			}
 		}
 		// two controllers with same object selected
-		else if (currSelection == otherSelection)
+		else if (curr == oth)
 		{
 			// first clicker of selection
-			if (currSelection->controllerSelectorId == _controller.id) 
+			if (curr->controllerSelectorId == _controller.id) 
 			{
-				glm::vec3 pointer_ws = glm::vec3(_controller.pose * glm::vec4(currSelection->cache_vec[0],1.0f));
-				currSelection->Set_cache_vec(pointer_ws, 2);
-				currSelection->Set_cache_pose(_controller.pose, 2);
+				glm::vec3 pointer_ws = glm::vec3(_controller.pose * glm::vec4(curr->cache_vec[0],1.0f));
+				curr->cache.primary_collision_point_world_updated = pointer_ws;
+				curr->cache.controller_pose_updated = _controller.pose;
 			}
 			// second clicker
 			else
 			{
-				glm::vec3 pointer_ws = glm::vec3(_controller.pose * glm::vec4(currSelection->cache_vec[3], 1.0f));
-				currSelection->Set_cache_vec(pointer_ws - currSelection->cache_vec[2], 6);
-				currSelection->Set_cache_vec(pointer_ws, 8);
+				glm::vec3 pointer_ws = glm::vec3(_controller.pose * glm::vec4(curr->cache_vec[3], 1.0f));
+				curr->Set_cache_vec(pointer_ws - curr->cache_vec[2], 6);
+				curr->Set_cache_vec(pointer_ws, 8);
+				curr->cache.
+				curr->cache.secondary_collision_point_world_updated = pointer_ws;
+
 			}
 		}
 		else
 		{
-			currSelection->Set_cache_pose(_controller.pose, 1);
+			curr->Set_cache_pose(_controller.pose, 1);
 		}
 	}
 	// controller trigger pressed for the first time without previous selection
-	else if (_controller.first_press && currSelection == NULL) 
-
+	else if (_controller.first_press && curr == NULL)
 	{
-		//std::cout << "fp" << std::endl;
 		std::vector<foundCollision> found_collisions;
 
 		for (AbstractBaseObject * absObj : all_objects) 
@@ -1007,51 +1007,64 @@ void Render::DetectCollision(VrMotionController & _controller)
 			glm::vec3 intersection_point_controller_space = glm::vec3(inverse_controller_pose * glm::vec4(found_collisions[0].intersection_point, 1.0f));
 
 			// selected element already selected by other controller
-			if (found_collisions[0].obj == otherSelection) 
+			if (found_collisions[0].obj == oth) 
 			{
-				currSelection = found_collisions[0].obj;
-				currSelection->is_double_selected = true;
-				currSelection->Set_cache_vec(intersection_point_controller_space, 3);
-				currSelection->Set_cache_vec(found_collisions[0].intersection_point, 4);
+				curr = found_collisions[0].obj;
+				curr->is_double_selected = true;
+				curr->Set_cache_vec(intersection_point_controller_space, 3);
+				curr->Set_cache_vec(found_collisions[0].intersection_point, 4);
 				
-				glm::vec3 tmp = glm::vec3(currSelection->cache_pose[1] * glm::vec4(currSelection->cache_vec[0],1.0f));
-				currSelection->Set_cache_vec(tmp, 1);
-				currSelection->Set_cache_vec(tmp, 2);
-				currSelection->Set_cache_vec(found_collisions[0].intersection_point - currSelection->cache_vec[1], 5);
-				currSelection->Set_cache_vec(found_collisions[0].intersection_point, 11);
+				glm::vec3 tmp = glm::vec3(curr->cache_pose[1] * glm::vec4(curr->cache_vec[0],1.0f));
+				curr->Set_cache_vec(tmp, 1);
+				curr->Set_cache_vec(tmp, 2);
+				curr->Set_cache_vec(found_collisions[0].intersection_point - curr->cache_vec[1], 5);
+				curr->Set_cache_vec(found_collisions[0].intersection_point, 11);
+
+				curr->cache.secondary_collision_point_controller_space_initial = intersection_point_controller_space;
+				curr->cache.secondary_collision_point_world_initial = found_collisions[0].intersection_point;
+				curr->cache.secondary_collision_point_world_updated = found_collisions[0].intersection_point;
+				curr->cache.secondary_to_primary_collision_point_initial = found_collisions[0].intersection_point - curr->cache.primary_collision_point_world_updated;
 			}
 			else 
 			{
 				
-				currSelection = found_collisions[0].obj;
-				currSelection->controllerSelectorId = _controller.id;
-				currSelection->Set_cache_pose(inverse_controller_pose * currSelection->append_pose, 0);
-				currSelection->Set_cache_pose(_controller.pose, 1);
-				currSelection->Set_cache_pose(_controller.pose, 2);
-				currSelection->Set_cache_pose(currSelection->append_pose, 3);		
+				curr = found_collisions[0].obj;
+				curr->controllerSelectorId = _controller.id;
+				curr->Set_cache_pose(inverse_controller_pose * curr->append_pose, 0);
+				curr->Set_cache_pose(_controller.pose, 1);
+				curr->Set_cache_pose(_controller.pose, 2);
+				curr->Set_cache_pose(curr->append_pose, 3);		
 
-				currSelection->Set_cache_vec(intersection_point_controller_space, 0);
-				currSelection->Set_cache_vec(found_collisions[0].intersection_point, 1);
-				currSelection->Set_cache_vec(found_collisions[0].intersection_point, 2);
+				curr->Set_cache_vec(intersection_point_controller_space, 0);
+				curr->Set_cache_vec(found_collisions[0].intersection_point, 1);
+				curr->Set_cache_vec(found_collisions[0].intersection_point, 2);
+
+				curr->cache.to_controller_space_initial = inverse_controller_pose * curr->append_pose;
+				curr->cache.controller_pose_initial = _controller.pose;
+				curr->cache.controller_pose_updated = _controller.pose;
+				curr->cache.appen_pose_initial = curr->append_pose;
+
+
+				
 			}				
-			if (currSelection->Type() == 0) 
+			if (curr->Type() == 0) 
 			{
-				ColorObject * s = static_cast<ColorObject*>(currSelection);
+				ColorObject * s = static_cast<ColorObject*>(curr);
 				s->SetSelected(true);
 			}
 		}
 	}
 	// trigger released with a selection
-	else if (!_controller.is_pressed && currSelection != NULL)
+	else if (!_controller.is_pressed && curr != NULL)
 	{
-		if (currSelection->Type() == 0)
+		if (curr->Type() == 0)
 		{
-			ColorObject * s = static_cast<ColorObject*>(currSelection);
+			ColorObject * s = static_cast<ColorObject*>(curr);
 			s->SetSelected(false);
 		}
 
-		currSelection->controllerSelectorId = -1;
-		currSelection = NULL;
+		curr->controllerSelectorId = -1;
+		curr = NULL;
 	}
 }
 

@@ -1,7 +1,5 @@
 #include "LineObject.h"
 
-
-
 LineObject::LineObject()
 {
 }
@@ -11,7 +9,8 @@ LineObject::~LineObject()
 {
 }
 
-void LineObject::GenerateAxis() {
+void LineObject::GenerateAxis() 
+{
 	positions.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
 	positions.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
 
@@ -33,8 +32,8 @@ void LineObject::GenerateAxis() {
 	LoadBuffers();
 }
 
-void LineObject::LoadBuffers() {
-
+void LineObject::LoadBuffers() 
+{
 		num_vertices = positions.size();
 
 		glGenVertexArrays(1, &vao);
@@ -59,5 +58,4 @@ void LineObject::LoadBuffers() {
 		glBindVertexArray(0);
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
-
 }

@@ -12,19 +12,24 @@
 #include "MiscFunctions.h"
 #include "Constants.h"
 
-template <typename T>
-struct vertex_attribute 
+struct InteractionCache
 {
-	std::vector<T> raw_data;
-	GLuint buffer_id;
-	std::string name;
+	glm::mat4 to_controller_space_initial;
+	glm::mat4 controller_pose_initial;
+	glm::mat4 controller_pose_updated;
+	glm::mat4 appen_pose_initial;
 
-	void Load() 
-	{
-		glGenBuffers(1, &buffer_id);
-		glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(T)*raw_data.size(), &raw_data[0], GL_STATIC_DRAW);
-	}
+	// dual gesture variables	
+	glm::vec3 primary_collision_point_world_initial;
+	glm::vec3 primary_collision_point_world_updated;
+	glm::vec3 primary_collision_point_controller_space_initial;
+	glm::vec3 secondary_collision_point_world_initial;
+	glm::vec3 secondary_collision_point_world_updated;
+	glm::vec3 secondary_collision_point_controller_space_initial;
+
+	glm::vec3 secondary_to_primary_collision_point_initial;
+
+
 };
 
 class AbstractBaseObject
@@ -33,8 +38,6 @@ class AbstractBaseObject
 		AbstractBaseObject();
 		~AbstractBaseObject();
 
-		//std::vector<vertex_attribute<typename T>*> vertices;
-		//virtual void Configure() = 0;
 		virtual void Load() = 0;
 		virtual int Type() = 0;
 
@@ -79,6 +82,7 @@ class AbstractBaseObject
 		glm::mat4 append_pose;
 		static glm::mat4 cache_pose[18];
 		static glm::vec3 cache_vec[18];
+		InteractionCache cache;
 		void CalcModelMatrix();
 
 		// vertex data
