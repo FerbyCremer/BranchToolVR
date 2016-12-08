@@ -20,8 +20,8 @@ namespace DirectoryInfo
 	static const std::string RELATIVE_MODELS_DIR = RELATIVE_RESOURCES_PATH + "Models/";
 	static const std::string RELATIVE_DICOM_DIR = RELATIVE_RESOURCES_PATH + "DICOM/";
 	static const std::string STARTUP_DICOM_SET = "torso/dcm0";
-	static const std::string POINT_CLOUD_HANDLE_MODEL = "pointCloudFrame2";
-	static const std::string COARSE_VIEWER_SLICE_HANDLE = "coarseViewerHandle2";
+	static const std::string POINT_CLOUD_HANDLE_MODEL = "pointCloudFrame";
+	static const std::string COARSE_VIEWER_SLICE_HANDLE = "coarseViewerHandle";
 }
 
 namespace Constants 

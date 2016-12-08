@@ -111,6 +111,7 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 
 	if (viewer->base_handle->is_double_selected)
 	{
+		std::cout << "Double selectedv" << std::endl;
 		viewer->SetAppendPose(viewer->base_handle->getDoubleSelectionTransform());
 	}	
 	else if(viewer->base_handle->is_selected)
@@ -126,6 +127,7 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 	{
 		if (viewer->point_cloud_selector->is_double_selected)
 		{
+
 			// TODO: fix position jump when secondary controller becomes primary
 			float start_interesection_ray_len = glm::length(viewer->point_cloud_selector->cache.primary_to_secondary_collision_point_initial);
 			float curr_intersection_ray_len = glm::length(viewer->point_cloud_selector->cache.primary_to_secondary_collision_point_current);
@@ -181,6 +183,7 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 
 	if (points->handle->is_double_selected)
 	{
+		//std::cout << "Double selectedp" << std::endl;
 		curr_pose = points->handle->getDoubleSelectionTransform();
 		points->Set_append_pose(curr_pose);
 		points->handle->Set_append_pose(curr_pose);
@@ -211,8 +214,6 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 		int index_y = (float)imaging_data.data[imaging_data.current_index].height * colp_to_model_space.y;
 		imaging_data.isovalue = imaging_data.data[imaging_data.current_index].isovalues.at(imaging_data.data[imaging_data.current_index].width * index_y + index_x);
 
-		std::cout << index_x << " " << index_y << std::endl;
-		std::cout << imaging_data.isovalue << std::endl << std::endl;
 		points->GenerateDicomPointCloud(imaging_data, imaging_data.isovalue, 30);
 	}
 

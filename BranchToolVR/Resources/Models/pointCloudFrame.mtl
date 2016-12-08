@@ -1,4 +1,4 @@
-# Blender MTL File: 'pointcloudknobs.1blend.blend'
+# Blender MTL File: 'None'
 # Material Count: 1
 
 newmtl None
@@ -8,4 +8,3 @@ Kd 0.8 0.8 0.8
 Ks 0.8 0.8 0.8
 d 1
 illum 2
-map_Kd C:\Users\Michael\Documents\Programming\BranchToolVR\BranchToolVR\Resources\Textures\brick_diffuse.png

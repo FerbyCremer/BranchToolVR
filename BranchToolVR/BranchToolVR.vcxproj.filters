@@ -335,7 +335,7 @@
     <ClInclude Include="MiscStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\misc\tiny_obj_loader.h">
+    <ClInclude Include="Libraries\misc\tinyobjloader\tiny_obj_loader.h">
       <Filter>misc</Filter>
     </ClInclude>
   </ItemGroup>

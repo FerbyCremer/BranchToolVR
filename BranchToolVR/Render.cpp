@@ -520,6 +520,7 @@ void Render::RenderUI(int level)
 		//glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.15f, 0.15f, 0.15f, 1.0f)));
 		//glClear(GL_DEPTH_BUFFER_BIT);
 		//glEnable(GL_DEPTH_TEST);
+		return;
 	}
 
 	// TODO: remove unecessary uniform and viewport calls
@@ -928,6 +929,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 		glBindTexture(GL_TEXTURE_2D, m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_glTexture);
 
 		glUniform1i(texture.uniforms[3], 0);
+		//std::cout << unTrackedDevice << std::endl;
 		glDrawElements(GL_TRIANGLES, m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_unVertexCount, GL_UNSIGNED_SHORT, 0);
 
 
@@ -1038,6 +1040,7 @@ void Render::DetectCollision(VrMotionController & _controller)
 	// controller trigger pressed for the first time without previous selection
 	else if (_controller.first_press && curr == NULL)
 	{
+		//std::cout << "firstPress: " << _controller.id << std::endl;
 		std::vector<foundCollision> found_collisions;
 
 		for (AbstractBaseObject * absObj : all_objects) 
@@ -1072,6 +1075,7 @@ void Render::DetectCollision(VrMotionController & _controller)
 				curr->cache.secondary_collision_point_world_current = found_collisions[0].intersection_point;
 				curr->cache.primary_to_secondary_collision_point_initial = curr->cache.primary_collision_point_world_current - found_collisions[0].intersection_point;
 				curr->cache.primary_to_secondary_collision_point_current = curr->cache.primary_collision_point_world_current - found_collisions[0].intersection_point;
+				curr->SetSelected(true);
 			}
 			else 
 			{
@@ -1089,6 +1093,8 @@ void Render::DetectCollision(VrMotionController & _controller)
 				if (curr->is_clickable)
 				{
 					curr->SetClick();
+					curr->SetSelected(false);
+					curr->controllerSelectorId = -1;
 					curr = NULL;
 				}
 				else
@@ -1104,6 +1110,8 @@ void Render::DetectCollision(VrMotionController & _controller)
 		if (curr == oth)
 		{
 			// first release of a double selected object
+			curr->SetSelected(false);
+			curr->is_double_selected = false;
 			
 		}
 		else

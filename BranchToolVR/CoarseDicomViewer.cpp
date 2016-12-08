@@ -4,9 +4,9 @@ CoarseDicomViewer::CoarseDicomViewer()
 {
 	static_mesh = new ColorObject;
 	
-	float base_handle_scale = 1.6f;
+	float base_handle_scale = 1.0f;
 	base_handle = new TextureObject;
-	base_handle->readObjFromFile(DirectoryInfo::POINT_CLOUD_HANDLE_MODEL, base_handle_scale, glm::vec3(base_handle_scale * 0.3f, -0.05f, base_handle_scale * 0.3f));
+	base_handle->readObjFromFile(DirectoryInfo::POINT_CLOUD_HANDLE_MODEL, base_handle_scale, glm::vec3(base_handle_scale * 0.5f, 0.0f, base_handle_scale * 0.5f));
 	base_handle->is_selectable = true;
 	base_handle->is_double_selectable = true;
 
