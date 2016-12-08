@@ -11,7 +11,8 @@ uniform vec3 ambient;
 
 vec3 light_pos = vec3(1.0f,1.0f,1.0f);
 
-void main(){
+void main()
+{
 	//vec3 to_light = normalize(light_pos - oi_position);
 	output_color = texture(diffuse_texture, oi_uv);
 }

@@ -32,7 +32,7 @@ struct Light
 
 	Light()
 	{
-		marker.GenerateSphere(11, 0.01f, true);
+		marker.GenerateSphere(11, 0.2f, true);
 	}
 
 	Light(float _radius) 
@@ -46,6 +46,7 @@ enum TexturesEnum
 	WOOD_TEXTURE,
 	FONT_TEXTURE,
 	CURR_ORTHOSLICE_TEXTURE,
+	COARSE_VIEWER_SLICE_HANDLE_TEXTURE,
 	CURR_NR_TEXTURES, // keep as last element of enum
 };
 
@@ -77,7 +78,6 @@ class Render
 {
 
 	public:
-
 		Render(GLFWwindow* _window);
 		~Render();
 		void AddObjectToScene(std::vector<AbstractBaseObject*> bsos);
@@ -92,12 +92,15 @@ class Render
 		void RenderScene();
 		void Interact();
 		void UpdateHMDMatrixPose();
-		void ResetSeatedPose();
 		void Finalize();
 		void RenderUI(int level);
 		void FakeInput(int controllerIndex);
 		void DetectCollision(VrMotionController & _controller);
 		void BindTextures();
+		void LoadTextures();
+		void LoadShaders();
+
+
 		static void window_size_callback(GLFWwindow* window, int width, int height);
 		static int window_size_x;
 		static int window_size_y;
@@ -147,6 +150,7 @@ class Render
 		ShaderProgram ui_color;
 		ShaderProgram ui_texture;
 		ShaderProgram shadow;
+		ShaderProgram recieve_shadow_color;
 		
 		// object containers
 		std::vector<AbstractBaseObject*> all_objects;
@@ -180,7 +184,7 @@ class Render
 		bool InitVR();
 		void RenderEyes();
 
-		bool createFrameBuffer(ShadowMap &sm);
+		bool createShadowMap(ShadowMap &sm);
 		void RenderSceneInternal(glm::mat4 _P, glm::mat4 _V);
 
 		std::vector<CGLRenderModel*> m_vecRenderModels;
@@ -197,7 +201,7 @@ class Render
 		static glm::mat4 ValveMat4ToGlmMat4Inv(vr::HmdMatrix44_t _mIN);
 		static bool CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc);
 		static std::string ReadFile(std::string _filePath);
+		static GLuint CompileGLShader(std::string programName);
 		static GLuint CreateShader(GLint target, std::string& src);
-		static GLuint CompileGLShader(std::string programName, std::string shaderDir);
 
 };

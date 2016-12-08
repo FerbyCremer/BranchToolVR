@@ -335,6 +335,9 @@
     <ClInclude Include="MiscStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\misc\tiny_obj_loader.h">
+      <Filter>misc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\dicom_point_cloud.fs.glsl">
@@ -391,5 +394,12 @@
     <None Include="Shaders\shadow.vs.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\recieve_shadow_color.fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\recieve_shadow_color.vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\README.md" />
   </ItemGroup>
 </Project>

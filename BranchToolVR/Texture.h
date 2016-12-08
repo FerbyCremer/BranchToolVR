@@ -10,21 +10,20 @@
 
 #include "DicomReader.h"
 #include "Constants.h"
+#include "MiscFunctions.h"
 
-class Texture{
-
+class Texture
+{
 	public:
-
 		Texture();
 		~Texture();
+		void Bind(int _level);
 		bool Load(std::string _fp);
 		bool Load(DicomSingle & _ds, int window_width, int window_center);
-		void Bind();
 		void Delete();
 
 		static int global_counter;
 		GLuint id;
-		GLuint level;
+		GLuint texture_object_id;
 		bool is_loaded;
 };
-

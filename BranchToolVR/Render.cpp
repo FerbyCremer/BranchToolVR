@@ -18,13 +18,13 @@ glm::mat4 Render::ui_projection;
 
 Render::Render(GLFWwindow *_window)
 {
-
 	// configure glfw vars
 	window = _window;
 	glfwSetWindowSizeCallback(window, Render::window_size_callback);
 
 	// set clears
-	glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
+	glm::vec4 c = Constants::CLEAR_COLOR;
+	glClearColor(c.x, c.y, c.z, c.w);
 	glClearDepthf(1.0f);
 
 	// enable alpha
@@ -35,9 +35,6 @@ Render::Render(GLFWwindow *_window)
 	//glEnable(GL_CULL_FACE);
 	//glFrontFace(GL_CCW);
 	//glCullFace(GL_BACK);
-
-	// ui
-	glEnable(GL_SCISSOR_TEST);
 
 	// initialize controllers
 	controller_pointer1 = new ColorObject;
@@ -56,122 +53,10 @@ Render::Render(GLFWwindow *_window)
 	selected_element2 = NULL;
 
 	// shadow
-	createFrameBuffer(sm);
+	createShadowMap(sm);
 	float shadow_width = 5.0f;
 	sm.P = glm::ortho(-shadow_width, shadow_width, -shadow_width, shadow_width, -100.0f, 100.0f);
-	sm.V = glm::lookAt(glm::vec3(2.5f,20.0f,2.5f),glm::vec3(-0.1f,0.0f,-0.1f),glm::vec3(0.0f,1.0f,0.0f));
-
-	// initializers
-
-	InitVR();
-
-	std::string shader_directory = "./Shaders/";
-
-	color.id = CompileGLShader("color", shader_directory);
-	color.num_uniforms = 11;
-	color.uniforms = new GLuint[color.num_uniforms];
-	color.uniforms[0] = glGetUniformLocation(color.id, "P");
-	color.uniforms[1] = glGetUniformLocation(color.id, "V");
-	color.uniforms[2] = glGetUniformLocation(color.id, "M");
-	color.uniforms[3] = glGetUniformLocation(color.id, "color");
-	color.uniforms[4] = glGetUniformLocation(color.id, "lights[0].pos"); // change to uniform buffer
-	color.uniforms[5] = glGetUniformLocation(color.id, "lights[1].pos");
-	color.uniforms[6] = glGetUniformLocation(color.id, "lights[2].pos");
-	color.uniforms[7] = glGetUniformLocation(color.id, "shadow");
-	color.uniforms[8] = glGetUniformLocation(color.id, "shadowP");
-	color.uniforms[9] = glGetUniformLocation(color.id, "shadowV");
-	color.uniforms[10] = glGetUniformLocation(color.id, "ambient");
-
-	texture.id = CompileGLShader("texture", shader_directory);
-	texture.num_uniforms = 5;
-	texture.uniforms = new GLuint[texture.num_uniforms];
-	texture.uniforms[0] = glGetUniformLocation(texture.id, "P");
-	texture.uniforms[1] = glGetUniformLocation(texture.id, "V");
-	texture.uniforms[2] = glGetUniformLocation(texture.id, "M");
-	texture.uniforms[3] = glGetUniformLocation(texture.id, "diffuse_texture");
-	texture.uniforms[4] = glGetUniformLocation(texture.id, "ambient");
-
-	line.id = CompileGLShader("line", shader_directory);
-	line.num_uniforms = 3;
-	line.uniforms = new GLuint[color.num_uniforms];
-	line.uniforms[0] = glGetUniformLocation(line.id, "P");
-	line.uniforms[1] = glGetUniformLocation(line.id, "V");
-	line.uniforms[2] = glGetUniformLocation(line.id, "M");
-
-	dicom_point_cloud.id = CompileGLShader("dicom_point_cloud", shader_directory);
-	dicom_point_cloud.num_uniforms = 14;
-	dicom_point_cloud.uniforms = new GLuint[dicom_point_cloud.num_uniforms];
-	dicom_point_cloud.uniforms[0] = glGetUniformLocation(dicom_point_cloud.id, "P");
-	dicom_point_cloud.uniforms[1] = glGetUniformLocation(dicom_point_cloud.id, "V");
-	dicom_point_cloud.uniforms[2] = glGetUniformLocation(dicom_point_cloud.id, "M");
-	dicom_point_cloud.uniforms[3] = glGetUniformLocation(dicom_point_cloud.id, "tolerance");
-	dicom_point_cloud.uniforms[4] = glGetUniformLocation(dicom_point_cloud.id, "lights[0].pos"); // change to uniform buffer
-	dicom_point_cloud.uniforms[5] = glGetUniformLocation(dicom_point_cloud.id, "lights[1].pos");
-	dicom_point_cloud.uniforms[6] = glGetUniformLocation(dicom_point_cloud.id, "lights[2].pos");
-	dicom_point_cloud.uniforms[7] = glGetUniformLocation(dicom_point_cloud.id, "scale");
-	dicom_point_cloud.uniforms[8] = glGetUniformLocation(dicom_point_cloud.id, "lower_bounds");
-	dicom_point_cloud.uniforms[9] = glGetUniformLocation(dicom_point_cloud.id, "upper_bounds");
-	dicom_point_cloud.uniforms[10] = glGetUniformLocation(dicom_point_cloud.id, "box_scale");
-	dicom_point_cloud.uniforms[11] = glGetUniformLocation(dicom_point_cloud.id, "scale");
-	dicom_point_cloud.uniforms[12] = glGetUniformLocation(dicom_point_cloud.id, "eye_pos");
-	dicom_point_cloud.uniforms[13] = glGetUniformLocation(dicom_point_cloud.id, "ambient");
-
-	branch_point.id = CompileGLShader("branch_point", shader_directory);
-	branch_point.num_uniforms = 7;
-	branch_point.uniforms = new GLuint[branch_point.num_uniforms];
-	branch_point.uniforms[0] = glGetUniformLocation(branch_point.id, "P");
-	branch_point.uniforms[1] = glGetUniformLocation(branch_point.id, "V");
-	branch_point.uniforms[2] = glGetUniformLocation(branch_point.id, "M");
-	branch_point.uniforms[3] = glGetUniformLocation(branch_point.id, "instanced_position");
-	branch_point.uniforms[4] = glGetUniformLocation(branch_point.id, "lower_bounds"); 
-	branch_point.uniforms[5] = glGetUniformLocation(branch_point.id, "scale");
-	branch_point.uniforms[6] = glGetUniformLocation(branch_point.id, "color");
-
-	branch_line.id = CompileGLShader("branch_line", shader_directory);
-	branch_line.num_uniforms = 10;
-	branch_line.uniforms = new GLuint[branch_line.num_uniforms];
-	branch_line.uniforms[0] = glGetUniformLocation(branch_line.id, "P");
-	branch_line.uniforms[1] = glGetUniformLocation(branch_line.id, "V");
-	branch_line.uniforms[2] = glGetUniformLocation(branch_line.id, "M");
-	branch_line.uniforms[3] = glGetUniformLocation(branch_line.id, "lower_bounds");
-	branch_line.uniforms[4] = glGetUniformLocation(branch_line.id, "scale");
-	branch_line.uniforms[5] = glGetUniformLocation(branch_line.id, "pos1");
-	branch_line.uniforms[6] = glGetUniformLocation(branch_line.id, "pos2");
-	branch_line.uniforms[7] = glGetUniformLocation(branch_line.id, "lights[0].pos"); // change to uniform buffer
-	branch_line.uniforms[8] = glGetUniformLocation(branch_line.id, "lights[1].pos");
-	branch_line.uniforms[9] = glGetUniformLocation(branch_line.id, "lights[2].pos");
-
-	ui_texture.id = CompileGLShader("ui_texture", shader_directory);
-	ui_texture.num_uniforms = 4;
-	ui_texture.uniforms = new GLuint[branch_line.num_uniforms];
-	ui_texture.uniforms[0] = glGetUniformLocation(ui_texture.id, "P");
-	ui_texture.uniforms[1] = glGetUniformLocation(ui_texture.id, "V");
-	ui_texture.uniforms[2] = glGetUniformLocation(ui_texture.id, "M");
-	ui_texture.uniforms[3] = glGetUniformLocation(ui_texture.id, "diffuse_texture");
-
-	ui_color.id = CompileGLShader("ui_color", shader_directory);
-	ui_color.num_uniforms = 4;
-	ui_color.uniforms = new GLuint[branch_line.num_uniforms];
-	ui_color.uniforms[0] = glGetUniformLocation(ui_color.id, "P");
-	ui_color.uniforms[1] = glGetUniformLocation(ui_color.id, "V");
-	ui_color.uniforms[2] = glGetUniformLocation(ui_color.id, "M");
-	ui_color.uniforms[3] = glGetUniformLocation(ui_color.id, "color");
-
-	shadow.id = CompileGLShader("shadow", shader_directory);
-	shadow.num_uniforms = 3;
-	shadow.uniforms = new GLuint[branch_line.num_uniforms];
-	shadow.uniforms[0] = glGetUniformLocation(shadow.id, "P");
-	shadow.uniforms[1] = glGetUniformLocation(shadow.id, "V");
-	shadow.uniforms[2] = glGetUniformLocation(shadow.id, "M");
-
-	// load textures
-	textures = new Texture*[CURR_NR_TEXTURES];
-	for (int i = 0; i < CURR_NR_TEXTURES - 1; ++i) 
-	{
-		textures[i] = new Texture;
-	}
-	textures[WOOD_TEXTURE]->Load("wood");
-	textures[FONT_TEXTURE]->Load("fontGlyph4096");
+	sm.V = glm::lookAt(glm::vec3(2.5f,20.0f,2.5f), glm::vec3(-0.1f,0.0f,-0.1f), glm::vec3(0.0f,1.0f,0.0f));
 
 	// set up lights
 	num_lights = 3; // must be same as shader declarations
@@ -192,14 +77,17 @@ Render::Render(GLFWwindow *_window)
 	lights[2].position = glm::vec3(0.0f, 1.0f, 2.0f);
 	lights[2].marker.Set_world_position(lights[2].position);
 
+	// line properties
 	glLineWidth(2.0f);
-
-
+	
+	// initializers
+	InitVR();
+	LoadShaders();
+	LoadTextures();
 }
 
 Render::~Render()
 {
-
 }
 
 void Render::Finalize()
@@ -257,7 +145,6 @@ void Render::window_size_callback(GLFWwindow* window, int width, int height)
 
 bool Render::InitVR() 
 {
-
 	// Loading the SteamVR Runtime
 	vr::EVRInitError eError = vr::VRInitError_None;
 	m_pHMD = vr::VR_Init(&eError, vr::VRApplication_Scene);
@@ -352,6 +239,7 @@ void Render::AddObjectToScene(DicomPointCloudObject * dpco)
 {
 	if (dpco != NULL)
 	{
+		all_objects.push_back(dpco); 
 		dicom_point_cloud_objects.push_back(dpco);
 		AddObjectToScene(dpco->handle);
 	}
@@ -430,18 +318,13 @@ void Render::RenderEyes()
 	vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
 }
 
-void Render::ResetSeatedPose() 
-{
-	m_pHMD->ResetSeatedZeroPose();
-}
-
 void Render::UpdateLights() 
 {
 	for (int i = 0; i < num_lights; ++i) 
 	{
 		if (lights[i].marker.is_selected) 
 		{
-			lights[i].marker.Set_append_pose(lights[i].marker.cache_pose[1] * lights[i].marker.cache_pose[0]);
+			lights[i].marker.Set_append_pose(lights[i].marker.cache.controller_pose_updated *lights[i].marker.cache.to_controller_space_initial);
 			lights[i].position = glm::vec3(lights[i].marker.GetModelMatrix()*glm::vec4(0.0f,0.0f,0.0f,1.0f));
 		}
 	}
@@ -449,7 +332,7 @@ void Render::UpdateLights()
 
 void Render::UpdateCursor() 
 {
-	static bool fp = true;
+	static bool first_press = true;
 	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1)) 
 	{
 		double xpos, ypos;
@@ -461,10 +344,10 @@ void Render::UpdateCursor()
 		cursor_info.normalized_cursor_position = glm::vec2(nx, ny);
 		cursor_info.is_pressed = true;
 		
-		if (fp) 
+		if (first_press) 
 		{
 			cursor_info.first_press = true;
-			fp = false;
+			first_press = false;
 		}
 
 		else 
@@ -474,7 +357,7 @@ void Render::UpdateCursor()
 	}
 	else 
 	{
-		fp = true;
+		first_press = true;
 		cursor_info.first_press = false;
 		cursor_info.is_pressed = false;
 	}
@@ -482,6 +365,10 @@ void Render::UpdateCursor()
 
 void Render::RenderShadows() 
 {
+	// cull front faces
+ 	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CCW);
+	glCullFace(GL_FRONT);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, sm.depth);
 	glDisable(GL_SCISSOR_TEST);
@@ -492,6 +379,8 @@ void Render::RenderShadows()
 	glUseProgram(shadow.id);
 	glUniformMatrix4fv(shadow.uniforms[0], 1, GL_FALSE, glm::value_ptr(sm.P));
 	glUniformMatrix4fv(shadow.uniforms[1], 1, GL_FALSE, glm::value_ptr(sm.V));
+
+	// render objects that cast shadow below:
 
 	for (ColorObject* & cObj : color_objects) 
 	{
@@ -532,17 +421,16 @@ void Render::RenderShadows()
 	glUniform3fv(dicom_point_cloud.uniforms[6], 1, glm::value_ptr(lights[2].position));
 	glUniform3fv(dicom_point_cloud.uniforms[12], 1, glm::value_ptr(vr_info.head_position));
 
-	for (DicomPointCloudObject* & dpco : dicom_point_cloud_objects) {
-
-		if (!dpco->is_loaded)
+	for (DicomPointCloudObject* & dpco : dicom_point_cloud_objects) 
+	{
+		if (!dpco->first_load)
 			continue;
 
 		glUniformMatrix4fv(dicom_point_cloud.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
 		glUniform1i(dicom_point_cloud.uniforms[3], dpco->curr_tolerance);
-		glUniform3fv(dicom_point_cloud.uniforms[7], 1, glm::value_ptr(dpco->scale));
+		glUniform3fv(dicom_point_cloud.uniforms[7], 1, glm::value_ptr(glm::vec3(dpco->scale)));
 		glUniform3fv(dicom_point_cloud.uniforms[8], 1, glm::value_ptr(dpco->lower_bounds));
 		glUniform3fv(dicom_point_cloud.uniforms[9], 1, glm::value_ptr(dpco->upper_bounds));
-		glUniform3fv(dicom_point_cloud.uniforms[10], 1, glm::value_ptr(dpco->box_scale));
 
 		glBindVertexArray(dpco->vao);
 		glEnableVertexAttribArray(0);
@@ -564,6 +452,7 @@ void Render::RenderShadows()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_SCISSOR_TEST);
+	glDisable(GL_CULL_FACE);
 }
 
 void Render::RenderScene() 
@@ -571,27 +460,43 @@ void Render::RenderScene()
 	// update state
 	UpdateCursor();
 	UpdateLights();
-	RenderShadows();
+	//RenderShadows();
 	Interact();
 
+
+	// TMP: render to screen while ui is broken
+	glViewport(0, 0, window_size_x, window_size_y);
+	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)));
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	if (vr_info.hmd_connected)
+	{
+		RenderSceneInternal(glm::perspective(90.0f, aspect, 0.1f, 100.0f), vr_info.head_pose_inv);
+	}
+	else
+	{
+		RenderSceneInternal(glm::perspective(90.0f, aspect, 0.01f, 100.0f), spoofControllerView);
+	}
+
+
 	// ui
-	glEnable(GL_SCISSOR_TEST);
-	RenderUI(0);
-	RenderUI(1);
-	glDisable(GL_SCISSOR_TEST);
+	//glEnable(GL_SCISSOR_TEST);
+	//RenderUI(0);
+	////RenderUI(1);
+	//glDisable(GL_SCISSOR_TEST);
 
 	// vr
 	RenderEyes();
 	UpdateHMDMatrixPose();
 }
 
-void Render::RenderUI(int level) {
-
+void Render::RenderUI(int level) 
+{
 	if (level == 0) 
 	{
 		// clear and render HMD view, or if no hmd is connected, show controllers perspective
-		glViewport(0, 0, half_window_size_x, window_size_y);
-		glScissor(0, 0, half_window_size_x, window_size_y);
+		//glViewport(0, 0, half_window_size_x, window_size_y);
+		//glScissor(0, 0, half_window_size_x, window_size_y);
 
 		if (vr_info.hmd_connected) 
 		{
@@ -599,22 +504,22 @@ void Render::RenderUI(int level) {
 		}
 		else 
 		{
-			RenderSceneInternal(glm::perspective(90.0f, aspect *0.5f, 0.1f, 100.0f), spoofControllerView);
+			RenderSceneInternal(glm::perspective(90.0f, aspect *0.5f, 0.01f, 100.0f), spoofControllerView);
 		}
 
-		// clear ui quadrant 0
-		glViewport(half_window_size_x, 0,  half_window_size_x, window_size_y);
-		glScissor(half_window_size_x, 0, half_window_size_x, window_size_y);
-		glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)));
-		glClear(GL_DEPTH_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
-
-		// clear ui quadrant 1
-		glViewport(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
-		glScissor(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
-		glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.15f, 0.15f, 0.15f, 1.0f)));
-		glClear(GL_DEPTH_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
+		//// clear ui quadrant 0
+		//glViewport(half_window_size_x, 0,  half_window_size_x, window_size_y);
+		//glScissor(half_window_size_x, 0, half_window_size_x, window_size_y);
+		//glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)));
+		//glClear(GL_DEPTH_BUFFER_BIT);
+		//glEnable(GL_DEPTH_TEST);
+		//
+		//// clear ui quadrant 1
+		//glViewport(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
+		//glScissor(half_window_size_x, half_window_size_y, half_window_size_x, window_size_y);
+		//glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.15f, 0.15f, 0.15f, 1.0f)));
+		//glClear(GL_DEPTH_BUFFER_BIT);
+		//glEnable(GL_DEPTH_TEST);
 	}
 
 	// TODO: remove unecessary uniform and viewport calls
@@ -627,17 +532,20 @@ void Render::RenderUI(int level) {
 
 	glUniformMatrix4fv(ui_color.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 
-	for (ColorObject* & cUiObj : color_ui_elements) {
+	for (ColorObject* & cUiObj : color_ui_elements) 
+	{
 		if (cUiObj->is_hidden || !cUiObj->is_loaded || cUiObj->level != level)
 			continue;
 
-		if (cUiObj->ui_quadrant == 0) {
+		if (cUiObj->ui_quadrant == 0) 
+		{
 			_P = glm::ortho(ui_quadrant_ortho_aspect[0].x, ui_quadrant_ortho_aspect[0].y, ui_quadrant_ortho_aspect[0].z, ui_quadrant_ortho_aspect[0].w, -100.0f, 100.0f);
 			glUniformMatrix4fv(ui_color.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 			glViewport(half_window_size_x, 0, half_window_size_x, half_window_size_y);
 			glScissor(half_window_size_x, 0, half_window_size_x, half_window_size_y);
 		}
-		else if (cUiObj->ui_quadrant == 1) {
+		else if (cUiObj->ui_quadrant == 1) 
+		{
 			_P = glm::ortho(ui_quadrant_ortho_aspect[1].x, ui_quadrant_ortho_aspect[1].y, ui_quadrant_ortho_aspect[1].z, ui_quadrant_ortho_aspect[1].w, -100.0f, 100.0f);
 			glUniformMatrix4fv(ui_color.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 			glViewport(half_window_size_x, half_window_size_y, half_window_size_x, half_window_size_y);
@@ -658,21 +566,22 @@ void Render::RenderUI(int level) {
 
 	glUseProgram(ui_texture.id);
 
-	BindTextures();
-
 	glUniformMatrix4fv(ui_texture.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 
-	for (TextureObject* & tUiObj : texture_ui_elements) {
+	for (TextureObject* & tUiObj : texture_ui_elements) 
+	{
 		if (tUiObj->is_hidden || !tUiObj->is_loaded || tUiObj->level != level)
 			continue;
 
-		if (tUiObj->ui_quadrant == 0) {
+		if (tUiObj->ui_quadrant == 0) 
+		{
 			_P = glm::ortho(ui_quadrant_ortho_aspect[0].x, ui_quadrant_ortho_aspect[0].y, ui_quadrant_ortho_aspect[0].z, ui_quadrant_ortho_aspect[0].w, -100.0f, 100.0f);
 			glUniformMatrix4fv(ui_texture.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 			glViewport(half_window_size_x, 0, half_window_size_x, half_window_size_y);
 			glScissor(half_window_size_x, 0, half_window_size_x, half_window_size_y);
 		}
-		else if (tUiObj->ui_quadrant == 1) {
+		else if (tUiObj->ui_quadrant == 1) 
+		{
 			_P = glm::ortho(ui_quadrant_ortho_aspect[1].x, ui_quadrant_ortho_aspect[1].y, ui_quadrant_ortho_aspect[1].z, ui_quadrant_ortho_aspect[1].w, -100.0f, 100.0f);
 			glUniformMatrix4fv(ui_texture.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 			glViewport(half_window_size_x, half_window_size_y, half_window_size_x, half_window_size_y);
@@ -690,23 +599,147 @@ void Render::RenderUI(int level) {
 	}
 }
 
-void Render::BindTextures() {
+void Render::BindTextures() 
+{
 	for (int i = 0; i < CURR_NR_TEXTURES; ++i)
 	{
-		textures[i]->Bind();
+		textures[i]->Bind(i);
 	}
 }
 
-void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
-
-	if (glfwGetKey(window, GLFW_KEY_Z)) {
-		_P = sm.P;
-		_V = sm.V;
+void Render::LoadTextures()
+{
+	// load textures
+	textures = new Texture*[CURR_NR_TEXTURES];
+	for (int i = 0; i < CURR_NR_TEXTURES; ++i)
+	{
+		if (i != CURR_ORTHOSLICE_TEXTURE) // dicomobjects container sets this texture
+			textures[i] = new Texture;
 	}
+	textures[WOOD_TEXTURE]->Load("blue");
+	textures[FONT_TEXTURE]->Load("fontGlyph4096");
+	textures[COARSE_VIEWER_SLICE_HANDLE_TEXTURE]->Load("coarseViewerTexture");
+}
 
+void Render::LoadShaders()
+{
+	color.id = CompileGLShader("color");
+	color.num_uniforms = 11;
+	color.uniforms = new GLuint[color.num_uniforms];
+	color.uniforms[0] = glGetUniformLocation(color.id, "P");
+	color.uniforms[1] = glGetUniformLocation(color.id, "V");
+	color.uniforms[2] = glGetUniformLocation(color.id, "M");
+	color.uniforms[3] = glGetUniformLocation(color.id, "color");
+	color.uniforms[4] = glGetUniformLocation(color.id, "lights[0].pos");
+	color.uniforms[5] = glGetUniformLocation(color.id, "lights[1].pos");
+	color.uniforms[6] = glGetUniformLocation(color.id, "lights[2].pos");
+	color.uniforms[7] = glGetUniformLocation(color.id, "shadow");
+	color.uniforms[8] = glGetUniformLocation(color.id, "shadowP");
+	color.uniforms[9] = glGetUniformLocation(color.id, "shadowV");
+	color.uniforms[10] = glGetUniformLocation(color.id, "ambient");
 
+	recieve_shadow_color.id = CompileGLShader("recieve_shadow_color");
+	recieve_shadow_color.num_uniforms = 11;
+	recieve_shadow_color.uniforms = new GLuint[color.num_uniforms];
+	recieve_shadow_color.uniforms[0] = glGetUniformLocation(color.id, "P");
+	recieve_shadow_color.uniforms[1] = glGetUniformLocation(color.id, "V");
+	recieve_shadow_color.uniforms[2] = glGetUniformLocation(color.id, "M");
+	recieve_shadow_color.uniforms[3] = glGetUniformLocation(color.id, "color");
+	recieve_shadow_color.uniforms[4] = glGetUniformLocation(color.id, "lights[0].pos");
+	recieve_shadow_color.uniforms[5] = glGetUniformLocation(color.id, "lights[1].pos");
+	recieve_shadow_color.uniforms[6] = glGetUniformLocation(color.id, "lights[2].pos");
+	recieve_shadow_color.uniforms[7] = glGetUniformLocation(color.id, "shadow");
+	recieve_shadow_color.uniforms[8] = glGetUniformLocation(color.id, "shadowP");
+	recieve_shadow_color.uniforms[9] = glGetUniformLocation(color.id, "shadowV");
+	recieve_shadow_color.uniforms[10] = glGetUniformLocation(color.id, "ambient");
+
+	texture.id = CompileGLShader("texture");
+	texture.num_uniforms = 5;
+	texture.uniforms = new GLuint[texture.num_uniforms];
+	texture.uniforms[0] = glGetUniformLocation(texture.id, "P");
+	texture.uniforms[1] = glGetUniformLocation(texture.id, "V");
+	texture.uniforms[2] = glGetUniformLocation(texture.id, "M");
+	texture.uniforms[3] = glGetUniformLocation(texture.id, "diffuse_texture");
+	texture.uniforms[4] = glGetUniformLocation(texture.id, "ambient");
+
+	line.id = CompileGLShader("line");
+	line.num_uniforms = 3;
+	line.uniforms = new GLuint[color.num_uniforms];
+	line.uniforms[0] = glGetUniformLocation(line.id, "P");
+	line.uniforms[1] = glGetUniformLocation(line.id, "V");
+	line.uniforms[2] = glGetUniformLocation(line.id, "M");
+
+	dicom_point_cloud.id = CompileGLShader("dicom_point_cloud");
+	dicom_point_cloud.num_uniforms = 14;
+	dicom_point_cloud.uniforms = new GLuint[dicom_point_cloud.num_uniforms];
+	dicom_point_cloud.uniforms[0] = glGetUniformLocation(dicom_point_cloud.id, "P");
+	dicom_point_cloud.uniforms[1] = glGetUniformLocation(dicom_point_cloud.id, "V");
+	dicom_point_cloud.uniforms[2] = glGetUniformLocation(dicom_point_cloud.id, "M");
+	dicom_point_cloud.uniforms[3] = glGetUniformLocation(dicom_point_cloud.id, "tolerance");
+	dicom_point_cloud.uniforms[4] = glGetUniformLocation(dicom_point_cloud.id, "lights[0].pos"); // change to uniform buffer
+	dicom_point_cloud.uniforms[5] = glGetUniformLocation(dicom_point_cloud.id, "lights[1].pos");
+	dicom_point_cloud.uniforms[6] = glGetUniformLocation(dicom_point_cloud.id, "lights[2].pos");
+	dicom_point_cloud.uniforms[7] = glGetUniformLocation(dicom_point_cloud.id, "scale");
+	dicom_point_cloud.uniforms[8] = glGetUniformLocation(dicom_point_cloud.id, "lower_bounds");
+	dicom_point_cloud.uniforms[9] = glGetUniformLocation(dicom_point_cloud.id, "upper_bounds");
+	dicom_point_cloud.uniforms[11] = glGetUniformLocation(dicom_point_cloud.id, "scale");
+	dicom_point_cloud.uniforms[12] = glGetUniformLocation(dicom_point_cloud.id, "eye_pos");
+	dicom_point_cloud.uniforms[13] = glGetUniformLocation(dicom_point_cloud.id, "ambient");
+
+	branch_point.id = CompileGLShader("branch_point");
+	branch_point.num_uniforms = 7;
+	branch_point.uniforms = new GLuint[branch_point.num_uniforms];
+	branch_point.uniforms[0] = glGetUniformLocation(branch_point.id, "P");
+	branch_point.uniforms[1] = glGetUniformLocation(branch_point.id, "V");
+	branch_point.uniforms[2] = glGetUniformLocation(branch_point.id, "M");
+	branch_point.uniforms[3] = glGetUniformLocation(branch_point.id, "instanced_position");
+	branch_point.uniforms[4] = glGetUniformLocation(branch_point.id, "lower_bounds");
+	branch_point.uniforms[5] = glGetUniformLocation(branch_point.id, "scale");
+	branch_point.uniforms[6] = glGetUniformLocation(branch_point.id, "color");
+
+	branch_line.id = CompileGLShader("branch_line");
+	branch_line.num_uniforms = 10;
+	branch_line.uniforms = new GLuint[branch_line.num_uniforms];
+	branch_line.uniforms[0] = glGetUniformLocation(branch_line.id, "P");
+	branch_line.uniforms[1] = glGetUniformLocation(branch_line.id, "V");
+	branch_line.uniforms[2] = glGetUniformLocation(branch_line.id, "M");
+	branch_line.uniforms[3] = glGetUniformLocation(branch_line.id, "lower_bounds");
+	branch_line.uniforms[4] = glGetUniformLocation(branch_line.id, "scale");
+	branch_line.uniforms[5] = glGetUniformLocation(branch_line.id, "pos1");
+	branch_line.uniforms[6] = glGetUniformLocation(branch_line.id, "pos2");
+	branch_line.uniforms[7] = glGetUniformLocation(branch_line.id, "lights[0].pos"); // change to uniform buffer
+	branch_line.uniforms[8] = glGetUniformLocation(branch_line.id, "lights[1].pos");
+	branch_line.uniforms[9] = glGetUniformLocation(branch_line.id, "lights[2].pos");
+
+	ui_texture.id = CompileGLShader("ui_texture");
+	ui_texture.num_uniforms = 4;
+	ui_texture.uniforms = new GLuint[branch_line.num_uniforms];
+	ui_texture.uniforms[0] = glGetUniformLocation(ui_texture.id, "P");
+	ui_texture.uniforms[1] = glGetUniformLocation(ui_texture.id, "V");
+	ui_texture.uniforms[2] = glGetUniformLocation(ui_texture.id, "M");
+	ui_texture.uniforms[3] = glGetUniformLocation(ui_texture.id, "diffuse_texture");
+
+	ui_color.id = CompileGLShader("ui_color");
+	ui_color.num_uniforms = 4;
+	ui_color.uniforms = new GLuint[branch_line.num_uniforms];
+	ui_color.uniforms[0] = glGetUniformLocation(ui_color.id, "P");
+	ui_color.uniforms[1] = glGetUniformLocation(ui_color.id, "V");
+	ui_color.uniforms[2] = glGetUniformLocation(ui_color.id, "M");
+	ui_color.uniforms[3] = glGetUniformLocation(ui_color.id, "color");
+
+	shadow.id = CompileGLShader("shadow");
+	shadow.num_uniforms = 3;
+	shadow.uniforms = new GLuint[branch_line.num_uniforms];
+	shadow.uniforms[0] = glGetUniformLocation(shadow.id, "P");
+	shadow.uniforms[1] = glGetUniformLocation(shadow.id, "V");
+	shadow.uniforms[2] = glGetUniformLocation(shadow.id, "M");
+}
+
+void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) 
+{
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
+	BindTextures();
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -715,8 +748,8 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 	glUniformMatrix4fv(line.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 	glUniformMatrix4fv(line.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 	
-	for (LineObject* & l : line_objects) {
-
+	for (LineObject* & l : line_objects) 
+	{
 		glUniformMatrix4fv(line.uniforms[2], 1, GL_FALSE, glm::value_ptr(glm::mat4()));
 		
 		glBindVertexArray(l->vao);	
@@ -727,7 +760,6 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	
 	glUseProgram(color.id);
 	
 	glUniformMatrix4fv(color.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
@@ -744,7 +776,8 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 	glUniformMatrix4fv(color.uniforms[8], 1, GL_FALSE, glm::value_ptr(sm.P));
 	glUniformMatrix4fv(color.uniforms[9], 1, GL_FALSE, glm::value_ptr(sm.V));
 	
-	for (ColorObject* & cObj : color_objects) {
+	for (ColorObject* & cObj : color_objects) 
+	{
 		if (cObj->is_hidden || !cObj->is_loaded)
 			continue;
 
@@ -759,18 +792,14 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 	}
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////
-
 	glUseProgram(texture.id);
-
-	for (int i = 0; i < CURR_NR_TEXTURES; ++i) {
-		textures[i]->Bind();
-	}
 
 	glUniformMatrix4fv(texture.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 	glUniformMatrix4fv(texture.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 	glUniform3fv(texture.uniforms[4], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
 
-	for (TextureObject* & tObj : texture_objects) {
+	for (TextureObject* & tObj : texture_objects) 
+	{
 		if (tObj->is_hidden || !tObj->is_loaded)
 			continue;
 
@@ -783,7 +812,9 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 		glDrawArrays(GL_TRIANGLES, 0, tObj->num_vertices);
 	}
 
-	////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////	
+
+
 	
 	glUseProgram(dicom_point_cloud.id);
 	
@@ -796,17 +827,16 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 	glUniform3fv(dicom_point_cloud.uniforms[12], 1, glm::value_ptr(vr_info.head_position));
 	glUniform3fv(dicom_point_cloud.uniforms[13], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
 
-	for (DicomPointCloudObject* & dpco : dicom_point_cloud_objects) {
-
-		if (!dpco->is_loaded)
+	for (DicomPointCloudObject* & dpco : dicom_point_cloud_objects) 
+	{
+		if (!dpco->first_load)
 			continue;
 
 		glUniformMatrix4fv(dicom_point_cloud.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
 		glUniform1i(dicom_point_cloud.uniforms[3], dpco->curr_tolerance);
-		glUniform3fv(dicom_point_cloud.uniforms[7], 1, glm::value_ptr(dpco->scale));
+		glUniform3fv(dicom_point_cloud.uniforms[7], 1, glm::value_ptr(glm::vec3(dpco->scale)));
 		glUniform3fv(dicom_point_cloud.uniforms[8], 1, glm::value_ptr(dpco->lower_bounds));
 		glUniform3fv(dicom_point_cloud.uniforms[9], 1, glm::value_ptr(dpco->upper_bounds));
-		glUniform3fv(dicom_point_cloud.uniforms[10], 1, glm::value_ptr(dpco->box_scale));
 
 		glBindVertexArray(dpco->vao);	
 		glEnableVertexAttribArray(0);
@@ -832,13 +862,14 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 		glUniform3fv(branch_point.uniforms[9], 1, glm::value_ptr(lights[2].position));
 
 		glUniform3fv(branch_point.uniforms[4], 1, glm::value_ptr(dpco->lower_bounds));
-		glUniform3fv(branch_point.uniforms[5], 1, glm::value_ptr(dpco->scale));
+		glUniform3fv(branch_point.uniforms[5], 1, glm::value_ptr(glm::vec3(dpco->scale)));
 
 		glBindVertexArray(dpco->branch_point_marker->vao);
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 
-		for (BranchPoint & bp : dpco->branch_points) {
+		for (BranchPoint & bp : dpco->branch_points) 
+		{
 			glUniform4fv(branch_point.uniforms[6], 1, glm::value_ptr(bp.getColor()));
 			glUniform3fv(branch_point.uniforms[3], 1, glm::value_ptr(bp.position));
 			glDrawArrays(GL_TRIANGLES, 0, dpco->branch_point_marker->num_vertices);
@@ -849,18 +880,19 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 		glUniformMatrix4fv(branch_line.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 		glUniformMatrix4fv(branch_line.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
 		glUniform3fv(branch_line.uniforms[3], 1, glm::value_ptr(dpco->lower_bounds));
-		glUniform3fv(branch_line.uniforms[4], 1, glm::value_ptr(dpco->scale));
+		glUniform3fv(branch_line.uniforms[4], 1, glm::value_ptr(glm::vec3(dpco->scale)));
 
-		for (BranchPoint & bp : dpco->branch_points) {
-			for (int j = 0; j < bp.neighbors.size(); ++j) {
-
-				if (bp.neighbors[j] < bp.id) {
+		for (BranchPoint & bp : dpco->branch_points) 
+		{
+			for (int j = 0; j < bp.neighbors.size(); ++j) 
+			{
+				if (bp.neighbors[j] < bp.id) 
+				{
 					BranchPoint* neighbor1 = dpco->GetBranchPointByID(bp.neighbors[j]);
-					if (neighbor1 != NULL) {
+					if (neighbor1 != NULL) 
+					{
 						glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(bp.position));
 						glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(neighbor1->position));
-						//glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(glm::vec3(0.0f,0.0f,0.0f)));
-						//glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(glm::vec3(5.0f,5.0f,5.0f)));
 						glDrawArrays(GL_LINES, 0, 2);
 					}
 				}
@@ -892,9 +924,9 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) {
 
 		glBindVertexArray(m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_glVertArray);
 
-		//std::cout << m_rTrackedDeviceToRenderModel[unTrackedDevice]->GetName() << std::endl;
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_glTexture);
+
 		glUniform1i(texture.uniforms[3], 0);
 		glDrawElements(GL_TRIANGLES, m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_unVertexCount, GL_UNSIGNED_SHORT, 0);
 
@@ -945,17 +977,37 @@ void Render::DetectCollision(VrMotionController & _controller)
 		if (curr->controllerSelectorId == -1)
 		{
 			curr->is_double_selected = false;
+			curr->SetSelected(true);
 			curr->controllerSelectorId = _controller.id;
-			curr->Set_cache_pose(glm::inverse(_controller.pose) * curr->append_pose, 0);
-			curr->Set_cache_pose(_controller.pose, 1);
-			curr->Set_cache_pose(_controller.pose, 2);
-			curr->Set_cache_pose(curr->append_pose, 3);
 
-			if (curr->Type() == 0)
+			glm::mat4 inverse_controller_pose = glm::inverse(_controller.pose);
+
+			curr->cache.to_controller_space_initial = inverse_controller_pose * curr->append_pose;
+			curr->cache.controller_pose_initial = _controller.pose;
+			curr->cache.controller_pose_updated = _controller.pose;
+			curr->cache.append_pose_initial = curr->append_pose;
+
+			if (curr->controllerSelectorIdPrev == _controller.id)
 			{
-				ColorObject * s = static_cast<ColorObject*>(curr);
-				s->SetSelected(true);
+				// primary controller regains sole ownership of object, no need to set:
+				//curr->cache.primary_collision_point_world_initial
+				//curr->cache.primary_collision_point_world_current
+				//curr->cache.primary_collision_point_controller_space_initial
 			}
+			else
+			{
+				// switch previously secondary controller to primary
+				// rotate previous point to new position
+				curr->cache.to_controller_space_initial = inverse_controller_pose * curr->append_pose;
+				curr->cache.primary_collision_point_world_initial = curr->cache.secondary_collision_point_world_current;
+				curr->cache.primary_collision_point_world_current = curr->cache.secondary_collision_point_world_current;
+				curr->cache.primary_collision_point_controller_space_initial = curr->cache.secondary_collision_point_controller_space_initial;
+				curr->controllerSelectorIdPrev = _controller.id;
+				curr->cache.primary_collision_point_world_current = glm::vec3(_controller.pose * glm::vec4(curr->cache.primary_collision_point_controller_space_initial, 1.0f));
+				curr->cache.controller_pose_updated = _controller.pose;
+
+			}
+
 		}
 		// two controllers with same object selected
 		else if (curr == oth)
@@ -963,24 +1015,24 @@ void Render::DetectCollision(VrMotionController & _controller)
 			// first clicker of selection
 			if (curr->controllerSelectorId == _controller.id) 
 			{
-				glm::vec3 pointer_ws = glm::vec3(_controller.pose * glm::vec4(curr->cache_vec[0],1.0f));
-				curr->cache.primary_collision_point_world_updated = pointer_ws;
+				curr->cache.primary_collision_point_world_current = glm::vec3(_controller.pose * glm::vec4(curr->cache.primary_collision_point_controller_space_initial,1.0f));
 				curr->cache.controller_pose_updated = _controller.pose;
 			}
 			// second clicker
 			else
 			{
-				glm::vec3 pointer_ws = glm::vec3(_controller.pose * glm::vec4(curr->cache_vec[3], 1.0f));
-				curr->Set_cache_vec(pointer_ws - curr->cache_vec[2], 6);
-				curr->Set_cache_vec(pointer_ws, 8);
-				curr->cache.
-				curr->cache.secondary_collision_point_world_updated = pointer_ws;
-
+				curr->cache.secondary_collision_point_world_current = glm::vec3(_controller.pose * glm::vec4(curr->cache.secondary_collision_point_controller_space_initial, 1.0f));
 			}
+
+			// double update
+			//curr->cache.primary_to_secondary_collision_point_current = curr->cache.secondary_collision_point_world_current - curr->cache.primary_collision_point_world_current;
+			curr->cache.primary_to_secondary_collision_point_current = curr->cache.primary_collision_point_world_current - curr->cache.secondary_collision_point_world_current;
 		}
+		// single selection
 		else
 		{
-			curr->Set_cache_pose(_controller.pose, 1);
+			curr->cache.primary_collision_point_world_current = glm::vec3(_controller.pose * glm::vec4(curr->cache.primary_collision_point_controller_space_initial, 1.0f));
+			curr->cache.controller_pose_updated = _controller.pose;
 		}
 	}
 	// controller trigger pressed for the first time without previous selection
@@ -991,7 +1043,7 @@ void Render::DetectCollision(VrMotionController & _controller)
 		for (AbstractBaseObject * absObj : all_objects) 
 		{
 			glm::vec3 collision_point;
-			if(!absObj->is_hidden && absObj->is_selectable && absObj->TestCollision(_controller.ray, _controller.position, collision_point))
+			if(!absObj->is_hidden && (absObj->is_selectable || absObj->is_clickable) && absObj->TestCollision(_controller.ray, _controller.position, collision_point))
 			{
 				found_collisions.push_back(foundCollision(absObj, collision_point, glm::length(collision_point - _controller.position)));
 			}
@@ -1007,60 +1059,57 @@ void Render::DetectCollision(VrMotionController & _controller)
 			glm::vec3 intersection_point_controller_space = glm::vec3(inverse_controller_pose * glm::vec4(found_collisions[0].intersection_point, 1.0f));
 
 			// selected element already selected by other controller
-			if (found_collisions[0].obj == oth) 
+			if (found_collisions[0].obj == oth)
 			{
+				if (!found_collisions[0].obj->is_double_selectable)
+					return;
+
 				curr = found_collisions[0].obj;
 				curr->is_double_selected = true;
-				curr->Set_cache_vec(intersection_point_controller_space, 3);
-				curr->Set_cache_vec(found_collisions[0].intersection_point, 4);
-				
-				glm::vec3 tmp = glm::vec3(curr->cache_pose[1] * glm::vec4(curr->cache_vec[0],1.0f));
-				curr->Set_cache_vec(tmp, 1);
-				curr->Set_cache_vec(tmp, 2);
-				curr->Set_cache_vec(found_collisions[0].intersection_point - curr->cache_vec[1], 5);
-				curr->Set_cache_vec(found_collisions[0].intersection_point, 11);
-
+				curr->cache.initial_scale = curr->scale;
 				curr->cache.secondary_collision_point_controller_space_initial = intersection_point_controller_space;
 				curr->cache.secondary_collision_point_world_initial = found_collisions[0].intersection_point;
-				curr->cache.secondary_collision_point_world_updated = found_collisions[0].intersection_point;
-				curr->cache.secondary_to_primary_collision_point_initial = found_collisions[0].intersection_point - curr->cache.primary_collision_point_world_updated;
+				curr->cache.secondary_collision_point_world_current = found_collisions[0].intersection_point;
+				curr->cache.primary_to_secondary_collision_point_initial = curr->cache.primary_collision_point_world_current - found_collisions[0].intersection_point;
+				curr->cache.primary_to_secondary_collision_point_current = curr->cache.primary_collision_point_world_current - found_collisions[0].intersection_point;
 			}
 			else 
 			{
-				
 				curr = found_collisions[0].obj;
 				curr->controllerSelectorId = _controller.id;
-				curr->Set_cache_pose(inverse_controller_pose * curr->append_pose, 0);
-				curr->Set_cache_pose(_controller.pose, 1);
-				curr->Set_cache_pose(_controller.pose, 2);
-				curr->Set_cache_pose(curr->append_pose, 3);		
-
-				curr->Set_cache_vec(intersection_point_controller_space, 0);
-				curr->Set_cache_vec(found_collisions[0].intersection_point, 1);
-				curr->Set_cache_vec(found_collisions[0].intersection_point, 2);
-
+				curr->controllerSelectorIdPrev = _controller.id;
 				curr->cache.to_controller_space_initial = inverse_controller_pose * curr->append_pose;
 				curr->cache.controller_pose_initial = _controller.pose;
 				curr->cache.controller_pose_updated = _controller.pose;
-				curr->cache.appen_pose_initial = curr->append_pose;
-
-
+				curr->cache.append_pose_initial = curr->append_pose;
+				curr->cache.primary_collision_point_world_initial = found_collisions[0].intersection_point;
+				curr->cache.primary_collision_point_world_current = found_collisions[0].intersection_point;
+				curr->cache.primary_collision_point_controller_space_initial = intersection_point_controller_space;							
 				
-			}				
-			if (curr->Type() == 0) 
-			{
-				ColorObject * s = static_cast<ColorObject*>(curr);
-				s->SetSelected(true);
+				if (curr->is_clickable)
+				{
+					curr->SetClick();
+					curr = NULL;
+				}
+				else
+				{
+					curr->SetSelected(true);
+				}
 			}
 		}
 	}
 	// trigger released with a selection
 	else if (!_controller.is_pressed && curr != NULL)
 	{
-		if (curr->Type() == 0)
+		if (curr == oth)
 		{
-			ColorObject * s = static_cast<ColorObject*>(curr);
-			s->SetSelected(false);
+			// first release of a double selected object
+			
+		}
+		else
+		{
+			// single ownership
+			curr->SetSelected(false);
 		}
 
 		curr->controllerSelectorId = -1;
@@ -1070,145 +1119,16 @@ void Render::DetectCollision(VrMotionController & _controller)
 
 void Render::Interact() 
 {
-
 	DetectCollision(vr_info.controller1);
 	DetectCollision(vr_info.controller2);
-
-	/*
-	// dicom point cloud interaction
-	static bool first_press21 = true;
-
-	if (current_selection == NULL && _pressed && first_press21) {
-		for (DicomPointCloudObject* & dpcObj : dicom_point_cloud_objects) {
-			if (dpcObj->TestCollision(_ray, _pos, collision_point)) {
-
-			}
-		}
-		first_press21 = false;
-	}
-	else if (!_pressed) {
-		first_press21 = true;
-	}
-
-	/// duplicate code controller 2
-	//tmp
-
-	p1 = controller_pose2 * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	p2 = controller_pose2 * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
-	ray = glm::vec3(p2 - p1);
-	static glm::vec3 collision_point2;
-	static bool first_press2 = true;
-
-	_pos = glm::vec3(p1);
-	_ray = ray;
-
-	if (controller_press2 && first_press2) {
-		current_selection2 = NULL;
-		float min_dist = 999999999.0f;
-		for (ColorObject* & cObj : color_objects) {
-			if (cObj->is_selectable && cObj->TestCollision(_ray, _pos, collision_point2, true)) {
-				float curr_dist = glm::length(collision_point2 - _pos);
-				if (glm::dot(ray, collision_point2 - _pos) > 0 && curr_dist < min_dist) {
-					min_dist = curr_dist;
-					current_selection2 = cObj;
-				}
-			}
-		}
-		if (current_selection2 != NULL && current_selection2->controllerSelectorId == -1) {
-			current_selection2->controllerSelectorId = 1;
-			current_selection2->SetSelected(true);
-			current_selection2->Set_cache_pose(controller_pose2, 1);//[1] = _controllerPose1;
-			current_selection2->Set_cache_pose(controller_pose2, 2);//[2] = _controllerPose1;
-			current_selection2->Set_cache_pose(current_selection2->append_pose, 3);//[3] = current_selection->append_pose;
-			current_selection2->Set_cache_pose(glm::inverse(controller_pose2) * current_selection2->append_pose, 0);//[0] = glm::inverse(_controllerPose1) * current_selection->append_pose;
-		}
-		first_press2 = false;
-	}
-	else if (controller_press2 && current_selection2 != NULL && current_selection2->controllerSelectorId == 1) {
-		current_selection2->Set_cache_pose(controller_pose2, 1);
-	}
-	else if (_pressed && current_selection2 != NULL && current_selection2->controllerSelectorId == -1) {
-		current_selection2->controllerSelectorId = 1;
-		current_selection2->SetSelected(true);
-		current_selection2->Set_cache_pose(controller_pose2, 1);//[1] = _controllerPose1;
-		current_selection2->Set_cache_pose(controller_pose2, 2);//[2] = _controllerPose1;
-		current_selection2->Set_cache_pose(current_selection2->append_pose, 3);//[3] = current_selection->append_pose;
-		current_selection2->Set_cache_pose(glm::inverse(controller_pose2) * current_selection2->append_pose, 0);
-	}
-	else if (!controller_press2 && current_selection2 != NULL) {
-		if (current_selection2->controllerSelectorId == 1)
-			current_selection2->controllerSelectorId = -1;
-		current_selection2->SetSelected(false);
-		current_selection2 = NULL;
-		first_press2 = true;
-	}
-	else if (!controller_press2) {
-		if (current_selection2 != NULL && current_selection2->controllerSelectorId == 1)
-			current_selection2->controllerSelectorId = -1;
-		current_selection2 = NULL;
-		first_press2 = true;
-	}
-
-	static bool first_press3 = true;
-
-	if (current_selection2 == NULL && controller_press2 && first_press3) {
-		for (DicomPointCloudObject* & dpcObj : dicom_point_cloud_objects) {
-			if (dpcObj->TestCollision(_ray, _pos, collision_point2)) {
-
-			}
-		}
-		first_press3 = false;
-	}
-	else if (!controller_press2) {
-		first_press3 = true;
-	}
-
-	// test same selection	
-	static bool once = true;
-	if (current_selection == current_selection2 && current_selection != NULL) {
-		
-		static float initial_dist;
-		static float new_dist;
-		static float initial_scale;
-
-		if (once) {
-			initial_dist = glm::length(vr_info.controller_world_pos1 - vr_info.controller_world_pos2);
-			initial_scale = current_selection->scale.x;
-			once = false;
-		}
-		else {
-			float curr_dist = glm::length(vr_info.controller_world_pos1 - vr_info.controller_world_pos2);
-			float ratio = curr_dist / initial_dist;
-			float new_scale = ratio*initial_scale;
-			std::cout << new_scale << std::endl;
-			current_selection->Set_scale(glm::vec3(new_scale));
-		}
-	}
-	else {
-		once = true;
-	}
-	*/
-
-}
-
-void Render::PrintMat4(glm::mat4 m) {
-	std::cout << m[0][0] << " " << m[0][1] << " " << m[0][2] << " " << m[0][3] << std::endl;
-	std::cout << m[1][0] << " " << m[1][1] << " " << m[1][2] << " " << m[1][3] << std::endl;
-	std::cout << m[2][0] << " " << m[2][1] << " " << m[2][2] << " " << m[2][3] << std::endl;
-	std::cout << m[3][0] << " " << m[3][1] << " " << m[3][2] << " " << m[3][3] << std::endl;
 }
 
 void Render::FakeInput(int controllerIndex) 
 {
-	static float move_rate = 0.025f;
-	static float rot_rate = 0.025f;
+	static float move_rate = 0.0251f;
+	static float rot_rate = 0.0251f;
 
 	VrMotionController & currController = controllerIndex == 0 ? vr_info.controller1 : vr_info.controller2;
-
-	// time based movement
-	//float delta_time_factor = (_deltaT + 1.0f) / 16.67f;
-	//move_rate *= delta_time_factor;
-	//rot_rate *= delta_time_factor;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
 	{
@@ -1236,10 +1156,10 @@ void Render::FakeInput(int controllerIndex)
 	glfwGetCursorPos(window, &xpos, &ypos);
 	
 	glm::vec2 mpos;
-	mpos.x = window_size_x / 4 - xpos;
+	mpos.x = window_size_x / 2 - xpos;
 	mpos.y = window_size_y / 2 - ypos;
 
-	glfwSetCursorPos(window, fourth_window_size_x, half_window_size_y);
+	glfwSetCursorPos(window, half_window_size_x, half_window_size_y);
 
 	currController.SetOrientationSpoof(currController.orientation + glm::vec3(rot_rate*mpos.x, glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f), 0.0f));
 	
@@ -1249,7 +1169,6 @@ void Render::FakeInput(int controllerIndex)
 	{
 		if (once[controllerIndex]) 
 		{
-			//std::cout << "pressed: " << !currController.is_pressed << std::endl;
 			currController.first_press = !currController.is_pressed;
 			currController.is_pressed = !currController.is_pressed;
 			once[controllerIndex] = false;
@@ -1263,10 +1182,6 @@ void Render::FakeInput(int controllerIndex)
 	{
 		once[controllerIndex] = true;
 	}
-
-	//PrintMat4(currController.pose);
-	//std::cout << std::endl;
-	//std::cout << std::endl << mpos.x << " " << mpos.y << " " << currController.orientation.x << " " << currController.orientation.y << " " << currController.orientation.z << std::endl << std::endl;
 
 	spoofControllerView = glm::inverse(currController.pose);
 
@@ -1282,7 +1197,6 @@ void Render::UpdateHMDMatrixPose()
 {
 	if (!m_pHMD) 
 	{
-		std::cout << "never" << std::endl;
 		vr_info.hmd_connected = false;
 
 		// without the HMD connected, default to keyboard control over spoofed motion controllers
@@ -1355,45 +1269,35 @@ void Render::UpdateHMDMatrixPose()
 
 		m_rmat4DevicePose[unTrackedDevice] = ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking);
 		
-		VrMotionController & currController = (controllerIndex == 0) ? vr_info.controller1 : vr_info.controller2;
+		VrMotionController & currController = (controllerIndex++ == 0) ? vr_info.controller1 : vr_info.controller2;
 		currController.SetPose(ValveMat34ToGlmMat4(m_rTrackedDevicePose[unTrackedDevice].mDeviceToAbsoluteTracking));
-		controllerIndex++;
+		
 		vr::VRControllerState_t state;
+
 		if (m_pHMD->GetControllerState(unTrackedDevice, &state))
 		{
-			//currController.first_press = currController.first_press;
-			//currController.is_pressed = state.ulButtonPressed != 0;
-
 			if (state.ulButtonPressed != 0) 
 			{
-
-				if(!currController.is_pressed)
-				std::cout << "fp " << currController.id << ": " << !currController.is_pressed << std::endl;
 				currController.first_press = !currController.is_pressed;
 				currController.is_pressed = true;
 			}
-			else {
+			else 
+			{
 				currController.first_press = false;
 				currController.is_pressed = false;
 			}
 		}
-
-		// increment and check if both controllers have been updated
-		//if (true || ++controllerIndex == 2) 
-		//{
-		//
-		//	//return;
-		//}
 	}
-			controller_pointer1->model_matrix = vr_info.controller1.pose;
-			controller_pointer2->model_matrix = vr_info.controller2.pose;
 
-			controller_pointer1->SetSelected(vr_info.controller1.is_pressed);
-			controller_pointer2->SetSelected(vr_info.controller2.is_pressed);
+	controller_pointer1->model_matrix = vr_info.controller1.pose;
+	controller_pointer2->model_matrix = vr_info.controller2.pose;
 
+	controller_pointer1->SetSelected(vr_info.controller1.is_pressed);
+	controller_pointer2->SetSelected(vr_info.controller2.is_pressed);
 }
 
-glm::mat4 Render::ValveMat34ToGlmMat4Inv(vr::HmdMatrix34_t _mIN) {
+glm::mat4 Render::ValveMat34ToGlmMat4Inv(vr::HmdMatrix34_t _mIN) 
+{
 	return glm::inverse(glm::mat4(
 		_mIN.m[0][0], _mIN.m[1][0], _mIN.m[2][0], 0.0,
 		_mIN.m[0][1], _mIN.m[1][1], _mIN.m[2][1], 0.0,
@@ -1401,7 +1305,8 @@ glm::mat4 Render::ValveMat34ToGlmMat4Inv(vr::HmdMatrix34_t _mIN) {
 		_mIN.m[0][3], _mIN.m[1][3], _mIN.m[2][3], 1.0f));
 }
 
-glm::mat4 Render::ValveMat34ToGlmMat4(vr::HmdMatrix34_t _mIN) {
+glm::mat4 Render::ValveMat34ToGlmMat4(vr::HmdMatrix34_t _mIN) 
+{
 	return glm::mat4(
 		_mIN.m[0][0], _mIN.m[1][0], _mIN.m[2][0], 0.0,
 		_mIN.m[0][1], _mIN.m[1][1], _mIN.m[2][1], 0.0,
@@ -1409,7 +1314,8 @@ glm::mat4 Render::ValveMat34ToGlmMat4(vr::HmdMatrix34_t _mIN) {
 		_mIN.m[0][3], _mIN.m[1][3], _mIN.m[2][3], 1.0f);
 }
 
-glm::mat4 Render::ValveMat4ToGlmMat4Inv(vr::HmdMatrix44_t _mIN) {
+glm::mat4 Render::ValveMat4ToGlmMat4Inv(vr::HmdMatrix44_t _mIN) 
+{
 	return glm::inverse(glm::mat4(
 		_mIN.m[0][0], _mIN.m[1][0], _mIN.m[2][0], _mIN.m[3][0],
 		_mIN.m[0][1], _mIN.m[1][1], _mIN.m[2][1], _mIN.m[3][1],
@@ -1417,7 +1323,8 @@ glm::mat4 Render::ValveMat4ToGlmMat4Inv(vr::HmdMatrix44_t _mIN) {
 		_mIN.m[0][3], _mIN.m[1][3], _mIN.m[2][3], _mIN.m[3][3]));
 }
 
-glm::mat4 Render::ValveMat4ToGlmMat4(vr::HmdMatrix44_t _mIN) {
+glm::mat4 Render::ValveMat4ToGlmMat4(vr::HmdMatrix44_t _mIN) 
+{
 	return glm::mat4(
 		_mIN.m[0][0], _mIN.m[1][0], _mIN.m[2][0], _mIN.m[3][0],
 		_mIN.m[0][1], _mIN.m[1][1], _mIN.m[2][1], _mIN.m[3][1],
@@ -1425,16 +1332,18 @@ glm::mat4 Render::ValveMat4ToGlmMat4(vr::HmdMatrix44_t _mIN) {
 		_mIN.m[0][3], _mIN.m[1][3], _mIN.m[2][3], _mIN.m[3][3]);
 }
 
-std::string Render::ReadFile(std::string _filePath) {
+std::string Render::ReadFile(std::string _filePath) 
+{
 	std::ifstream t(_filePath);
 	std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
 	return str;
 }
 
-GLuint Render::CompileGLShader(std::string programName, std::string shaderDir){
-
-	std::string vs_src = Render::ReadFile(shaderDir + programName + ".vs.glsl");
-	std::string fs_src = Render::ReadFile(shaderDir + programName + ".fs.glsl");
+GLuint Render::CompileGLShader(std::string programName)
+{
+	std::string shader_dir = MiscFunctions::relativeToAbsolutePath(DirectoryInfo::RELATIVE_SHADERS_DIR);
+	std::string vs_src = Render::ReadFile(shader_dir + programName + ".vs.glsl");
+	std::string fs_src = Render::ReadFile(shader_dir + programName + ".fs.glsl");
 
 	GLuint unProgramID = glCreateProgram();
 
@@ -1450,7 +1359,9 @@ GLuint Render::CompileGLShader(std::string programName, std::string shaderDir){
 
 	GLint programSuccess = GL_TRUE;
 	glGetProgramiv(unProgramID, GL_LINK_STATUS, &programSuccess);
-	if (programSuccess != GL_TRUE){
+
+	if (programSuccess != GL_TRUE)
+	{
 		printf("%s - Error linking program %d!\n", programName.c_str(), unProgramID);
 		glDeleteProgram(unProgramID);
 		return 0;
@@ -1462,8 +1373,8 @@ GLuint Render::CompileGLShader(std::string programName, std::string shaderDir){
 	return unProgramID;
 }
 
-GLuint Render::CreateShader(GLint target, std::string& src) {
-
+GLuint Render::CreateShader(GLint target, std::string& src) 
+{
 	GLuint shader = glCreateShader(target);
 	const char* c_str = src.c_str();
 	GLint len = src.length();
@@ -1492,8 +1403,8 @@ GLuint Render::CreateShader(GLint target, std::string& src) {
 	return shader;
 }
 
-bool Render::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc){
-
+bool Render::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebufferDesc)
+{
 	glGenFramebuffers(1, &framebufferDesc.m_nRenderFramebufferId);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferDesc.m_nRenderFramebufferId);
 
@@ -1528,8 +1439,8 @@ bool Render::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebu
 	return true;
 }
 
-bool Render::createFrameBuffer(ShadowMap &sm) {
-
+bool Render::createShadowMap(ShadowMap &sm) 
+{
 	glGenFramebuffers(1, &sm.fbo);
 
 	glGenTextures(1, &sm.depth);

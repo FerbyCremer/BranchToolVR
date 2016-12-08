@@ -6,10 +6,12 @@ layout(location = 2) in vec3 instanced_position;
 layout(location = 3) in float state;
 layout(location = 4) in float iso_diff;
 
-struct Light{
+struct Light
+{
   vec3 pos;
   float power;
 };
+
 uniform Light lights[3];
 
 uniform mat4 P;
@@ -20,7 +22,6 @@ uniform vec3 scale;
 
 uniform vec3 lower_bounds;
 uniform vec3 upper_bounds;
-uniform vec3 box_scale;
 uniform vec3 eye_pos;
 
 out float oi_state;
@@ -30,10 +31,11 @@ out float oi_lighting;
 out float oi_lighting2;
 out vec3 oi_instanced_position;
 
-void main(){
-
+void main()
+{
 		oi_state = state;
-		oi_pos = vec3(M*vec4(scale*(position + instanced_position), 1.0f));
+		vec3 scale1 = vec3(1,1,1);
+		oi_pos = vec3(M*vec4(scale1*(position + instanced_position), 1.0f));
 		oi_normal = normalize(vec3(M*vec4(normal, 0.0f)));
 		oi_instanced_position = normalize(instanced_position)*1.5f;
 
@@ -50,7 +52,6 @@ void main(){
 		oi_lighting  =  0.5f*clamp(dot(oi_normal, normalize(to_light1)),0.0f, 1.0f)/(light_dist1*light_dist1);
 		oi_lighting +=  0.5f*clamp(dot(oi_normal, normalize(to_light2)),0.0f, 1.0f)/(light_dist2*light_dist2);
 		oi_lighting +=  0.5f*clamp(dot(oi_normal, normalize(to_light3)),0.0f, 1.0f)/(light_dist3*light_dist3);
-
 
 		vec3 incidenceVector = -normalize(to_light1); //a unit vector
 		vec3 reflectionVector = reflect(incidenceVector, oi_normal); //also a unit vector

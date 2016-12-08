@@ -90,41 +90,52 @@ void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos
 			lock = world_space;
 
 			// slider found, set x offset 
-			if (selected_element->type == SLIDER) {
+			if (selected_element->type == SLIDER) 
+			{
 				selected_element->SetSelected(true);
 				Slider* s = static_cast<Slider*>(selected_element);
-				if (world_space) {
+				if (world_space) 
+				{
 					x_offset = (glm::inverse(GetModelMatrix())*glm::vec4(p, 1.0f)).x - s->knob.model_position.x;
 				}
-				else {
+				else 
+				{
 					x_offset = (glm::inverse(base_panel.back_plate.ui_transform)*glm::vec4(p, 1.0f)).x - s->knob.model_position.x;
 				}
 				
 			}
-			else if (selected_element->type == TAB) {
-				for (Tab* _tab : base_panel.tabs) {
+			else if (selected_element->type == TAB)
+			{
+				for (Tab* _tab : base_panel.tabs)
+				{
 					_tab->Select(false);
 				}
 				Tab* t = static_cast<Tab*>(selected_element);
 				t->Select(true);
 				selected_element = NULL;
 			}
-			else if (selected_element->type == CTRLHANDLE) {
+			else if (selected_element->type == CTRLHANDLE) 
+			{
 				selected_element->SetSelected(true);
 			}
 		}
 
 	}
 	// press held down and element was selected
-	else if (_pressed && selected_element != NULL && lock == world_space) {
+	else if (_pressed && selected_element != NULL && lock == world_space)
+	{
 		glm::vec3 p = GetCollisionPointWithPanelPlane(_ray,_pos, world_space);
-		if (glm::dot((p - _pos), _ray) > 0) {
-			if (selected_element->type == SLIDER) {
+		if (glm::dot((p - _pos), _ray) > 0)
+		{
+			if (selected_element->type == SLIDER) 
+			{
 				Slider* s = static_cast<Slider*>(selected_element);
-				if (world_space) {
+				if (world_space)
+				{
 					s->knob.Set_model_positionX(glm::clamp((glm::inverse(GetModelMatrix())*glm::vec4(p, 1.0f)).x - x_offset, s->track_min_max.x, s->track_min_max.y));
 				}
-				else {
+				else 
+				{
 					s->knob.Set_model_positionX(glm::clamp((glm::inverse(base_panel.back_plate.ui_transform)*glm::vec4(p, 1.0f)).x - x_offset, s->track_min_max.x, s->track_min_max.y));
 				}
 
@@ -132,15 +143,18 @@ void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos
 			}
 		}
 
-		if (selected_element->type == CTRLHANDLE) {
+		if (selected_element->type == CTRLHANDLE) 
+		{
 			Handle* h = static_cast<Handle*>(selected_element);
 			this->SetAppendPose(_controllerPose*m);
 		}	
 		
 	}
 	// press released with a selected element
-	else if (!_pressed && selected_element != NULL && lock == world_space) {
-		if (selected_element->type == SLIDER) {
+	else if (!_pressed && selected_element != NULL && lock == world_space) 
+	{
+		if (selected_element->type == SLIDER)
+		{
 			Slider* s = static_cast<Slider*>(selected_element);
 			s->UpdateVal(s->knob.model_position.x / s->track_min_max.y, true);
 		}
@@ -150,14 +164,15 @@ void UiPanel::Interact(glm::mat4 _controllerPose, glm::vec3 _ray, glm::vec3 _pos
 		selected_element = NULL;
 	}
 	// press released with a click miss
-	else if (!_pressed && once && lock == world_space) {
+	else if (!_pressed && once && lock == world_space) 
+	{
 		once = false;
 	}
 	
 }
 
-void UiPanel::GenerateDicomPanel(Render * _r) {
-
+void UiPanel::GenerateDicomPanel(Render * _r) 
+{
 	base_panel.SetSize(Constants::DICOM_PANEL_DIMENSIONS);
 	//glm::vec3 half_panel_size = base_panel.size * 0.525f;
 
@@ -258,30 +273,35 @@ void UiPanel::GenerateDicomPanel(Render * _r) {
 	_r->ui_quadrant_ortho[1] = glm::vec4(0.5f,0.5f,0.0f,0.0f);
 }
 
-void UiPanel::Finalize() {
+void UiPanel::Finalize()
+{
 	all_elements = base_panel.GetElements();
 	base_panel.Finalize();
 }
 
-std::vector<AbstractBaseObject*> UiPanel::GetObjects() {
+std::vector<AbstractBaseObject*> UiPanel::GetObjects() 
+{
 	return base_panel.GetObjects();
 }
 
-void UiPanel::SetWorldPosition(glm::vec3 _inPos) {
+void UiPanel::SetWorldPosition(glm::vec3 _inPos) 
+{
 	std::vector<AbstractBaseObject*> objs = GetObjects();
 	for (AbstractBaseObject* & bso : objs) {
 		bso->Set_world_position(_inPos);
 	}
 }
 
-void UiPanel::SetModelOrientation(glm::vec3 _inOrientation) {
+void UiPanel::SetModelOrientation(glm::vec3 _inOrientation) 
+{
 	std::vector<AbstractBaseObject*> objs = GetObjects();
 	for (AbstractBaseObject* & bso : objs) {
 		bso->Set_model_orientation( _inOrientation);
 	}
 }
 
-void UiPanel::SetAppendPose(glm::mat4 _inPose) {
+void UiPanel::SetAppendPose(glm::mat4 _inPose) 
+{
 	std::vector<AbstractBaseObject*> objs = GetObjects();
 	for (AbstractBaseObject* & bso : objs) {
 		bso->Set_append_pose(_inPose);

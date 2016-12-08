@@ -227,6 +227,7 @@
     <ClInclude Include="DicomReader.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="ColorObject.h" />
+    <ClInclude Include="Libraries\misc\tiny_obj_loader.h" />
     <ClInclude Include="LineObject.h" />
     <ClInclude Include="MiscFunctions.h" />
     <ClInclude Include="MiscStructs.h" />
@@ -237,6 +238,7 @@
     <ClInclude Include="UiPanel.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\README.md" />
     <None Include="Shaders\branch_line.fs.glsl" />
     <None Include="Shaders\branch_line.vs.glsl" />
     <None Include="Shaders\branch_point.fs.glsl" />
@@ -247,6 +249,8 @@
     <None Include="Shaders\dicom_point_cloud.vs.glsl" />
     <None Include="Shaders\line.fs.glsl" />
     <None Include="Shaders\line.vs.glsl" />
+    <None Include="Shaders\recieve_shadow_color.fs.glsl" />
+    <None Include="Shaders\recieve_shadow_color.vs.glsl" />
     <None Include="Shaders\shadow.fs.glsl" />
     <None Include="Shaders\shadow.vs.glsl" />
     <None Include="Shaders\texture.fs.glsl" />

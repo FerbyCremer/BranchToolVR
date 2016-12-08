@@ -10,6 +10,7 @@ in vec3 oi_instanced_position;
 out vec4 outputColor;
 uniform vec3 ambient;
 
-void main(){
+void main()
+{
 	outputColor = vec4(oi_lighting*oi_instanced_position + ambient, 1.0f);
 }

@@ -3,17 +3,18 @@
 ColorObject::ColorObject()
 {
 	display_color = glm::vec4(0.2f, 0.8f, 0.2f,1.0f);
+	selected_color_additive = glm::vec4(1.0f);
 	display_color_modifier = 0.0f;
+	selection_modifier = 0.5f;
 }
 
 ColorObject::~ColorObject()
 {
-
 }
 
 glm::vec4 ColorObject::GetDisplayColor() 
 {
-	return display_color + display_color_modifier*glm::vec4(1.0f,1.0f,1.0f,1.0f);
+	return display_color + display_color_modifier*selected_color_additive;
 }
 
 void ColorObject::SetDisplayColor(const glm::vec4 & _inColor) 
@@ -26,7 +27,7 @@ void ColorObject::SetSelected(bool _isSelected)
 	if (_isSelected)
 	{
 		is_selected = true;
-		display_color_modifier = 0.5f;
+		display_color_modifier = selection_modifier;
 		return;
 	}
 
@@ -36,7 +37,6 @@ void ColorObject::SetSelected(bool _isSelected)
 
 void ColorObject::GenerateRoom() 
 {
-
 	glm::vec3 scale(10.0f, 0.0f, 10.0f);
 	glm::vec3 _offset = glm::vec3(-5.0f, -0.1f, -5.0f);
 	display_color = glm::vec4(0.2f, 0.2f, 0.3f,1.0f);
@@ -67,7 +67,6 @@ void ColorObject::GenerateRoom()
 
 void ColorObject::GenerateController() 
 {
-
 	float len = 0.05f;
 	float pointer_width = 0.005f;
 
@@ -233,6 +232,7 @@ void ColorObject::AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset)
 void ColorObject::GenerateXYPrism(float _scaleX, float _scaleY, float _scaleZ, glm::vec2 _padding, glm::vec3 _offset) 
 {
 	AddRectangularPrism(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));	
+
 	for (unsigned int i = 0; i < positions.size(); ++i) 
 	{
 		positions[i].x *= _scaleX - _padding.x*2.0f;
@@ -253,7 +253,6 @@ void ColorObject::GenerateXYPrism(glm::vec3 _scale, glm::vec2 _padding, glm::vec
 		positions[i].x *= _scale.x - _padding.x*2.0f;
 		positions[i].y *= _scale.y - _padding.y*2.0f;
 		positions[i].z *= _scale.z;
-		//positions[i].y += (float)i * 0.025f;
 		positions[i] += glm::vec3(_padding.x, _padding.y, 0.0f);
 		positions[i] += _offset;
 	}
@@ -299,7 +298,8 @@ void ColorObject::GenerateXYPlane(float _scaleX, float _scaleY, glm::vec2 _paddi
 extern int edgeTable[];
 extern int triTable[][16];
 
-glm::vec3 VertexInterp(double isolevel, glm::vec3 p1, glm::vec3 p2, double valp1, double valp2){
+glm::vec3 VertexInterp(double isolevel, glm::vec3 p1, glm::vec3 p2, double valp1, double valp2)
+{
 	//double mu;
 	//glm::vec3 p;
 	//
@@ -326,17 +326,15 @@ glm::vec3 VertexInterp(double isolevel, glm::vec3 p1, glm::vec3 p2, double valp1
 
 }
 
-void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel) {
-
-	if (_dSet.data.size() < 1) {
+void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel) 
+{
+	if (_dSet.data.size() < 1) 
+	{
 		return;
 	}
 
 	positions.clear();
 	normals.clear();
-
-	//static float scaler = 1.00f;
-	//static float hscaler = scaler / 2.0f;
 
 	int num_gridX = _dSet.data[0].width;
 	int num_gridY = _dSet.data[0].height;
@@ -349,8 +347,8 @@ void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel
 	int num_cellsXY = (_dSet.data[0].width - 1) * (_dSet.data[0].height - 1);
 	int num_cellsXYZ = num_cellsXY *  (_dSet.data.size() - 1);
 
-	for (int i = 0; i < num_cellsXYZ; i+=1) {
-
+	for (int i = 0; i < num_cellsXYZ; i+=1) 
+	{
 		int cell_layer_lower = i / num_cellsXY;
 		int cell_layer_upper = cell_layer_lower + 1;
 		int cell_x = i % num_cellsX;
@@ -374,7 +372,7 @@ void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel
 		
 		glm::vec3 vertlist[12];
 		glm::vec3 cell_points[8];
-		// num cells z prev
+
 		cell_points[0] = glm::vec3((float)cell_x / (float)num_gridX, (float)cell_y / (float)num_cellsY, (float)cell_layer_lower / (float)num_cellsZ);
 		cell_points[1] = glm::vec3((float)(cell_x+1) / (float)num_gridX, (float)cell_y / (float)num_cellsY, (float)cell_layer_lower / (float)num_cellsZ);
 		cell_points[2] = glm::vec3((float)cell_x / (float)num_gridX, (float)(cell_y+1) / (float)num_cellsY, (float)cell_layer_lower / (float)num_cellsZ);
@@ -384,18 +382,6 @@ void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel
 		cell_points[6] = glm::vec3(cell_points[2].x,cell_points[2].y, (float)cell_layer_upper / (float)num_cellsZ);
 		cell_points[7] = glm::vec3(cell_points[3].x,cell_points[3].y, (float)cell_layer_upper / (float)num_cellsZ);
 
-		//grid_values[0] = glm::length(cell_points[0]) > 1;
-		//grid_values[1] = glm::length(cell_points[1]) > 1;
-		//grid_values[2] = glm::length(cell_points[2]) > 1;
-		//grid_values[3] = glm::length(cell_points[3]) > 1;
-		//grid_values[4] = glm::length(cell_points[4]) > 1;
-		//grid_values[5] = glm::length(cell_points[5]) > 1;
-		//grid_values[6] = glm::length(cell_points[6]) > 1;
-		//grid_values[7] = glm::length(cell_points[7]) > 1;
-		//
-		//_isolevel = 1;
-
-		//_isolevel = 5;
 		int cubeindex = 0;
 		if (grid_values[0] < _isolevel) cubeindex |= 1;
 		if (grid_values[1] < _isolevel) cubeindex |= 2;
@@ -420,82 +406,73 @@ void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel
 		glm::vec3 norm_list[12];
 
 		/* Find the vertices where the surface intersects the cube */
-		if (edgeTable[cubeindex] & 1) {
+		if (edgeTable[cubeindex] & 1) 
+		{
 			vertlist[0] = VertexInterp(_isolevel, cell_points[0], cell_points[1], grid_values[0], grid_values[1]);
 			norm_list[0] = VertexInterp(_isolevel, normals1[0], normals1[1], grid_values[0], grid_values[1]);
 		}
-			
-		if (edgeTable[cubeindex] & 2){
+		if (edgeTable[cubeindex] & 2)
+		{
 			vertlist[1] = VertexInterp(_isolevel, cell_points[1], cell_points[2], grid_values[1], grid_values[2]);
 			norm_list[1] = VertexInterp(_isolevel, normals1[1], normals1[2], grid_values[0], grid_values[1]);
 		}
-			
-		if (edgeTable[cubeindex] & 4){
+		if (edgeTable[cubeindex] & 4)
+		{
 			vertlist[2] = VertexInterp(_isolevel, cell_points[2], cell_points[3], grid_values[2], grid_values[3]);
 			norm_list[2] = VertexInterp(_isolevel, normals1[2], normals1[3], grid_values[0], grid_values[1]);
-		}
-			
-		if (edgeTable[cubeindex] & 8){
+		}	
+		if (edgeTable[cubeindex] & 8)
+		{
 			vertlist[3] = VertexInterp(_isolevel, cell_points[3], cell_points[0], grid_values[3], grid_values[0]);
 			norm_list[3] = VertexInterp(_isolevel, normals1[3], normals1[0], grid_values[0], grid_values[1]);
 		}
-			
-		if (edgeTable[cubeindex] & 16){
+		if (edgeTable[cubeindex] & 16)
+		{
 			vertlist[4] = VertexInterp(_isolevel, cell_points[4], cell_points[5], grid_values[4], grid_values[5]);
 			norm_list[4] = VertexInterp(_isolevel, normals1[4], normals1[5], grid_values[0], grid_values[1]);
 		}
-			
-		if (edgeTable[cubeindex] & 32){
+		if (edgeTable[cubeindex] & 32)
+		{
 			vertlist[5] = VertexInterp(_isolevel, cell_points[5], cell_points[6], grid_values[5], grid_values[6]);
 			norm_list[5] = VertexInterp(_isolevel, normals1[5], normals1[6], grid_values[0], grid_values[1]);
 		}
-			
-		if (edgeTable[cubeindex] & 64){
+		if (edgeTable[cubeindex] & 64)
+		{
 			vertlist[6] = VertexInterp(_isolevel, cell_points[6], cell_points[7], grid_values[6], grid_values[7]);
 			norm_list[6] = VertexInterp(_isolevel, normals1[6], normals1[7], grid_values[0], grid_values[1]);
 		}
-			
-		if (edgeTable[cubeindex] & 128)	{
+		if (edgeTable[cubeindex] & 128)
+		{
 			vertlist[7] = VertexInterp(_isolevel, cell_points[7], cell_points[4], grid_values[7], grid_values[4]);
 			norm_list[7] = VertexInterp(_isolevel, normals1[7], normals1[4], grid_values[0], grid_values[1]);
 		}
-			
-		if (edgeTable[cubeindex] & 256){
+		if (edgeTable[cubeindex] & 256)
+		{
 			vertlist[8] = VertexInterp(_isolevel, cell_points[0], cell_points[4], grid_values[0], grid_values[4]);
 			norm_list[8] = VertexInterp(_isolevel, normals1[0], normals1[4], grid_values[0], grid_values[1]);
 		}
-			
-		if (edgeTable[cubeindex] & 512){
+		if (edgeTable[cubeindex] & 512)
+		{
 			vertlist[9] = VertexInterp(_isolevel, cell_points[1], cell_points[5], grid_values[1], grid_values[5]);
 			norm_list[9] = VertexInterp(_isolevel, normals1[1], normals1[5], grid_values[0], grid_values[1]);
 		}
-			
-		if (edgeTable[cubeindex] & 1024){
+		if (edgeTable[cubeindex] & 1024)
+		{
 			vertlist[10] = VertexInterp(_isolevel, cell_points[2], cell_points[6], grid_values[2], grid_values[6]);
 			norm_list[10] = VertexInterp(_isolevel, normals1[2], normals1[6], grid_values[0], grid_values[1]);
 		}
-			
-		if (edgeTable[cubeindex] & 2048){
+		if (edgeTable[cubeindex] & 2048)
+		{
 			vertlist[11] = VertexInterp(_isolevel, cell_points[3], cell_points[7], grid_values[3], grid_values[7]);
 			norm_list[11] = VertexInterp(_isolevel, normals1[3], normals1[7], grid_values[0], grid_values[1]);
 		}
 
-		for (int j = 0; triTable[cubeindex][j] != -1; j += 3) {
+		for (int j = 0; triTable[cubeindex][j] != -1; j += 3) 
+		{
 			positions.push_back(_dSet.scale*vertlist[triTable[cubeindex][j]]);
 			positions.push_back(_dSet.scale*vertlist[triTable[cubeindex][j + 1]]);
 			positions.push_back(_dSet.scale*vertlist[triTable[cubeindex][j + 2]]);
 
-			//positions.push_back(vertlist[triTable[cubeindex][j]]);
-			//positions.push_back(vertlist[triTable[cubeindex][j + 1]]);
-			//positions.push_back(vertlist[triTable[cubeindex][j + 2]]);
-
-			//normals.push_back(glm::normalize(norm_list[triTable[cubeindex][j]]));
-			//normals.push_back(glm::normalize(norm_list[triTable[cubeindex][j + 1]]));
-			//normals.push_back(glm::normalize(norm_list[triTable[cubeindex][j + 2]]));
-			
-			//int i1 = triTable[cubeindex][j];
-			//int i2 = triTable[cubeindex][j + 1];
-			//int i3 = triTable[cubeindex][j + 2];
 			glm::vec3 p1 = vertlist[triTable[cubeindex][j]];
 			glm::vec3 p2 = vertlist[triTable[cubeindex][j + 1]];
 			glm::vec3 p3 = vertlist[triTable[cubeindex][j + 2]];
@@ -505,7 +482,6 @@ void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel
 			normals.push_back(n);
 			normals.push_back(n);
 			normals.push_back(n);
-
 		}
 	}
 

@@ -8,24 +8,22 @@
 #include "Render.h"
 #include "UiPanel.h"
 
-class DicomObjectsContainer{
-
+class DicomObjectsContainer
+{
 	public:
-
 		DicomObjectsContainer();
 		~DicomObjectsContainer();
 		void Load(std::string _dicomDir);
 		void UpdateDicomPointCloud(int _isovalue);
-		void Interact(glm::mat4 & _controllerPose, glm::vec3& _ray, glm::vec3& _pos, bool _pressed);
 		void AddObjects(Render * _r);
-		void Update(float h_asp, VrData & _vr, CursorData & _crsr);// glm::mat4 & _controllerPose, glm::vec3& _ray, glm::vec3& _pos, bool _pressed);
+		void Update(float h_asp, VrData & _vr, CursorData & _crsr);
 		void UpdateSliders();
 
 	//private:
 
 		DicomSet imaging_data;
 		DicomPointCloudObject * points;
-		UiPanel * dicom_panel;
+		UiPanel * vr_ui;
 		CoarseDicomViewer * viewer;
 		ColorObject * debug;
 
@@ -41,5 +39,4 @@ class DicomObjectsContainer{
 		Slider* window_center_slider;
 		Slider* clear_branching_slider;
 		Slider* ortho_level;
-
 };

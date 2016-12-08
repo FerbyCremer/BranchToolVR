@@ -3,6 +3,7 @@
 	ColorObject * debug1 = new ColorObject;
 	ColorObject * debug2 = new ColorObject;
 	ColorObject * debug3 = new ColorObject;
+	ColorObject * debug4 = new ColorObject;
 Engine::Engine()
 {
 	if (!InitGLFW() || !InitGLEW()) 
@@ -22,7 +23,7 @@ Engine::Engine()
 	// TEMP: set dicom directory and panel values
 	dicomObjects = new DicomObjectsContainer;
 	dicomObjects->AddObjects(renderer);
-	dicomObjects->Load(Constants::RELATIVE_DICOM_RESOURCE_PATH);	//"Resources\\DICOM\\torso\\DCM0"
+	dicomObjects->Load(DirectoryInfo::STARTUP_DICOM_SET);
 	
 	// scene
 	ground = new ColorObject;
@@ -30,24 +31,31 @@ Engine::Engine()
 	renderer->AddObjectToScene(ground);
 
 
-	box->GenerateXYPrism(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(0.0f), -glm::vec3(0.25f, 0.25f, 0.25f));
+	box->GenerateXYPrism(glm::vec3(1.0f), glm::vec2(0.0f), glm::vec3(0));
 	box->is_selectable = true;
+	box->SetDisplayColor(glm::vec4(0.7f, 0.7f, 0.7f, 1.0f));
+	box->Set_world_position(glm::vec3(-2.0f, 0.2f, 0.0f));
 	renderer->AddObjectToScene(box);
 
 	debug1 = new ColorObject;
 	debug1->GenerateSphere(10, 0.1f, false);
-	debug1->SetDisplayColor(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
-	renderer->AddObjectToScene(debug1);
+	debug1->SetDisplayColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	//renderer->AddObjectToScene(debug1);
 
 	debug2 = new ColorObject;
 	debug2->GenerateSphere(10, 0.1f, false);
-	debug2->SetDisplayColor(glm::vec4(1.0f, 0.0f, 0.25f, 1.0f));
-	renderer->AddObjectToScene(debug2);
+	debug2->SetDisplayColor(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+	//renderer->AddObjectToScene(debug2);
 
 	debug3 = new ColorObject;
-	debug3->GenerateSphere(10, 0.1f, false);
-	debug3->SetDisplayColor(glm::vec4(0.0f, 0.5f, 0.25f, 1.0f));
-	renderer->AddObjectToScene(debug3);
+	debug3->GenerateSphere(10, 0.2f, false);
+	debug3->SetDisplayColor(glm::vec4(0.0f, 0.0f, 1.25f, 1.0f));
+	//renderer->AddObjectToScene(debug3);
+
+	debug4 = new ColorObject;
+	debug4->GenerateSphere(10, 0.2f, false);
+	debug4->SetDisplayColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	//renderer->AddObjectToScene(debug4);
 
 
 	// call final render initializer after all objects have been added
@@ -58,7 +66,6 @@ Engine::Engine()
 
 Engine::~Engine()
 {
-
 }
 
 bool Engine::InitGLFW() 
@@ -90,15 +97,8 @@ bool Engine::InitGLFW()
 
 bool Engine::InitGLEW() 
 {
-
 	glewExperimental = true;
-
-	if (glewInit() != GLEW_OK) 
-	{
-		return false;
-	}
-
-	return true;
+	return glewInit() == GLEW_OK;
 }
 
 void Engine::Update() 
@@ -106,82 +106,31 @@ void Engine::Update()
 		dicomObjects->Update(renderer->half_aspect, renderer->vr_info, renderer->cursor_info);
 		renderer->RenderScene();
 
-		static float rot = 0.025f;
-		static float t = 0.0f;
-		if (glfwGetKey(window, GLFW_KEY_G)) {
-			//box->Set_model_orientation(glm::vec3(t, 0.0f, 0.0f));
-			//t += rot;
-		}
-		if (glfwGetKey(window, GLFW_KEY_H)) {
-			//box->Set_model_orientation(glm::vec3(t, 0.0f, 0.0f));
-			//t -= rot;
-
-			box->Set_append_pose(glm::mat4(1.0f));
-			
-		}
-//std::cout << (t*360.0f)/6.14 << std::endl;
-
+		// test dual motion controller box
 		if (box->is_selected)
 		{
 			if (box->is_double_selected) 
 			{
-				std::cout << "here11" << std::endl;
-				glm::mat4 rot = MiscFunctions::RotateTo(box->cache_vec[5], box->cache_vec[6]);
-
-				debug1->Set_world_position(box->cache_vec[5]);
-				debug2->Set_world_position(box->cache_vec[6]);
-				//debug1->Set_world_position(box->cache_vec[11]);
-
-				//std::cout << box->cache_vec[4].x << " " << box->cache_vec[4].y << " " << box->cache_vec[4].z << std::endl;
-				//std::cout << box->cache_vec[6].x << " " << box->cache_vec[6].y << " " << box->cache_vec[6].z << std::endl;
-				//Render::PrintMat4(rot);
-				//std::cout << std::endl;
-				glm::mat4 curr_pose = box->cache_pose[2] *glm::translate(glm::mat4(1.0f), box->cache_vec[0]) *rot* glm::translate(glm::mat4(1.0f), -box->cache_vec[0]) * box->cache_pose[0];
-				//curr_pose = glm::translate(glm::mat4(1.0f), -box->cache_vec[0]) * box->cache_pose[0];
-				glm::vec3 tmp = glm::vec3(box->cache_pose[2] * glm::vec4(box->cache_vec[0],1.0f));
-				glm::mat4 tmpm = glm::mat4(glm::mat3(box->cache_pose[2]));
-				tmpm[3][3] = 1.0f;
-				curr_pose = glm::translate(glm::mat4(1.0f), tmp)* rot*tmpm* glm::translate(glm::mat4(1.0f), -box->cache_vec[0]) * box->cache_pose[0];
-				//curr_pose = glm::translate(glm::mat4(1.0f), tmp)* rot* glm::translate(glm::mat4(1.0f), -box->cache_vec[0]) * box->cache_pose[0];
+				glm::mat4 rot = MiscFunctions::RotateTo(box->cache.primary_to_secondary_collision_point_initial, box->cache.primary_to_secondary_collision_point_current);
+				glm::mat4 curr_pose = box->cache.controller_pose_updated * glm::translate(glm::mat4(1.0f), box->cache.primary_collision_point_controller_space_initial)* rot* glm::translate(glm::mat4(1.0f), -box->cache.primary_collision_point_controller_space_initial) * box->cache.to_controller_space_initial;
 				box->Set_append_pose(curr_pose);
-
 			}
 			else 
 			{
-				glm::mat4 curr_pose = box->cache_pose[1] * box->cache_pose[0];
+				glm::mat4 curr_pose = box->cache.controller_pose_updated * box->cache.to_controller_space_initial;
 				box->Set_append_pose(curr_pose);
 			}
-			//glm::mat4 curr_pose = box->cache_pose[1] * box->cache_pose[0];
-			//box->Set_append_pose(curr_pose);
 		}
 
 }
 
 void Engine::Loop() 
 {
-	glm::vec3 p1(0.0f,0.0f,-1.0f);
-	glm::vec3 p2(1.0f,0.0f,-1.0f);
-	glm::vec3 c1(0.0f,0.0f,0.0f);
-	glm::vec3 c2(1.0f,0.0f,0.0f);
-
-	glm::vec3 q1(0.0f, 0.0f, -1.0f);
-	glm::vec3 q2(0.0f, 1.0f, -1.0f);
-	glm::vec3 d1(0.0f, 0.0f, 0.0f);
-	glm::vec3 d2(0.0f, 1.0f, 0.0f);
-
-	glm::mat4 m;
-	glm::column(m, 0, glm::vec4(p1, 1.0f));
-	glm::column(m, 0, glm::vec4(p2, 1.0f));
-	glm::column(m, 0, glm::vec4(c1, 1.0f));
-	glm::column(m, 0, glm::vec4(c2, 1.0f));
-
-
 	auto begin = std::chrono::high_resolution_clock::now();
 	auto end = std::chrono::high_resolution_clock::now();
 
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) 
 	{
-		
 		begin = std::chrono::high_resolution_clock::now();
 		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(begin - end).count();
 		

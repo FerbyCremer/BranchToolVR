@@ -58,10 +58,10 @@ struct VrMotionController
 		pose = glm::translate(glm::mat4(), position) * glm::yawPitchRoll(orientation.x, orientation.y, orientation.z);
 		ray = glm::vec3(pose * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
 	}
-
 };
 
-struct VrData {
+struct VrData 
+{
 
 	// controllers
 	VrMotionController controller1;
@@ -76,7 +76,8 @@ struct VrData {
 	glm::vec3 head_position;
 	bool hmd_connected;
 
-	VrData() {
+	VrData() 
+	{
 		head_pose_inv = glm::mat4(1.0f);
 		left_eye_proj = glm::mat4(1.0f);
 		right_eye_proj = glm::mat4(1.0f);
@@ -87,12 +88,14 @@ struct VrData {
 	}
 };
 
-struct CursorData {
+struct CursorData 
+{
 	glm::vec2 normalized_cursor_position;
 	bool is_pressed;
 	bool first_press;
 
-	CursorData() {
+	CursorData() 
+	{
 		normalized_cursor_position = glm::vec2(0.0f, 0.0f);
 		is_pressed = false;
 		first_press = true;

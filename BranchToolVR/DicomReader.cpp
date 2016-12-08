@@ -1,7 +1,5 @@
 #include "DicomReader.h"
 
-#include <future>
-
 struct less_than_key
 {
 	inline bool operator() (const DicomSingle& struct1, const DicomSingle& struct2)
@@ -10,15 +8,14 @@ struct less_than_key
 	}
 };
 
-
-DicomSet DicomReader::ReadSet(std::string _dirPath, bool * finished) {
-
-	_dirPath = Path_MakeAbsolute(_dirPath, Path_GetWorkingDirectory(), '/');
+DicomSet DicomReader::ReadSet(std::string _dicomFolder)
+{
+	_dicomFolder = MiscFunctions::relativeToAbsolutePath(DirectoryInfo::RELATIVE_DICOM_DIR + _dicomFolder);
 
 	DicomSet _dSet;
 
 	tinydir_dir dir;
-	tinydir_open(&dir, _dirPath.c_str()); 
+	tinydir_open(&dir, _dicomFolder.c_str()); 
 
 	// single threaded version
 	//while (dir.has_next){
@@ -36,12 +33,13 @@ DicomSet DicomReader::ReadSet(std::string _dirPath, bool * finished) {
 	// multiple threads
 	std::vector<std::future<DicomSingle>> threads;
 	
-	while (dir.has_next){
-	
+	while (dir.has_next)
+	{
 		tinydir_file file;
 		tinydir_readfile(&dir, &file);
 	
-		if (std::string(file.extension) == "dcm") {
+		if (std::string(file.extension) == "dcm")
+		{
 			threads.emplace_back(std::async(ReadSingle, std::string(file.path)));
 		}
 	
@@ -50,36 +48,28 @@ DicomSet DicomReader::ReadSet(std::string _dirPath, bool * finished) {
 	
 	tinydir_close(&dir);
 	
-	for (std::future<DicomSingle> & d : threads) {
+	for (std::future<DicomSingle> & d : threads) 
+	{
 		_dSet.data.push_back(d.get());
 	}
 	
 	std::sort(_dSet.data.begin(), _dSet.data.end(), less_than_key());
 
-	if(finished != NULL)
-	*finished = true;
-
-	if (_dSet.data.size() > 1) {
+	if (_dSet.data.size() > 1) 
+	{
 		float perPixel = 1.0f / (_dSet.data[0].pixel_spacing * _dSet.data[0].width);
 		float heightToWidthRatio = _dSet.data[0].spacing / _dSet.data[0].pixel_spacing;
-
 		float scaledHeight = perPixel * heightToWidthRatio;
 
 		_dSet.scale = glm::vec3(1.0f, 1.0f, (float) _dSet.data.size() / (float)_dSet.data[0].width);
-		_dSet.scale.z = (1.0f/(float)_dSet.data.size()) * _dSet.data[0].spacing;
 		_dSet.scale.z = (float)_dSet.data.size() * scaledHeight;
-		std::cout << _dSet.scale.z << std::endl;
-		std::cout << _dSet.data[0].spacing << std::endl;
-		std::cout << std::endl << "spacing: " << _dSet.data[0].spacing << " pixelSpacing: " << _dSet.data[0].pixel_spacing << std::endl;
 	}
-
 
 	return _dSet;
 }
 
-DicomSingle DicomReader::ReadSingle(std::string _filePath) {
-
-	// return value
+DicomSingle DicomReader::ReadSingle(std::string _filePath) 
+{
 	DicomSingle _dSingle;
 
 	using namespace puntoexe;
@@ -92,12 +82,6 @@ DicomSingle DicomReader::ReadSingle(std::string _filePath) {
 
 	_dSingle.layer = std::atoi(testDataSet->getString(0x0020, 0, 0x0013, 0).c_str());
 	_dSingle.series_id = testDataSet->getString(0x0020, 0, 0x000E, 0);
-
-	//double[] d = Attribute.getDoubleValues(list, TagFromName.SpacingBetweenSlices);
-	//double[] e = Attribute.getDoubleValues(list, TagFromName.PixelSpacing); //0.1mm
-	//
-	//if (d.length > 0 && e.length > 0)
-	//	spacing_ratio = (float)(d[0] / e[0]);
 
 	float spacingBetweenSlices = abs(std::atof(testDataSet->getString(0x0018, 0, 0x0088, 0).c_str()));
 	float pixelSpacing = abs(std::atof(testDataSet->getString(0x0028, 0, 0x0030, 0).c_str()));
@@ -112,32 +96,17 @@ DicomSingle DicomReader::ReadSingle(std::string _filePath) {
 	std::uint32_t sizeX, sizeY;
 	firstImage->getSize(&sizeX, &sizeY);
 
-	// pixel skipping code
-	//static int skip = 2;
-	//_dSingle.width = sizeX / skip;
-	//_dSingle.height = sizeY /skip;
-	//_dSingle.isovalues.clear();
-	//static short iso_prev;
-	//std::uint32_t index(0);
-	//for (std::uint32_t scanY = 0; scanY < sizeY; ++scanY){
-	//	for (std::uint32_t scanX = 0; scanX < sizeX; ++scanX){
-	//		for (std::uint32_t scanChannel = 0; scanChannel < 1; ++scanChannel){ // TEMP: loop condition set to 1 (was channelsNumber)
-	//			if (!(scanX % skip == 0 && scanY % skip ==0))
-	//				iso_prev = myHandler->getUnsignedLong(index++);
-	//			else
-	//				_dSingle.isovalues.push_back((myHandler->getUnsignedLong(index++) + iso_prev) / 2);
-	//		}
-	//	}
-	//}
-
 	_dSingle.width = sizeX;
 	_dSingle.height = sizeY;
 	_dSingle.isovalues.clear();
 
 	std::uint32_t index(0);
-	for (std::uint32_t scanY = 0; scanY < sizeY; ++scanY){
-		for (std::uint32_t scanX = 0; scanX < sizeX; ++scanX){
-			for (std::uint32_t scanChannel = 0; scanChannel < 1; ++scanChannel){ // TEMP: loop condition set to 1 (was channelsNumber)
+	for (std::uint32_t scanY = 0; scanY < sizeY; ++scanY)
+	{
+		for (std::uint32_t scanX = 0; scanX < sizeX; ++scanX)
+		{
+			for (std::uint32_t scanChannel = 0; scanChannel < 1; ++scanChannel) // TEMP: loop condition set to 1 (was channelsNumber)
+			{ 
 				_dSingle.isovalues.push_back(myHandler->getUnsignedLong(index++));
 			}
 		}

@@ -8,14 +8,17 @@
 #include <iostream>
 #include <thread>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/projection.hpp>
-#include <glm/gtc/matrix_access.hpp>
+#include <pathtools.h>
 
 #include "Constants.h"
 
-namespace MiscFunctions {
-
+namespace MiscFunctions 
+{
 	template <typename T>
 	std::string to_string_with_precision(const T a_value, const int n)
 	{
@@ -84,6 +87,18 @@ namespace MiscFunctions {
 		printf("%s", buffer);
 	}
 
+	static inline void println_vec3(glm::vec3 v)
+	{
+		std::cout << v.x << " " << v.y << " " << v.z << std::endl;
+	}
+
+	static inline void println_mat4(glm::mat4 m) 
+	{
+		std::cout << m[0][0] << " " << m[0][1] << " " << m[0][2] << " " << m[0][3] << std::endl;
+		std::cout << m[1][0] << " " << m[1][1] << " " << m[1][2] << " " << m[1][3] << std::endl;
+		std::cout << m[2][0] << " " << m[2][1] << " " << m[2][2] << " " << m[2][3] << std::endl;
+		std::cout << m[3][0] << " " << m[3][1] << " " << m[3][2] << " " << m[3][3] << std::endl << std::endl;
+	}
 
 	static inline float XZplaneAngleY(glm::vec3 a)
 	{
@@ -93,27 +108,22 @@ namespace MiscFunctions {
 
 		if (xz.x > 0 && xz.z < 0) 
 		{
-			// quad 0
-			//std::cout << "0" << std::endl;
+			// quadrant 0
 			return xzDotXaxis;
 		}
 		else if (xz.x < 0 && xz.z < 0) 
 		{
 			// quad 1
-			//std::cout << "1" << std::endl;
 			return xzDotXaxis;
 		}
 		else if (xz.x < 0 && xz.z > 0) 
 		{
 			// quad 2
-			//std::cout << "2" << std::endl;
 			return Constants::TWOPI - xzDotXaxis;
 		}
 		else if (xz.x > 0 && xz.z > 0) 
 		{
 			// quad 3
-			//std::cout << "3" << std::endl;
-			//std::cout << Constants::TWOPI - xzDotXaxis << std::endl;
 			return Constants::TWOPI - xzDotXaxis;
 		}
 		else
@@ -142,12 +152,11 @@ namespace MiscFunctions {
 	{
 		glm::vec3 z = glm::normalize(a);
 		glm::vec3 zflat = glm::normalize(glm::vec3(a.x, 0.0f, a.z));
-
 		float zDotXaxis = acos(glm::dot(z, zflat));
-
 		float fac = 1.0f;
 
-		if (b.x < 0.0f) {
+		if (b.x < 0.0f) 
+		{
 			fac = -1.0f;
 		}
 
@@ -159,33 +168,7 @@ namespace MiscFunctions {
 		{
 			return fac*-zDotXaxis;
 		}
-
-		if (z.x < 0)
-		{
-			if (z.y > 0.0f)
-			{
-				return -zDotXaxis;
-			}
-			else
-			{
-				return zDotXaxis;
-			}
-		}
-		else
-		{
-			if (z.y > 0.0f)
-			{
-				return zDotXaxis;
-			}
-			else
-			{
-				return -zDotXaxis;
-			}
-		}
-
-
 	}
-
 
 	static inline glm::mat4 RotateTo(glm::vec3 a, glm::vec3 b) 
 	{
@@ -194,71 +177,14 @@ namespace MiscFunctions {
 			return glm::mat4(1.0f);
 		}
 
-		glm::vec3 aUnit = glm::normalize(a);
-		glm::vec3 bUnit = glm::normalize(b);
-		glm::vec3 cross = glm::cross(aUnit, bUnit);
-		float dot = glm::dot(aUnit, bUnit);
-		float crossMag = glm::length(cross);
-
-
-		//return glm::rotate(glm::mat4(1.0f), -(XZplaneAngle(b) - XZplaneAngle(a)), Constants::Y_AXIS);
-
-		//std::cout << XZplaneAngleY(b) << std::endl;
-
-		//std::cout << (XZplaneAngleZ(b) - XZplaneAngleZ(a)) << std::endl;
-
-		
-
-		return glm::rotate(glm::mat4(1.0f), (XZplaneAngleY(b) - XZplaneAngleY(a)), Constants::Y_AXIS) *glm::rotate(glm::mat4(1.0f), (XZplaneAngleZ(b, a) - XZplaneAngleZ(a, a)), Constants::Z_AXIS) *glm::scale(glm::mat4(1.0f), glm::vec3(glm::length(b) / glm::length(a)));
-
-		//return glm::rotate(glm::mat4(1.0f), (XZplaneAngleZ(b)), Constants::Z_AXIS)*glm::rotate(glm::mat4(1.0f), (XZplaneAngleY(b) - XZplaneAngleY(a)), Constants::Y_AXIS);// *glm::scale(glm::mat4(1.0f), glm::vec3(glm::length(b) / glm::length(a)));
-
+		return glm::rotate(glm::mat4(1.0f), XZplaneAngleY(b) - XZplaneAngleY(a), Constants::Y_AXIS) 
+			*glm::rotate(glm::mat4(1.0f), XZplaneAngleZ(b, a) - XZplaneAngleZ(a, a), Constants::Z_AXIS) 
+			*glm::scale(glm::mat4(1.0f), glm::vec3(glm::length(b) / glm::length(a)));
 	}
 
+	static inline std::string relativeToAbsolutePath(std::string _relative)
+	{
+		std::string sExecutableDirectory = Path_StripFilename(Path_GetExecutablePath());
+		return Path_MakeAbsolute(_relative, sExecutableDirectory);
+	}
 };		
-
-
-		//float phi = acos()
-
-
-		//glm::mat4 m(dot, -crossMag,   0, 0.0f,
-		//	   crossMag,      0.0f, dot, 0.0f,
-		//			  0,         0,   0, 0.0f,
-		//			0.0f,     0.0f,   0, 0.0f);
-
-
-		//glm::mat3 g( dot, -crossMag,   0,
-		//		crossMag,      0.0f, dot,
-		//		       0,         0,   0);
-		//
-		//glm::vec3 u = glm::proj(bUnit, aUnit);
-		//glm::vec3 v = bUnit - u;
-		//
-		//glm::mat3 f;
-		//glm::column(f, 0, aUnit);
-		//glm::column(f, 1, v);
-		//glm::column(f, 2, cross);
-		//glm::mat3 fi = glm::inverse(f);
-		//
-		//glm::mat3 ret = fi*g*f;
-		//
-		//glm::mat4 m(ret);
-		//
-		//return m;
-
-		//float c = glm::dot(aUnit, bUnit);
-		//float s = glm::length(v);
-		//float factor = 1.0f / (1.0f + c);
-		//
-		//glm::mat4 m(0.0f, -v.z,  v.y, 0.0f,
-		//			 v.z, 0.0f, -v.x, 0.0f,
-		//			-v.y, -v.x,  0.0f, 0.0f,
-		//			0.0f,  0.0f, 0.0f, 0.0f);
-		//
-		//std::cout << m[0][0] << " " << m[0][1] << " " << m[0][2] << " " << m[0][3] << std::endl;
-		//std::cout << m[1][0] << " " << m[1][1] << " " << m[1][2] << " " << m[1][3] << std::endl;
-		//std::cout << m[2][0] << " " << m[2][1] << " " << m[2][2] << " " << m[2][3] << std::endl;
-		//std::cout << m[3][0] << " " << m[3][1] << " " << m[3][2] << " " << m[3][3] << std::endl;
-		//std::cout << std::endl;
-
-		//return (glm::mat4(1.0f) + m + (m*m)*factor);

@@ -1,23 +1,28 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include <future>
 #include <windows.h>
 #include <Windows.h>
 #include <thread>
 #include <string>
 #include <iostream>
+
+#include <glm/glm.hpp>
 #include <imebra.h>
 #include <tinydir.h>
 #include <pathtools.h>
 
 #include "Constants.h"
+#include "MiscFunctions.h"
 
-struct IsovaluePoint {
+struct IsovaluePoint 
+{
 	glm::vec3 pos;
-	float diff; // difference from mean
+	float diff;
 };
 
-struct DicomSingle {
+struct DicomSingle 
+{
 	std::vector<short> isovalues;
 	int width;
 	int height;
@@ -27,7 +32,8 @@ struct DicomSingle {
 	std::string series_id;
 };
 
-struct DicomSet {
+struct DicomSet 
+{
 	std::vector<DicomSingle> data;
 	std::string series_id;
 	glm::vec3 scale;
@@ -38,7 +44,8 @@ struct DicomSet {
 	int window_width;
 	int current_index;
 
-	DicomSet() {
+	DicomSet() 
+	{
 		series_id = "";
 		scale = glm::vec3(0.0f, 0.0f, 0.0f);
 		current_index = 0;
@@ -50,9 +57,10 @@ struct DicomSet {
 	}
 };
 
-class DicomReader{
+class DicomReader
+{
 	public:
-		static DicomSet ReadSet(std::string _dirFilePath, bool * finished);
+		static DicomSet ReadSet(std::string _dicomFolder);
 		static DicomSingle ReadSingle(std::string _filePath);
 };
 

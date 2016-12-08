@@ -12,14 +12,11 @@
 #include "DicomReader.h"
 #include "MiscFunctions.h"
 
-class ColorObject : public AbstractBaseObject{
-
+class ColorObject : public AbstractBaseObject
+{
 	public:
-
 		ColorObject();
 		~ColorObject();
-
-		// functions
 		void GenerateXYPlane(float _scaleX, float _scaleY, glm::vec2 _padding, glm::vec3 _offset);
 		void GenerateXYPlane(float _scaleX, float _scaleY, float _padding, glm::vec3 _offset);
 		void GenerateXYPrism(float _scaleX, float _scaleY, float _scaaleZ, glm::vec2 _padding, glm::vec3 _offset);
@@ -31,14 +28,13 @@ class ColorObject : public AbstractBaseObject{
 		void SetDisplayColor(const glm::vec4 & _inColor);
 		void SetSelected(bool _isSelected);
 		glm::vec4 GetDisplayColor();
-
-	//private:
-
 		void AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset);
 		void Finalize();
 		void Load();
 		int Type();
 
 		glm::vec4 display_color;
+		glm::vec4 selected_color_additive;
 		float display_color_modifier;
+		float selection_modifier;
 };
