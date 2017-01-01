@@ -1,9 +1,5 @@
 #include "Engine.h"
-	ColorObject * box = new ColorObject;
-	ColorObject * debug1 = new ColorObject;
-	ColorObject * debug2 = new ColorObject;
-	ColorObject * debug3 = new ColorObject;
-	ColorObject * debug4 = new ColorObject;
+
 Engine::Engine()
 {
 	if (!InitGLFW() || !InitGLEW()) 
@@ -30,37 +26,13 @@ Engine::Engine()
 	ground->GenerateRoom();
 	renderer->AddObjectToScene(ground);
 
-
-	box->GenerateXYPrism(glm::vec3(1.0f), glm::vec2(0.0f), glm::vec3(0));
-	box->is_selectable = true;
-	box->SetDisplayColor(glm::vec4(0.7f, 0.7f, 0.7f, 1.0f));
-	box->Set_world_position(glm::vec3(-2.0f, 0.2f, 0.0f));
-	renderer->AddObjectToScene(box);
-
-	debug1 = new ColorObject;
-	debug1->GenerateSphere(10, 0.1f, false);
-	debug1->SetDisplayColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-	//renderer->AddObjectToScene(debug1);
-
-	debug2 = new ColorObject;
-	debug2->GenerateSphere(10, 0.1f, false);
-	debug2->SetDisplayColor(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-	//renderer->AddObjectToScene(debug2);
-
-	debug3 = new ColorObject;
-	debug3->GenerateSphere(10, 0.2f, false);
-	debug3->SetDisplayColor(glm::vec4(0.0f, 0.0f, 1.25f, 1.0f));
-	//renderer->AddObjectToScene(debug3);
-
-	debug4 = new ColorObject;
-	debug4->GenerateSphere(10, 0.2f, false);
-	debug4->SetDisplayColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-	//renderer->AddObjectToScene(debug4);
-
+	ImGui_ImplGlfwGL3_Init(window, true);
+	bool show_test_window = true;
+	bool show_another_window = false;
+	ImVec4 clear_color = ImColor(114, 144, 154);
 
 	// call final render initializer after all objects have been added
 	renderer->Finalize();
-
 	Loop();
 }
 
@@ -103,25 +75,8 @@ bool Engine::InitGLEW()
 
 void Engine::Update() 
 {
-		dicomObjects->Update(renderer->half_aspect, renderer->vr_info, renderer->cursor_info);
-		renderer->RenderScene();
-
-		// test dual motion controller box
-		if (box->is_selected)
-		{
-			if (box->is_double_selected) 
-			{
-				glm::mat4 rot = MiscFunctions::RotateTo(box->cache.primary_to_secondary_collision_point_initial, box->cache.primary_to_secondary_collision_point_current);
-				glm::mat4 curr_pose = box->cache.controller_pose_updated * glm::translate(glm::mat4(1.0f), box->cache.primary_collision_point_controller_space_initial)* rot* glm::translate(glm::mat4(1.0f), -box->cache.primary_collision_point_controller_space_initial) * box->cache.to_controller_space_initial;
-				box->Set_append_pose(curr_pose);
-			}
-			else 
-			{
-				glm::mat4 curr_pose = box->cache.controller_pose_updated * box->cache.to_controller_space_initial;
-				box->Set_append_pose(curr_pose);
-			}
-		}
-
+	dicomObjects->Update(renderer->half_aspect, renderer->vr_info, renderer->cursor_info);
+	renderer->RenderScene();
 }
 
 void Engine::Loop() 
@@ -129,15 +84,59 @@ void Engine::Loop()
 	auto begin = std::chrono::high_resolution_clock::now();
 	auto end = std::chrono::high_resolution_clock::now();
 
+
+	bool show_test_window = true;
+	bool show_another_window = false;
+	ImVec4 clear_color = ImColor(114, 144, 154);
+
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) 
 	{
 		begin = std::chrono::high_resolution_clock::now();
 		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(begin - end).count();
 		
-		Update();
+		
+		glfwPollEvents();
+		ImGui_ImplGlfwGL3_NewFrame();
+Update();
+		// 1. Show a simple window
+		// Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
+		{
+			static float f = 0.0f;
+			ImGui::Text("Hello, world!");
+			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+			ImGui::ColorEdit3("clear color", (float*)&clear_color);
+			if (ImGui::Button("Test Window")) show_test_window ^= 1;
+			if (ImGui::Button("Another Window")) show_another_window ^= 1;
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		}
+
+		// 2. Show another simple window, this time using an explicit Begin/End pair
+		if (show_another_window)
+		{
+			ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
+			ImGui::Begin("Another Window", &show_another_window);
+			ImGui::Text("Hello");
+			ImGui::End();
+		}
+
+		// 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
+		if (show_test_window)
+		{
+			ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
+			ImGui::ShowTestWindow(&show_test_window);
+		}
+
+		// Rendering
+		int display_w, display_h;
+		glfwGetFramebufferSize(window, &display_w, &display_h);
+		glViewport(0, 0, display_w, display_h);
+		//glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+		//glClear(GL_COLOR_BUFFER_BIT);
+		ImGui::Render();
+
 
 		glfwSwapBuffers(window);
-		glfwPollEvents();		
+
 
 		end = begin;
 	} 

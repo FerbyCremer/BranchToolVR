@@ -265,6 +265,25 @@ void ColorObject::GenerateXYPlane(float _scaleX, float _scaleY, float _padding, 
 	GenerateXYPlane(_scaleX,  _scaleY, glm::vec2(_padding,_padding), _offset);
 }
 
+void ColorObject::GenerateXZPlane(float _scaleX, float _scaleZ, float _padding, glm::vec3 _offset)
+{
+	positions.push_back(glm::vec3(_scaleX*0.0f, 0.0f, _scaleZ* 0.0f));
+	positions.push_back(glm::vec3(_scaleX*1.0f, 0.0f, _scaleZ* 0.0f));
+	positions.push_back(glm::vec3(_scaleX*1.0f, 0.0f, _scaleZ* -1.0f));
+	positions.push_back(glm::vec3(_scaleX*0.0f, 0.0f, _scaleZ* 0.0f));
+	positions.push_back(glm::vec3(_scaleX*1.0f, 0.0f, _scaleZ* -1.0f));
+	positions.push_back(glm::vec3(_scaleX*0.0f, 0.0f, _scaleZ* -1.0f));
+
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+
+	Finalize();
+}
+
 void ColorObject::GenerateXYPlane(float _scaleX, float _scaleY, glm::vec2 _padding, glm::vec3 _offset)
 {
 	positions.push_back(glm::vec3(0.0f, 0.0f, 0.0f));

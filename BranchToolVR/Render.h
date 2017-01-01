@@ -194,7 +194,6 @@ class Render
 		void SetupRenderModelForTrackedDevice(vr::TrackedDeviceIndex_t unTrackedDeviceIndex);
 		
 		// static helper functions
-		static void PrintMat4(glm::mat4 m);
 		static glm::mat4 ValveMat34ToGlmMat4Inv(vr::HmdMatrix34_t _mIN);
 		static glm::mat4 ValveMat34ToGlmMat4(vr::HmdMatrix34_t _mIN);
 		static glm::mat4 ValveMat4ToGlmMat4(vr::HmdMatrix44_t _mIN);

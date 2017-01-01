@@ -21,9 +21,12 @@
 #include "DicomObjectsContainer.h"
 #include "Constants.h"
 
+
+#include <imgui.h>
+#include "imgui_impl_glfw_gl3.h"
+
 class Engine
 {
-
 	public:
 
 		Engine();

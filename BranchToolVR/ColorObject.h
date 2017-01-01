@@ -19,6 +19,7 @@ class ColorObject : public AbstractBaseObject
 		~ColorObject();
 		void GenerateXYPlane(float _scaleX, float _scaleY, glm::vec2 _padding, glm::vec3 _offset);
 		void GenerateXYPlane(float _scaleX, float _scaleY, float _padding, glm::vec3 _offset);
+		void GenerateXZPlane(float _scaleX, float _scaleZ, float _padding, glm::vec3 _offset);
 		void GenerateXYPrism(float _scaleX, float _scaleY, float _scaaleZ, glm::vec2 _padding, glm::vec3 _offset);
 		void GenerateXYPrism(glm::vec3 _scale, glm::vec2 _padding, glm::vec3 _offset);
 		void GenerateSphere(int _res, float _radius, bool _invNormals);
