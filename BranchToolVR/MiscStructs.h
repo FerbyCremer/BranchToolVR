@@ -11,14 +11,18 @@ struct VrMotionController
 	glm::vec3 position;
 	glm::vec3 orientation;
 	glm::vec3 ray;
-	bool is_pressed;
-	bool first_press;
+	bool trigger_is_pressed;
+	bool trigger_first_press;
+	bool alt_is_pressed;
+	bool alt_first_press;
 	int id;
 
 	VrMotionController() 
 	{
-		is_pressed = false;
-		first_press = false;
+		trigger_is_pressed = false;
+		trigger_first_press = false;
+		alt_is_pressed = false;
+		alt_first_press = false;
 		pose = glm::mat4(1.0f);
 		position = glm::vec3(0.0f);
 		orientation = glm::vec3(0.0f);
@@ -28,8 +32,8 @@ struct VrMotionController
 
 	void Press(bool _is_pressed)
 	{
-		first_press = _is_pressed && !is_pressed;
-		is_pressed = _is_pressed;
+		trigger_first_press = _is_pressed && !trigger_is_pressed;
+		trigger_is_pressed = _is_pressed;
 	}
 
 	void SetPose(glm::mat4 & _inPose)
@@ -62,7 +66,6 @@ struct VrMotionController
 
 struct VrData 
 {
-
 	// controllers
 	VrMotionController controller1;
 	VrMotionController controller2;

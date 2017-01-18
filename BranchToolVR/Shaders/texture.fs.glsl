@@ -15,4 +15,5 @@ void main()
 {
 	//vec3 to_light = normalize(light_pos - oi_position);
 	output_color = texture(diffuse_texture, oi_uv);
+	//output_color.a = 0.5f;
 }

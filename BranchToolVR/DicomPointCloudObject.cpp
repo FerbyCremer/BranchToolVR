@@ -16,6 +16,7 @@ DicomPointCloudObject::DicomPointCloudObject()
 	handle->is_selectable = true;
 	handle->is_double_selectable = true;
 	handle->readObjFromFile(DirectoryInfo::POINT_CLOUD_HANDLE_MODEL, Constants::DEFAULT_POINT_CLOUD_SCALE, 0.5f*glm::vec3(Constants::DEFAULT_POINT_CLOUD_SCALE, 0.0f, Constants::DEFAULT_POINT_CLOUD_SCALE));
+	handle->texture_id = 3; //POINT_CLOUD_FRAME_TEXTURE;
 
 	branch_point_marker = new ColorObject;
 	branch_point_marker->SetDisplayColor(glm::vec4(1.0f, 0.1f, 0.2f, 1.0f));

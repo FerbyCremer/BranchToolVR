@@ -27,6 +27,7 @@ struct InteractionCache
 	glm::mat4 controller_pose_initial;
 	glm::mat4 controller_pose_updated;
 	glm::mat4 append_pose_initial;
+	glm::vec3 controller_world_position_initial;
 
 	// dual gesture variables	
 	glm::vec3 primary_collision_point_world_initial;

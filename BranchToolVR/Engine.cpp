@@ -2,7 +2,7 @@
 
 Engine::Engine()
 {
-	if (!InitGLFW() || !InitGLEW()) 
+	if (!InitGLFW() || !InitGLEW())
 	{
 		glfwTerminate();
 		throw std::runtime_error("Failed to initialize Engine class. Exiting...");
@@ -84,6 +84,10 @@ void Engine::Loop()
 	auto begin = std::chrono::high_resolution_clock::now();
 	auto end = std::chrono::high_resolution_clock::now();
 
+	ColorObject* debug1 = new ColorObject();
+	debug1->GenerateSphere(10, 0.001f, false);
+	renderer->AddObjectToScene(debug1);
+
 
 	bool show_test_window = true;
 	bool show_another_window = false;
@@ -94,10 +98,31 @@ void Engine::Loop()
 		begin = std::chrono::high_resolution_clock::now();
 		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(begin - end).count();
 		
+
+		if (dicomObjects->imgui_panel->is_selected)
+		{
+			//glm::vec4 colp_to_model_space = glm::inverse(dicomObjects->imgui_panel->GetModelMatrix()) * glm::vec4(dicomObjects->imgui_panel->cache.primary_collision_point_world_current, 1.0f);
+			//dicomObjects->imgui_panel_coords = glm::vec2(colp_to_model_space);
+			//debug1->Set_world_position(glm::vec3(dicomObjects->imgui_panel->cache.primary_collision_point_world_current));
+
+			// find collision with controller ray and xy plane (imgui panel model space)
+			glm::vec3 curr_pos = glm::vec3(glm::inverse(dicomObjects->imgui_panel->GetModelMatrix())*dicomObjects->imgui_panel->cache.controller_pose_updated* glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+			glm::vec3 curr_ray = glm::vec3(glm::inverse(dicomObjects->imgui_panel->GetModelMatrix())*dicomObjects->imgui_panel->cache.controller_pose_updated* glm::vec4(0.0f, 0.0f, -1.0f, 1.0f)) - curr_pos;
+			float t = (-curr_pos.z) / curr_ray.z;
+			glm::vec3 xy_plane_intersection = curr_pos + curr_ray*t;
+
+			dicomObjects->imgui_panel_coords = glm::vec2(xy_plane_intersection) + glm::vec2(0.001f,0.0001f);
+			debug1->Set_world_position(glm::vec3(dicomObjects->imgui_panel->GetModelMatrix()*glm::vec4(xy_plane_intersection,1.0f)));
+		}
+
+		
 		
 		glfwPollEvents();
-		ImGui_ImplGlfwGL3_NewFrame();
-Update();
+
+
+		ImGui_ImplGlfwGL3_NewFrame(renderer->vr_info, dicomObjects->imgui_panel_coords, dicomObjects->imgui_panel->is_selected);
+		Update();
+
 		// 1. Show a simple window
 		// Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
 		{
@@ -109,7 +134,7 @@ Update();
 			if (ImGui::Button("Another Window")) show_another_window ^= 1;
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		}
-
+		
 		// 2. Show another simple window, this time using an explicit Begin/End pair
 		if (show_another_window)
 		{
@@ -118,20 +143,18 @@ Update();
 			ImGui::Text("Hello");
 			ImGui::End();
 		}
-
+		
 		// 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
 		if (show_test_window)
 		{
 			ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
 			ImGui::ShowTestWindow(&show_test_window);
 		}
-
+		
 		// Rendering
-		int display_w, display_h;
-		glfwGetFramebufferSize(window, &display_w, &display_h);
-		glViewport(0, 0, display_w, display_h);
-		//glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-		//glClear(GL_COLOR_BUFFER_BIT);
+		glBindFramebuffer(GL_FRAMEBUFFER, rt->fbo);
+		glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)));
+		glClear(GL_DEPTH_BUFFER_BIT);
 		ImGui::Render();
 
 

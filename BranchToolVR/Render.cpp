@@ -157,14 +157,15 @@ bool Render::InitVR()
 		return false;
 	}
 
-	//m_pRenderModels = (vr::IVRRenderModels *)vr::VR_GetGenericInterface(vr::IVRRenderModels_Version, &eError);
-	//if (!m_pRenderModels){
-	//	m_pHMD = NULL;
-	//	vr::VR_Shutdown();
-	//	char buf[1024];
-	//	sprintf_s(buf, sizeof(buf), "Unable to get render model interface: %s", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
-	//	return false;
-	//}
+	m_pRenderModels = (vr::IVRRenderModels *)vr::VR_GetGenericInterface(vr::IVRRenderModels_Version, &eError);
+	if (!m_pRenderModels)
+	{
+		m_pHMD = NULL;
+		vr::VR_Shutdown();
+		char buf[1024];
+		sprintf_s(buf, sizeof(buf), "Unable to get render model interface: %s", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
+		return false;
+	}
 
 	m_pHMD->GetRecommendedRenderTargetSize(&m_nRenderWidth, &m_nRenderHeight);
 
@@ -423,8 +424,7 @@ void Render::RenderShadows()
 
 	for (DicomPointCloudObject* & dpco : dicom_point_cloud_objects) 
 	{
-		if (!dpco->first_load)
-			continue;
+		if (!dpco->first_load) continue;
 
 		glUniformMatrix4fv(dicom_point_cloud.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
 		glUniform1i(dicom_point_cloud.uniforms[3], dpco->curr_tolerance);
@@ -433,6 +433,7 @@ void Render::RenderShadows()
 		glUniform3fv(dicom_point_cloud.uniforms[9], 1, glm::value_ptr(dpco->upper_bounds));
 
 		glBindVertexArray(dpco->vao);
+
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
@@ -445,7 +446,6 @@ void Render::RenderShadows()
 		glVertexAttribDivisor(4, 1);
 
 		glDrawArraysInstanced(GL_TRIANGLES, 0, dpco->num_vertices, dpco->num_instances);
-
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -465,6 +465,7 @@ void Render::RenderScene()
 
 
 	// TMP: render to screen while ui is broken
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, window_size_x, window_size_y);
 	glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)));
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -603,22 +604,27 @@ void Render::BindTextures()
 {
 	for (int i = 0; i < CURR_NR_TEXTURES; ++i)
 	{
+		if (i == IMGUI_TEXTURE) continue;
+		
 		textures[i]->Bind(i);
 	}
 }
 
 void Render::LoadTextures()
 {
-	// load textures
 	textures = new Texture*[CURR_NR_TEXTURES];
 	for (int i = 0; i < CURR_NR_TEXTURES; ++i)
 	{
-		if (i != CURR_ORTHOSLICE_TEXTURE) // dicomobjects container sets this texture
-			textures[i] = new Texture;
+		if (i == CURR_ORTHOSLICE_TEXTURE || i == IMGUI_TEXTURE) continue; // dicomobjects container sets this texture
+		
+		textures[i] = new Texture;
 	}
-	textures[WOOD_TEXTURE]->Load("blue");
+
+	textures[WOOD_TEXTURE]->Load("Wood");
 	textures[FONT_TEXTURE]->Load("fontGlyph4096");
 	textures[COARSE_VIEWER_SLICE_HANDLE_TEXTURE]->Load("coarseViewerTexture");
+	textures[POINT_CLOUD_FRAME_TEXTURE]->Load("pointCloudFrame");
+	textures[IMGUI_HANDLE_TEXTURE]->Load("imguiFrame");
 }
 
 void Render::LoadShaders()
@@ -736,10 +742,11 @@ void Render::LoadShaders()
 }
 
 void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V) 
-{
+{	
+	BindTextures();
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
-	BindTextures();
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -760,6 +767,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
+	
 	glUseProgram(color.id);
 	
 	glUniformMatrix4fv(color.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
@@ -770,16 +778,16 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 	glUniform3fv(color.uniforms[6], 1, glm::value_ptr(lights[2].position));
 	glUniform3fv(color.uniforms[10], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
 
-	glActiveTexture(GL_TEXTURE0 + 8);
+	glActiveTexture(GL_TEXTURE0 + 8); // TMP: set shadow map texture 
 	glBindTexture(GL_TEXTURE_2D, sm.depth);
 	glUniform1i(color.uniforms[7], 8);	
+
 	glUniformMatrix4fv(color.uniforms[8], 1, GL_FALSE, glm::value_ptr(sm.P));
 	glUniformMatrix4fv(color.uniforms[9], 1, GL_FALSE, glm::value_ptr(sm.V));
 	
 	for (ColorObject* & cObj : color_objects) 
 	{
-		if (cObj->is_hidden || !cObj->is_loaded)
-			continue;
+		if (cObj->is_hidden || !cObj->is_loaded) continue;
 
 		glUniformMatrix4fv(color.uniforms[2], 1, GL_FALSE, glm::value_ptr(cObj->GetModelMatrix()));
 		glUniform4fv(color.uniforms[3], 1, glm::value_ptr(cObj->GetDisplayColor()));	
@@ -792,6 +800,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 	}
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////
+	
 	glUseProgram(texture.id);
 
 	glUniformMatrix4fv(texture.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
@@ -814,8 +823,6 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////	
 
-
-	
 	glUseProgram(dicom_point_cloud.id);
 	
 	glUniformMatrix4fv(dicom_point_cloud.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
@@ -839,6 +846,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 		glUniform3fv(dicom_point_cloud.uniforms[9], 1, glm::value_ptr(dpco->upper_bounds));
 
 		glBindVertexArray(dpco->vao);	
+
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
@@ -898,10 +906,11 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 				}
 			}
 		}
-
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
+
+	// VALVE OBJECT RENDERING
 
 	glUseProgram(texture.id);
 
@@ -911,6 +920,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 			continue;
 
 		const vr::TrackedDevicePose_t & pose = m_rTrackedDevicePose[unTrackedDevice];
+
 		if (!pose.bPoseIsValid)
 			continue;
 
@@ -920,7 +930,6 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 
 		glm::mat4 matDeviceToTracking = m_rmat4DevicePose[unTrackedDevice];
 		glUniformMatrix4fv(texture.uniforms[2], 1, GL_FALSE, glm::value_ptr(matDeviceToTracking));
-
 
 		glBindVertexArray(m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_glVertArray);
 
@@ -971,7 +980,7 @@ void Render::DetectCollision(VrMotionController & _controller)
 	AbstractBaseObject *& oth = _controller.id != 0 ? selected_element1 : selected_element2;
 
 	// controller trigger is held down with previous selection
-	if (_controller.is_pressed && curr != NULL)
+	if (_controller.trigger_is_pressed && curr != NULL)
 	{			
 		// other controller has just released previously shared object
 		if (curr->controllerSelectorId == -1)
@@ -1005,9 +1014,7 @@ void Render::DetectCollision(VrMotionController & _controller)
 				curr->controllerSelectorIdPrev = _controller.id;
 				curr->cache.primary_collision_point_world_current = glm::vec3(_controller.pose * glm::vec4(curr->cache.primary_collision_point_controller_space_initial, 1.0f));
 				curr->cache.controller_pose_updated = _controller.pose;
-
 			}
-
 		}
 		// two controllers with same object selected
 		else if (curr == oth)
@@ -1036,7 +1043,7 @@ void Render::DetectCollision(VrMotionController & _controller)
 		}
 	}
 	// controller trigger pressed for the first time without previous selection
-	else if (_controller.first_press && curr == NULL)
+	else if (_controller.trigger_first_press && curr == NULL)
 	{
 		std::vector<foundCollision> found_collisions;
 
@@ -1084,7 +1091,8 @@ void Render::DetectCollision(VrMotionController & _controller)
 				curr->cache.append_pose_initial = curr->append_pose;
 				curr->cache.primary_collision_point_world_initial = found_collisions[0].intersection_point;
 				curr->cache.primary_collision_point_world_current = found_collisions[0].intersection_point;
-				curr->cache.primary_collision_point_controller_space_initial = intersection_point_controller_space;							
+				curr->cache.primary_collision_point_controller_space_initial = intersection_point_controller_space;			
+				curr->cache.controller_world_position_initial = _controller.position;
 				
 				if (curr->is_clickable)
 				{
@@ -1099,7 +1107,7 @@ void Render::DetectCollision(VrMotionController & _controller)
 		}
 	}
 	// trigger released with a selection
-	else if (!_controller.is_pressed && curr != NULL)
+	else if (!_controller.trigger_is_pressed && curr != NULL)
 	{
 		if (curr == oth)
 		{
@@ -1163,24 +1171,45 @@ void Render::FakeInput(int controllerIndex)
 
 	currController.SetOrientationSpoof(currController.orientation + glm::vec3(rot_rate*mpos.x, glm::clamp(rot_rate*mpos.y, -1.2f, 1.2f), 0.0f));
 	
-	static bool once[] = { true, true };
+	static bool trigger_once[] = { true, true };
+	static bool alt_once[] = { true, true };
 	
+	// trigger spoof LMB
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1))
 	{
-		if (once[controllerIndex]) 
+		if (trigger_once[controllerIndex]) 
 		{
-			currController.first_press = !currController.is_pressed;
-			currController.is_pressed = !currController.is_pressed;
-			once[controllerIndex] = false;
+			currController.trigger_first_press = !currController.trigger_is_pressed;
+			currController.trigger_is_pressed = !currController.trigger_is_pressed;
+			trigger_once[controllerIndex] = false;
 		}
 		else 
 		{
-			currController.first_press = false;
+			currController.trigger_first_press = false;
 		}
 	}
 	else if(!glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1))
 	{
-		once[controllerIndex] = true;
+		trigger_once[controllerIndex] = true;
+	}
+
+	// alternate button spoof RMB
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2))
+	{
+		if (alt_once[controllerIndex])
+		{
+			currController.alt_first_press = !currController.alt_is_pressed;
+			currController.alt_is_pressed = !currController.alt_is_pressed;
+			alt_once[controllerIndex] = false;
+		}
+		else
+		{
+			currController.alt_first_press = false;
+		}
+	}
+	else if (!glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2))
+	{
+		alt_once[controllerIndex] = true;
 	}
 
 	spoofControllerView = glm::inverse(currController.pose);
@@ -1188,8 +1217,8 @@ void Render::FakeInput(int controllerIndex)
 	controller_pointer1->model_matrix = vr_info.controller1.pose;
 	controller_pointer2->model_matrix = vr_info.controller2.pose;
 
-	controller_pointer1->SetSelected(vr_info.controller1.is_pressed);
-	controller_pointer2->SetSelected(vr_info.controller2.is_pressed);
+	controller_pointer1->SetSelected(vr_info.controller1.trigger_is_pressed);
+	controller_pointer2->SetSelected(vr_info.controller2.trigger_is_pressed);
 
 }
 
@@ -1255,6 +1284,7 @@ void Render::UpdateHMDMatrixPose()
 
 	// update controllers
 	int controllerIndex = 0;
+
 	for (vr::TrackedDeviceIndex_t unTrackedDevice = vr::k_unTrackedDeviceIndex_Hmd + 1; unTrackedDevice < vr::k_unMaxTrackedDeviceCount; ++unTrackedDevice)
 	{
 		if (!m_pHMD->IsTrackedDeviceConnected(unTrackedDevice))
@@ -1278,13 +1308,13 @@ void Render::UpdateHMDMatrixPose()
 		{
 			if (state.ulButtonPressed != 0) 
 			{
-				currController.first_press = !currController.is_pressed;
-				currController.is_pressed = true;
+				currController.trigger_first_press = !currController.trigger_is_pressed;
+				currController.trigger_is_pressed = true;
 			}
 			else 
 			{
-				currController.first_press = false;
-				currController.is_pressed = false;
+				currController.trigger_first_press = false;
+				currController.trigger_is_pressed = false;
 			}
 		}
 	}
@@ -1292,8 +1322,8 @@ void Render::UpdateHMDMatrixPose()
 	controller_pointer1->model_matrix = vr_info.controller1.pose;
 	controller_pointer2->model_matrix = vr_info.controller2.pose;
 
-	controller_pointer1->SetSelected(vr_info.controller1.is_pressed);
-	controller_pointer2->SetSelected(vr_info.controller2.is_pressed);
+	controller_pointer1->SetSelected(vr_info.controller1.trigger_is_pressed);
+	controller_pointer2->SetSelected(vr_info.controller2.trigger_is_pressed);
 }
 
 glm::mat4 Render::ValveMat34ToGlmMat4Inv(vr::HmdMatrix34_t _mIN) 

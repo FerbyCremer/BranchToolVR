@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <glm/glm.hpp>
 
 #define DEFAULT_WINDOW_SIZE_X 1000
 #define DEFAULT_WINDOW_SIZE_Y 1000
@@ -21,7 +22,8 @@ namespace DirectoryInfo
 	static const std::string RELATIVE_DICOM_DIR = RELATIVE_RESOURCES_PATH + "DICOM/";
 	static const std::string STARTUP_DICOM_SET = "torso/dcm0";
 	static const std::string POINT_CLOUD_HANDLE_MODEL = "pointCloudFrame2";
-	static const std::string COARSE_VIEWER_SLICE_HANDLE = "coarseViewerHandle2";
+	static const std::string COARSE_VIEWER_SLICE_HANDLE_MODEL = "coarseViewerHandle2";
+	static const std::string IMGUI_FRAME_MODEL = "imguiFrame";
 }
 
 namespace Constants 
@@ -42,4 +44,5 @@ namespace Constants
 	static const float DEFAULT_POINT_CLOUD_SCALE = 1.0f;
 	static const float PI = 3.14159265359f;
 	static const float SQRT3 = 1.73205080757f;
+	static const glm::ivec2 UI_DIMENSIONS = glm::ivec2(2048, 2048);
 }

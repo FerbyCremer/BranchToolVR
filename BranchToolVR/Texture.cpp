@@ -29,7 +29,7 @@ void Texture::Delete()
 
 bool Texture::Load(DicomSingle & _ds, int window_width, int window_center)
 {
-	if (&_ds == NULL) 
+	if (&_ds == NULL || !_ds.isovalues.size()) 
 	{
 		return false;
 	}

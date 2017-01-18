@@ -24,6 +24,10 @@
 #include "MiscFunctions.h"
 #include "MiscStructs.h"
 
+#include "imgui.h"
+#include "imgui_impl_glfw_gl3.h"
+
+
 struct Light 
 {
 	glm::vec3 position;
@@ -46,7 +50,10 @@ enum TexturesEnum
 	WOOD_TEXTURE,
 	FONT_TEXTURE,
 	CURR_ORTHOSLICE_TEXTURE,
+	POINT_CLOUD_FRAME_TEXTURE,
 	COARSE_VIEWER_SLICE_HANDLE_TEXTURE,
+	IMGUI_TEXTURE,
+	IMGUI_HANDLE_TEXTURE,
 	CURR_NR_TEXTURES, // keep as last element of enum
 };
 

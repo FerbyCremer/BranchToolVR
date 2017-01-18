@@ -9,9 +9,10 @@ CoarseDicomViewer::CoarseDicomViewer()
 	base_handle->readObjFromFile(DirectoryInfo::POINT_CLOUD_HANDLE_MODEL, base_handle_scale, glm::vec3(base_handle_scale * 0.3f, -0.05f, base_handle_scale * 0.3f));
 	base_handle->is_selectable = true;
 	base_handle->is_double_selectable = true;
+	base_handle->texture_id = POINT_CLOUD_FRAME_TEXTURE;
 
 	orthoslice_handle = new TextureObject;
-	orthoslice_handle->readObjFromFile(DirectoryInfo::COARSE_VIEWER_SLICE_HANDLE,1.0f, glm::vec3(0.5f, 0.5f, 0.0f));
+	orthoslice_handle->readObjFromFile(DirectoryInfo::COARSE_VIEWER_SLICE_HANDLE_MODEL,1.0f, glm::vec3(0.5f, 0.5f, 0.0f));
 	orthoslice_handle->is_selectable = true;
 	orthoslice_handle->texture_id = COARSE_VIEWER_SLICE_HANDLE_TEXTURE;
 

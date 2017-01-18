@@ -211,7 +211,7 @@ glm::mat4 AbstractBaseObject::getDoubleSelectionScaleDifference()
 		* cache.to_controller_space_initial;
 }
 
-void AbstractBaseObject::SetBoundingSphere() 
+void AbstractBaseObject::SetBoundingSphere() // TODO: fix
 {
 	float curr_max = 0.0f;
 	for (int i = 0; i < positions.size(); ++i) 

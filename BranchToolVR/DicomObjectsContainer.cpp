@@ -1,39 +1,26 @@
 #include "DicomObjectsContainer.h"
 
-ColorObject * ddebug1 = new ColorObject;
-ColorObject * ddebug2 = new ColorObject;
-
 DicomObjectsContainer::DicomObjectsContainer()
 {
 	points = new DicomPointCloudObject;
 	viewer = new CoarseDicomViewer;
-	vr_ui = new UiPanel;
+	imgui_panel = new TextureObject;
 
-	// default values
-	imaging_data.isovalue = 1340;
-	imaging_data.isovalue_tolerance = DEFAULT_ISOVALUE_TOLERANCE;
-	imaging_data.window_center = 0;
-	imaging_data.window_width = 1000;
+	imgui_panel->GenerateXYPlane(1.0f, 1.0f, 0.0f, glm::vec3(0.0f));
+	imgui_panel->is_selectable = true;
+	imgui_panel->texture_id = 11;
 
-	// default positions
-	//points->SetWorldPosition(glm::vec3(1.0f, 0.1f, 0.1f));
-	//viewer->Translate(glm::vec3(0.5f, 0.5f, 0.5f));
+	imgui_panel_handle = new TextureObject;
+	imgui_panel_handle->readObjFromFile(DirectoryInfo::IMGUI_FRAME_MODEL,1.0f,glm::vec3(0.5,0.5f,0.0f));
+	imgui_panel_handle->texture_id = IMGUI_HANDLE_TEXTURE;
+	imgui_panel_handle->is_selectable = true;
 
-	//orthoslice = new TextureObject;
-	//orthoslice->GenerateXYPlane(1.0f, 1.0f, 0.0f, glm::vec3(-0.5f, -0.5f, 0.0f));
-	//orthoslice->texture_id = CURR_ORTHOSLICE_TEXTURE;
-	//orthoslice->ui_quadrant = 1;
-	//
-	//selector2D = new ColorObject;
-	//selector2D->Set_scale(Constants::DEFAULT_SELECTOR_SCALE);
-	//selector2D->GenerateXYPlane(1.0f, 1.0f, 0.0f, glm::vec3(-0.5f, -0.5f, 0.1f));
-	//selector2D->ui_quadrant = 1;
-	//selector2D->SetDisplayColor(Constants::UI_SELECTOR_COLOR);
-	//selector2D->Set_model_position(glm::vec3(viewer->point_cloud_selector_scale*0.5f - 0.5f, viewer->point_cloud_selector_scale*0.5f - 0.5f,0.0f));
-	//selector2D->level = 1;
+	//// default values
+	//imaging_data.isovalue = 1340;
+	//imaging_data.isovalue_tolerance = DEFAULT_ISOVALUE_TOLERANCE;
+	//imaging_data.window_center = 0;
+	//imaging_data.window_width = 1000;
 
-	ddebug1 = new ColorObject;
-	ddebug1->GenerateXYPrism(glm::vec3(1.0f), glm::vec2(0.0f), glm::vec3(0.0f));
 
 
 	glm::mat4 tmp_viewer_start = glm::translate(glm::mat4(1.0f), glm::vec3( 0.5f, 0.25f, 0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
@@ -54,7 +41,6 @@ DicomObjectsContainer::~DicomObjectsContainer()
 {
 	delete points;
 	delete viewer;
-	delete vr_ui;
 }
 
 
@@ -82,7 +68,6 @@ void DicomObjectsContainer::UpdateSliders()
 	{
 		viewer->point_cloud_selector->Set_scale(scaleX_slider->curr);
 		viewer->point_cloud_selector_scale = scaleX_slider->curr;
-		selector2D->Set_scale(scaleX_slider->curr);
 		scaleX_slider->has_changed = false;
 	}
 
@@ -100,6 +85,11 @@ void DicomObjectsContainer::UpdateSliders()
 		viewer->orthoslice_texture->Load(imaging_data.data[imaging_data.current_index], window_width_slider->curr, window_center_slider->curr);
 		window_center_slider->has_changed = false;
 	}
+
+}
+
+void DicomObjectsContainer::SetImguiPanelCoords()
+{
 
 }
 
@@ -194,7 +184,6 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 		points->handle->Set_append_pose(curr_pose);
 		points->Set_append_pose(curr_pose);
 		points->branch_point_marker->Set_append_pose(curr_pose);
-		ddebug1->Set_append_pose(curr_pose);
 		points->bounding_cube->Set_append_pose(curr_pose);
 	}
 
@@ -211,126 +200,26 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 		int index_y = (float)imaging_data.data[imaging_data.current_index].height * colp_to_model_space.y;
 		imaging_data.isovalue = imaging_data.data[imaging_data.current_index].isovalues.at(imaging_data.data[imaging_data.current_index].width * index_y + index_x);
 
-		std::cout << index_x << " " << index_y << std::endl;
-		std::cout << imaging_data.isovalue << std::endl << std::endl;
 		points->GenerateDicomPointCloud(imaging_data, imaging_data.isovalue, 30);
 	}
 
+	if (imgui_panel_handle->is_selected)
+	{
+		curr_pose = imgui_panel_handle->cache.controller_pose_updated * imgui_panel_handle->cache.to_controller_space_initial;
+		imgui_panel_handle->Set_append_pose(curr_pose);
+		imgui_panel->Set_append_pose(curr_pose);
 
-	//
-	//if (viewer->selector_changed) 
-	//{	
-	//	points->lower_bounds = viewer->point_cloud_selector->model_position;
-	//	points->upper_bounds = viewer->point_cloud_selector->model_position + viewer->point_cloud_selector_scale;
-	//	points->box_scale = viewer->point_cloud_selector_scale;
-	//	points->GenerateDicomPointCloud(imaging_data, imaging_data.isovalue, MAX_ISOVALUE_TOLERANCE);
-	//	viewer->selector_changed = false;
-	//	selector2D->Set_model_positionX(viewer->point_cloud_selector->model_position.x + viewer->point_cloud_selector_scale.x*0.5f-0.5f);
-	//	selector2D->Set_model_positionY(viewer->point_cloud_selector->model_position.y + viewer->point_cloud_selector_scale.x*0.5f-0.5f);
-	//}
-	//
-	//if (points->handle->is_selected) 
-	//{
-	//	glm::mat4 curr_pose = points->handle->cache_pose[1] * points->handle->cache_pose[0];
-	//	points->handle->Set_append_pose(curr_pose);
-	//	points->Set_append_pose(curr_pose);
-	//	points->branch_point_marker->Set_append_pose(curr_pose);
-	//}		
-	//
-	//if (viewer->orthoslice->model_position.z >= points->lower_bounds.z && viewer->orthoslice->model_position.z <= points->upper_bounds.z) 
-	//{
-	//	selector2D->SetDisplayColor(glm::vec4(0.2f, 0.2f, 1.0f, 0.5f));
-	//}
-	//else 
-	//{
-	//	selector2D->SetDisplayColor(glm::vec4(0.8f,0.8f,0.8f,1.0f));
-	//}
-	//
-	//static bool selector2D_ui_selection = false;
-	//
-	//// ui interactions
-	//if (_crsr.is_pressed) 
-	//{
-	//	if (_crsr.normalized_cursor_position.x > 0.0f)
-	//	{
-	//		if (_crsr.normalized_cursor_position.y > 0.0f) 
-	//		{
-	//			
-	//			// quadrant 1
-	//			glm::vec2 quad1coords = 1.0f*(_crsr.normalized_cursor_position) - 0.5f;
-	//
-	//			if (h_asp > 1.0f) 
-	//			{
-	//				quad1coords.x *= h_asp;
-	//			}
-	//			else 
-	//			{
-	//				quad1coords.y /= h_asp;
-	//			}
-	//			
-	//			selector2D->Set_model_positionX(quad1coords.x);
-	//			selector2D->Set_model_positionY(quad1coords.y);
-	//
-	//			selector2D_ui_selection = true;
-	//
-	//		}
-	//		else if (_crsr.normalized_cursor_position.y < 0.0f) 
-	//		{
-	//			// quadrant 0
-	//			glm::vec2 quad0coords = _crsr.normalized_cursor_position;
-	//			quad0coords.y += 1.0f;
-	//			quad0coords *= 2.0f;
-	//			quad0coords -= 1.0f;
-	//			quad0coords *= dicom_panel->base_panel.half_size.x;
-	//
-	//			if (h_asp > 1.0f) 
-	//			{
-	//				quad0coords.y /= h_asp;
-	//			}
-	//			else 
-	//			{
-	//				quad0coords.x *= h_asp;
-	//			}
-	//
-	//			glm::mat4 pose = glm::translate(glm::mat4(1.0f), glm::vec3(quad0coords.x, quad0coords.y,1.0f));
-	//			glm::vec3 ray = glm::vec3(0.0f,0.0f,-1.0f);
-	//			glm::vec3 pos = glm::vec3(quad0coords.x, quad0coords.y, 1.0f);
-	//
-	//			dicom_panel->Interact(pose,ray,pos,_crsr.is_pressed,false);
-	//		}
-	//	}
-	//}
-	//else 
-	//{
-	//	// update selection box if 2d selector was moved
-	//
-	//	if (selector2D_ui_selection)
-	//	{
-	//		
-	//		glm::vec2 selectorTo3dlower = glm::vec2(selector2D->model_position) + glm::vec2(0.5f,0.5f) - viewer->point_cloud_selector_scale.x*0.5f;
-	//		glm::vec2 selectorTo3dupper = glm::vec2(selector2D->model_position) + glm::vec2(0.5f, 0.5f) + viewer->point_cloud_selector_scale.x*0.5f;
-	//
-	//
-	//		points->lower_bounds = glm::vec3(selectorTo3dlower, viewer->orthoslice->model_position.z - viewer->point_cloud_selector_scale.x*0.5f);
-	//		points->upper_bounds = glm::vec3(selectorTo3dupper, viewer->orthoslice->model_position.z + viewer->point_cloud_selector_scale.x*0.5f);
-	//
-	//		points->box_scale = viewer->point_cloud_selector_scale;
-	//		viewer->point_cloud_selector->Set_model_positionX(selectorTo3dlower.x);
-	//		viewer->point_cloud_selector->Set_model_positionY(selectorTo3dlower.y);
-	//		viewer->point_cloud_selector->Set_model_positionZ(viewer->orthoslice->model_position.z - viewer->point_cloud_selector_scale.x*0.5f);
-	//		points->GenerateDicomPointCloud(imaging_data, imaging_data.isovalue, MAX_ISOVALUE_TOLERANCE);
-	//		selector2D_ui_selection = false;
-	//		selector2D->SetDisplayColor(glm::vec4(0.2f, 0.2f, 1.0f, 0.5f));
-	//	}
-	//
-	//
-	//	// release any previously held selections
-	//	//dicom_panel->Interact(glm::mat4(), glm::vec3(), glm::vec3(), false, false);
-	//}
-	//
-	//// controller interactions
-	////dicom_panel->Interact(_vr.controller_pose1, glm::vec3(_vr.controller_pose1* glm::vec4(0.0f, 0.0f, -1.0f,0.0f)), glm::vec3(_vr.controller_pose1* glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), _vr.controller_press1, true);
-	////glm::vec3 ray = glm::vec3(p2 - p1);
+	}
+
+	if (imgui_panel->is_selected)
+	{
+		glm::vec4 colp_to_model_space = glm::inverse(imgui_panel->GetModelMatrix()) * glm::vec4(imgui_panel->cache.primary_collision_point_world_current, 1.0f);
+		imgui_panel_coords = glm::vec2(colp_to_model_space);
+
+	}
+
+
+
 }
 
 void DicomObjectsContainer::AddObjects(Render * _r) 
@@ -349,24 +238,14 @@ void DicomObjectsContainer::AddObjects(Render * _r)
 	//ortho_level = vr_ui->GetSliderByName("level");
 	
 	_r->AddObjectToScene(points);
+	_r->AddObjectToScene(imgui_panel);
+	_r->AddObjectToScene(imgui_panel_handle);
 	//_r->AddObjectToScene(points->bounding_cube);
 
 	viewer->AddObjects(_r);
 
-	_r->AddObjectToUi(orthoslice);
-	_r->AddObjectToUi(selector2D);
-	//_r->AddObjectToUi(debug1);
-
-	//ddebug1 = new ColorObject;
-	//ddebug1->GenerateSphere(10, 0.1f, false);
-	//ddebug1->SetDisplayColor(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
-	//_r->AddObjectToScene(ddebug1);
 
 
-	ddebug2 = new ColorObject;
-	ddebug2->GenerateSphere(10, 0.1f, false);
-	ddebug2->SetDisplayColor(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f));
-	//_r->AddObjectToScene(ddebug2);
 }
 
 void DicomObjectsContainer::Load(std::string _dicomDir)

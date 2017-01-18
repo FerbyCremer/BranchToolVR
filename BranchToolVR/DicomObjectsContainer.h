@@ -18,18 +18,17 @@ class DicomObjectsContainer
 		void AddObjects(Render * _r);
 		void Update(float h_asp, VrData & _vr, CursorData & _crsr);
 		void UpdateSliders();
+		void SetImguiPanelCoords();
 
 	//private:
 
 		DicomSet imaging_data;
 		DicomPointCloudObject * points;
-		UiPanel * vr_ui;
 		CoarseDicomViewer * viewer;
-		ColorObject * debug;
+		TextureObject* imgui_panel;
+		TextureObject* imgui_panel_handle;
+		glm::vec2 imgui_panel_coords;
 
-		// 2D ui elements
-		TextureObject * orthoslice;
-		ColorObject * selector2D;
 
 		// ui panel trigger elements
 		Slider* isovalue_slider;
