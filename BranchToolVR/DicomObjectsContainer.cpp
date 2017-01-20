@@ -1,7 +1,11 @@
 #include "DicomObjectsContainer.h"
 
+static ColorObject* debug = new ColorObject();
+
 DicomObjectsContainer::DicomObjectsContainer()
 {
+	debug->GenerateSphere(10, 0.025f, false);
+
 	points = new DicomPointCloudObject;
 	viewer = new CoarseDicomViewer;
 	imgui_panel = new TextureObject;
@@ -14,26 +18,14 @@ DicomObjectsContainer::DicomObjectsContainer()
 	imgui_panel_handle->readObjFromFile(DirectoryInfo::IMGUI_FRAME_MODEL,1.0f,glm::vec3(0.5,0.5f,0.0f));
 	imgui_panel_handle->texture_id = IMGUI_HANDLE_TEXTURE;
 	imgui_panel_handle->is_selectable = true;
-
-	//// default values
-	//imaging_data.isovalue = 1340;
-	//imaging_data.isovalue_tolerance = DEFAULT_ISOVALUE_TOLERANCE;
-	//imaging_data.window_center = 0;
-	//imaging_data.window_width = 1000;
-
-
-
+	
+	// set coarse viewer starting location
 	glm::mat4 tmp_viewer_start = glm::translate(glm::mat4(1.0f), glm::vec3( 0.5f, 0.25f, 0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-	glm::mat4 tmp_points_start = glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f, 0.25f, 0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-
 	viewer->SetAppendPose(tmp_viewer_start);
-
-	points->Set_append_pose(tmp_points_start);
-	points->handle->Set_append_pose(tmp_points_start);
-	points->Set_append_pose(tmp_points_start);
-	points->branch_point_marker->Set_append_pose(tmp_points_start);
-	points->bounding_cube->Set_append_pose(tmp_points_start);
-
+	
+	// set point cloud starting location
+	glm::mat4 tmp_points_start = glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f, 0.25f, 0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+	points->SetAppendPose(tmp_points_start);
 
 }
 
@@ -41,56 +33,16 @@ DicomObjectsContainer::~DicomObjectsContainer()
 {
 	delete points;
 	delete viewer;
+	delete imgui_panel;
+	delete imgui_panel_handle;
 }
-
 
 void DicomObjectsContainer::UpdateSliders() 
 {
-	// tab one
-	if (isovalue_slider->has_changed)
-	{
-		UpdateDicomPointCloud(isovalue_slider->curr);
-		isovalue_slider->has_changed = false;
-	}
-	if (isovalue_tol_slider->has_changed) 
-	{
-		points->curr_tolerance = isovalue_tol_slider->curr;
-		isovalue_tol_slider->has_changed = false;
-	}
-	if (clear_branching_slider->has_changed)
-	{
-		points->branch_points.clear();
-		clear_branching_slider->has_changed = false;
-	}
-
-	// tab two
-	if (scaleX_slider->has_changed) 
-	{
-		viewer->point_cloud_selector->Set_scale(scaleX_slider->curr);
-		viewer->point_cloud_selector_scale = scaleX_slider->curr;
-		scaleX_slider->has_changed = false;
-	}
-
-	// tab three
-	if (window_width_slider->has_changed)
-	{
-		imaging_data.window_width = window_width_slider->curr;
-		viewer->orthoslice_texture->Load(imaging_data.data[imaging_data.current_index], window_width_slider->curr, window_center_slider->curr);
-		window_width_slider->has_changed = false;
-	}
-	
-	if (window_center_slider->has_changed) 
-	{
-		imaging_data.window_center = window_center_slider->curr;
-		viewer->orthoslice_texture->Load(imaging_data.data[imaging_data.current_index], window_width_slider->curr, window_center_slider->curr);
-		window_center_slider->has_changed = false;
-	}
-
 }
 
 void DicomObjectsContainer::SetImguiPanelCoords()
 {
-
 }
 
 void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr)
@@ -172,21 +124,13 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 	if (points->handle->is_double_selected)
 	{
 		curr_pose = points->handle->getDoubleSelectionTransform();
-		points->Set_append_pose(curr_pose);
-		points->handle->Set_append_pose(curr_pose);
-		points->Set_append_pose(curr_pose);
-		points->branch_point_marker->Set_append_pose(curr_pose);
-		points->bounding_cube->Set_append_pose(curr_pose);
+		points->SetAppendPose(curr_pose);
 	}
 	else if (points->handle->is_selected) 
 	{
 		curr_pose = points->handle->cache.controller_pose_updated * points->handle->cache.to_controller_space_initial;
-		points->handle->Set_append_pose(curr_pose);
-		points->Set_append_pose(curr_pose);
-		points->branch_point_marker->Set_append_pose(curr_pose);
-		points->bounding_cube->Set_append_pose(curr_pose);
+		points->SetAppendPose(curr_pose);
 	}
-
 
 	if (viewer->orthoslice->WasClicked())
 	{
@@ -219,38 +163,91 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 	}
 
 
+	// drawing branches in VR
+	static BranchPoint* prev = NULL;
+	static const float dist_threshold_to_existing = 0.1f;
+
+	// test if controller is close to old branch point
+	if (_vr.controller1.alt_first_press)
+	{
+		// find  the closest branch point		
+		
+		int closest_index = -1;
+		float curr_min = -1.0f;
+		bool found = false;
+
+		for (int i = 0; i < points->branch_points.size(); ++i)
+		{
+			float len = glm::length(points->branch_points[i]->position - _vr.controller1.position);
+
+			if (len <= dist_threshold_to_existing && len <= (curr_min || !found))
+			{
+				curr_min = len;
+				closest_index = i;
+				found = true;
+			}
+		}
+
+		// if so, start a new branch from close branch point
+		if (found)
+		{
+			prev = points->branch_points[closest_index];
+		}
+		// else new disconnected branch
+		else
+		{
+			prev = NULL;
+		}
+	}
+	else if (_vr.controller1.alt_is_pressed)
+	{
+		//debug->Set_world_position(_vr.controller1.position);
+
+		if (prev != NULL)
+		{
+			static const float new_bp_dist_threshold = 0.1f;
+
+			if (glm::length(prev->position - _vr.controller1.position) >= new_bp_dist_threshold)
+			{
+				glm::vec4 controller_pos_in_point_space = glm::inverse(points->GetModelMatrix()) * glm::vec4(_vr.controller1.position, 1.0f);
+				//std::cout << controller_pos_in_point_space.x << " " << controller_pos_in_point_space.y << " " << controller_pos_in_point_space.z << std::endl;
+				
+				glm::vec4 tmp = points->GetModelMatrix() * glm::inverse(points->GetModelMatrix()) * glm::vec4(_vr.controller1.position, 1.0f);
+				//debug->Set_world_position(glm::vec3(tmp) - points->lower_bounds);
+				BranchPoint* newBP = new BranchPoint(glm::vec3(controller_pos_in_point_space) - points->lower_bounds);
+				points->branch_points.push_back(newBP);
+				prev->neighbors.push_back(newBP->id);
+				prev = newBP;
+
+			}
+
+		}
+		// first point of disconnected branch
+		else
+		{
+			glm::vec4 controller_pos_in_point_space = glm::inverse(points->GetModelMatrix()) * glm::vec4(_vr.controller1.position, 1.0f);
+			std::cout << controller_pos_in_point_space.x << " " << controller_pos_in_point_space.y << " " << controller_pos_in_point_space.z << std::endl;
+			BranchPoint* newBP = new BranchPoint(glm::vec3(controller_pos_in_point_space) - points->lower_bounds);
+			points->branch_points.push_back(newBP);
+			prev = newBP;
+		}
+	}
+
 
 }
 
 void DicomObjectsContainer::AddObjects(Render * _r) 
 {
-	// dicom panel
-	//vr_ui->GenerateDicomPanel(_r);
-	//vr_ui->SetWorldPosition(glm::vec3(0.0f, 0.0f, -1.0f));
-	//vr_ui->SetModelOrientation(glm::vec3(0.8f, 0.2f, 0.2f));
+	_r->AddObjectToScene(debug);
 
-	//isovalue_slider = vr_ui->GetSliderByName("isovalue");
-	//isovalue_tol_slider = vr_ui->GetSliderByName("isovalue tolerance");
-	//scaleX_slider = vr_ui->GetSliderByName("selector scale");
-	//window_width_slider = vr_ui->GetSliderByName("window width");
-	//window_center_slider = vr_ui->GetSliderByName("window center");
-	//clear_branching_slider = vr_ui->GetSliderByName("reset selection");
-	//ortho_level = vr_ui->GetSliderByName("level");
-	
 	_r->AddObjectToScene(points);
 	_r->AddObjectToScene(imgui_panel);
 	_r->AddObjectToScene(imgui_panel_handle);
-	//_r->AddObjectToScene(points->bounding_cube);
-
 	viewer->AddObjects(_r);
-
-
-
 }
 
 void DicomObjectsContainer::Load(std::string _dicomDir)
 {
-	// need to reset positions
 	imaging_data = DicomReader::ReadSet(_dicomDir);
 	viewer->Load(imaging_data);
 	UpdateDicomPointCloud(DEFAULT_ISOVALUE);

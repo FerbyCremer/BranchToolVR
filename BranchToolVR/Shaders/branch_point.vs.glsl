@@ -7,6 +7,7 @@ struct Light{
   vec3 pos;
   float pow;
 };
+
 uniform Light lights[3];
 
 uniform mat4 P;
@@ -20,8 +21,9 @@ out vec3 oi_pos;
 out vec3 oi_normal;
 out float oi_lighting;
 
-void main(){
-	vec4 tmp = M * vec4((position + instanced_position - lower_bounds), 1.0f);
+void main()
+{
+	vec4 tmp = M * vec4(position + instanced_position + lower_bounds, 1.0f);
 	gl_Position = P * V * tmp;
 	oi_normal = normalize(vec3(M * vec4(normal, 0.0f)));
 	oi_pos = vec3(tmp);
@@ -37,5 +39,4 @@ void main(){
 	oi_lighting  =  0.5f*clamp(dot(oi_normal, normalize(to_light1)),0.0f, 1.0f)/(light_dist1*light_dist1);
 	oi_lighting +=  0.5f*clamp(dot(oi_normal, normalize(to_light2)),0.0f, 1.0f)/(light_dist2*light_dist2);
 	oi_lighting +=  0.5f*clamp(dot(oi_normal, normalize(to_light3)),0.0f, 1.0f)/(light_dist3*light_dist3);
-
 }

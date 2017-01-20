@@ -17,14 +17,20 @@ struct BranchPoint
 	glm::vec3 position;
 	int id;
 	std::vector<int> neighbors;
-	glm::vec4 color;
 	bool is_selected;
+	static int id_assigner;
 
-	BranchPoint(glm::vec3 _inPos, int _id) 
+	BranchPoint(glm::vec3 _inPos)
 	{
 		position = _inPos;
-		id = _id;
-		color = glm::vec4(1.0, 0.0f, 0.0f, 1.0f);
+		id = id_assigner++;
+		is_selected = false;
+	}
+
+	BranchPoint()
+	{
+		position = glm::vec3(0.0f);
+		id = id_assigner++;
 		is_selected = false;
 	}
 
@@ -44,19 +50,23 @@ class DicomPointCloudObject : public AbstractBaseObject
 		DicomPointCloudObject();
 		~DicomPointCloudObject();
 		void GenerateDicomPointCloud(DicomSet & _ds, int isovalue, int max_tolerance);
-		bool TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _cp);
+		void SetAppendPose(glm::mat4 _in);
 		void Clear();
 		void Load();
-		int Type();
-		int curr_tolerance;
+		void GenerateCube(glm::vec3 _scale, glm::vec3 _offset);
+		void GenerateSphere(float _scale);
+		bool TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _cp);		
+		int Type();	
+		BranchPoint* GetBranchPointByID(int id);	
 
+		int curr_tolerance;
 		glm::vec3 lower_bounds;
 		glm::vec3 upper_bounds;
 		glm::vec3 voxel_scale;
 		ColorObject * branch_point_marker;
-		std::vector<BranchPoint> branch_points;
+		std::vector<BranchPoint*> branch_points;
 		int current_bp_selection;
-		BranchPoint* GetBranchPointByID(int id);
+		
 
 	//private:
 		TextureObject * handle;
@@ -79,7 +89,4 @@ class DicomPointCloudObject : public AbstractBaseObject
 		GLuint instanced_positions_buffer;
 		GLuint states_buffer;
 		GLuint isovalue_differences_buffer;
-
-		void GenerateCube(glm::vec3 _scale, glm::vec3 _offset);
-		void GenerateSphere(float _scale);
 };

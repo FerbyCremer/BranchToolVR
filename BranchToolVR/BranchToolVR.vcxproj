@@ -136,6 +136,7 @@
     <ClCompile Include="DicomPointCloudObject.cpp" />
     <ClCompile Include="DicomReader.cpp" />
     <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="imgui_impl_glfw_gl3.cpp" />
     <ClCompile Include="Libraries\imebra\library\base\src\baseObject.cpp" />
     <ClCompile Include="Libraries\imebra\library\base\src\baseStream.cpp" />
     <ClCompile Include="Libraries\imebra\library\base\src\charsetConversionBase.cpp" />
@@ -206,7 +207,6 @@
     <ClCompile Include="Libraries\imebra\library\imebra\src\YBRFULLToMONOCHROME2.cpp" />
     <ClCompile Include="Libraries\imebra\library\imebra\src\YBRFULLToRGB.cpp" />
     <ClCompile Include="Libraries\imebra\library\imebra\src\YBRPARTIALToRGB.cpp" />
-    <ClCompile Include="Libraries\imgui\examples\opengl3_example\imgui_impl_glfw_gl3.cpp" />
     <ClCompile Include="Libraries\imgui\imgui.cpp" />
     <ClCompile Include="Libraries\imgui\imgui_demo.cpp" />
     <ClCompile Include="Libraries\imgui\imgui_draw.cpp" />
@@ -231,7 +231,7 @@
     <ClInclude Include="DicomReader.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="ColorObject.h" />
-    <ClInclude Include="Libraries\imgui\examples\opengl3_example\imgui_impl_glfw_gl3.h" />
+    <ClInclude Include="imgui_impl_glfw_gl3.h" />
     <ClInclude Include="Libraries\imgui\imconfig.h" />
     <ClInclude Include="Libraries\imgui\imgui.h" />
     <ClInclude Include="Libraries\imgui\imgui_internal.h" />

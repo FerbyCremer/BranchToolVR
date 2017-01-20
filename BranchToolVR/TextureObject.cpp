@@ -367,7 +367,7 @@ void TextureObject::readObjFromFile(std::string _name)
 
 void TextureObject::readObjFromFile(std::string _name, float _scale, glm::vec3 _offset)
 {
-	std::string strFullPath = MiscFunctions::relativeToAbsolutePath(DirectoryInfo::RELATIVE_MODELS_DIR + _name + ".obj");
+	std::string strFullPath = MiscFunctions::relativeToAbsolutePath(DirectoryInfo::RELATIVE_MODELS_DIR + _name + DirectoryInfo::MODEL_EXT);
 
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;

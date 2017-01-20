@@ -297,8 +297,8 @@
     <ClCompile Include="Libraries\imgui\imgui.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Libraries\imgui\examples\opengl3_example\imgui_impl_glfw_gl3.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="imgui_impl_glfw_gl3.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -371,8 +371,8 @@
     <ClInclude Include="Libraries\imgui\imconfig.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\imgui\examples\opengl3_example\imgui_impl_glfw_gl3.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="imgui_impl_glfw_gl3.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

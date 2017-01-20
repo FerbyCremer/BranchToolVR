@@ -876,10 +876,10 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 
-		for (BranchPoint & bp : dpco->branch_points) 
+		for (BranchPoint*& bp : dpco->branch_points) 
 		{
-			glUniform4fv(branch_point.uniforms[6], 1, glm::value_ptr(bp.getColor()));
-			glUniform3fv(branch_point.uniforms[3], 1, glm::value_ptr(bp.position));
+			glUniform4fv(branch_point.uniforms[6], 1, glm::value_ptr(bp->getColor()));
+			glUniform3fv(branch_point.uniforms[3], 1, glm::value_ptr(bp->position));
 			glDrawArrays(GL_TRIANGLES, 0, dpco->branch_point_marker->num_vertices);
 		}
 
@@ -890,16 +890,16 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 		glUniform3fv(branch_line.uniforms[3], 1, glm::value_ptr(dpco->lower_bounds));
 		glUniform3fv(branch_line.uniforms[4], 1, glm::value_ptr(glm::vec3(dpco->scale)));
 
-		for (BranchPoint & bp : dpco->branch_points) 
+		for (BranchPoint* & bp : dpco->branch_points) 
 		{
-			for (int j = 0; j < bp.neighbors.size(); ++j) 
+			for (int j = 0; j < bp->neighbors.size(); ++j)
 			{
-				if (bp.neighbors[j] < bp.id) 
+				if (bp->neighbors[j] < bp->id)
 				{
-					BranchPoint* neighbor1 = dpco->GetBranchPointByID(bp.neighbors[j]);
+					BranchPoint* neighbor1 = dpco->GetBranchPointByID(bp->neighbors[j]);
 					if (neighbor1 != NULL) 
 					{
-						glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(bp.position));
+						glUniform3fv(branch_line.uniforms[5], 1, glm::value_ptr(bp->position));
 						glUniform3fv(branch_line.uniforms[6], 1, glm::value_ptr(neighbor1->position));
 						glDrawArrays(GL_LINES, 0, 2);
 					}
@@ -1385,6 +1385,11 @@ GLuint Render::CompileGLShader(std::string programName)
 	glAttachShader(unProgramID, nSceneFragmentShader);
 	glDeleteShader(nSceneFragmentShader);
 
+	if (nSceneFragmentShader == 0 || nSceneVertexShader == 0)
+	{
+		std::cout << "failed to load shader: " << programName << std::endl;
+	}
+
 	glLinkProgram(unProgramID);
 
 	GLint programSuccess = GL_TRUE;
@@ -1415,14 +1420,16 @@ GLuint Render::CreateShader(GLint target, std::string& src)
 	GLint fShaderCompiled = GL_FALSE;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &fShaderCompiled);
 
-	if (fShaderCompiled != GL_TRUE){
+	if (fShaderCompiled != GL_TRUE)
+	{
 		GLint maxLength = 0;
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
 
 		std::vector<GLchar> errorLog(maxLength);
 		glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
 
-		for (auto const& value : errorLog) {
+		for (auto const& value : errorLog) 
+		{
 			std::cout << value;
 		}
 
@@ -1460,7 +1467,8 @@ bool Render::CreateFrameBuffer(int nWidth, int nHeight, FramebufferDesc &framebu
 
 	// check FBO status
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (status != GL_FRAMEBUFFER_COMPLETE){
+	if (status != GL_FRAMEBUFFER_COMPLETE)
+	{
 		return false;
 	}
 
