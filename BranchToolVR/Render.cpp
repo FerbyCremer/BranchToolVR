@@ -334,6 +334,7 @@ void Render::UpdateLights()
 void Render::UpdateCursor() 
 {
 	static bool first_press = true;
+
 	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1)) 
 	{
 		double xpos, ypos;

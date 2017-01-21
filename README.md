@@ -7,25 +7,30 @@ A tool designed to map vascular systems present in medical images in virtual rea
 * recreate old ui in imgui
 	* <sup>isovalue sliders</sup>
 	* <sup>orthoslice slider</sup>
-	* <sup>isovalue sliders</sup>
-	* <sup>isovalue sliders</sup>
+	* <sup>how to use instructions text</sup>
 * transparent object depth sorting
 * auto detect sensible windowing values
 * data set testing
-* triangulate vein structures
-* export triangulation
+* clamp box within bounds
 * add isovalue coloring to static mesh
 * refactor shaders
 * combine proj and view matrices on cpu
 * refactor screen ui
 * sort points by isovalue for faster surface lookup
+* add object manager class
 * refactor code from other sources
+* re-enable shadows
+* point cloud culling
+* refactor class/struct destructors
+* refactor class privelages
 * identify performance bottlenecks
+* add visual feedback to actions
 * repository features
 	* <sup>add compile instructions</sup>
 	* <sup>create libraries zip in download section</sup>
 	* <sup>uml documentation</sup>
-
+* triangulate vein structures
+* export triangulation
 
 ## Libraries used:
 * OpenGL
@@ -34,4 +39,3 @@ A tool designed to map vascular systems present in medical images in virtual rea
 * GLM
 * imgui
 * imebra
-
