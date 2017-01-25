@@ -26,6 +26,7 @@ A tool designed to map vascular systems present in medical images in virtual rea
 * identify performance bottlenecks
 * add visual feedback to actions
 * repository features
+* add selector cube model (remove transparency)
 	* <sup>add compile instructions</sup>
 	* <sup>create libraries zip in download section</sup>
 	* <sup>uml documentation</sup>
