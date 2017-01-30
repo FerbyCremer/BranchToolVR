@@ -22,11 +22,8 @@
 #include "Texture.h"
 #include "RenderModel.h"
 #include "MiscFunctions.h"
-#include "MiscStructs.h"
-
-#include "imgui.h"
-#include "imgui_impl_glfw_gl3.h"
-
+#include "InputHelpers.h"
+#include "Constants.h"
 
 struct Light 
 {
@@ -45,6 +42,14 @@ struct Light
 	}
 };
 
+struct ShadowMap
+{
+	GLuint depth;
+	GLuint fbo;
+	glm::mat4 P;
+	glm::mat4 V;
+};
+
 enum TexturesEnum 
 {
 	WOOD_TEXTURE,
@@ -52,8 +57,6 @@ enum TexturesEnum
 	CURR_ORTHOSLICE_TEXTURE,
 	POINT_CLOUD_FRAME_TEXTURE,
 	COARSE_VIEWER_SLICE_HANDLE_TEXTURE,
-	IMGUI_TEXTURE,
-	IMGUI_HANDLE_TEXTURE,
 	CURR_NR_TEXTURES, // keep as last element of enum
 };
 
@@ -73,63 +76,37 @@ struct FramebufferDesc
 	GLuint m_nResolveFramebufferId;
 };
 
-struct ShadowMap
-{
-	GLuint depth;
-	GLuint fbo;
-	glm::mat4 P;
-	glm::mat4 V;
-};
-
 class Render
 {
-
 	public:
 		Render(GLFWwindow* _window);
 		~Render();
+		void SceneLoop();		
 		void AddObjectToScene(std::vector<AbstractBaseObject*> bsos);
 		void AddObjectToScene(AbstractBaseObject* abso);
 		void AddObjectToScene(ColorObject * bso);
 		void AddObjectToScene(DicomPointCloudObject * dpco);
 		void AddObjectToScene(LineObject * l);
 		void AddObjectToScene(TextureObject * t);
-		void AddObjectToUi(AbstractBaseObject* abso);
-		void AddObjectToUi(TextureObject * t);
-		void AddObjectToUi(ColorObject * c);
-		void RenderScene();
+		const CursorData& GetCursorData() { return cursor_info; };
+		const VrData& GetVrData() { return vr_info; };
+
+	private:
 		void Interact();
-		void UpdateHMDMatrixPose();
-		void Finalize();
-		void RenderUI(int level);
+		void UpdateHMDMatrixPose();		
+		void UpdateCursor();
 		void FakeInput(int controllerIndex);
 		void DetectCollision(VrMotionController & _controller);
 		void BindTextures();
 		void LoadTextures();
-		void LoadShaders();
-
-
-		static void window_size_callback(GLFWwindow* window, int width, int height);
-		static int window_size_x;
-		static int window_size_y;
-		static int half_window_size_x;
-		static int half_window_size_y;
-		static int fourth_window_size_x;
-		static int fourth_window_size_y;
-		static float aspect;
-		static float half_aspect;
-		static VrData vr_info;
-		static CursorData cursor_info;
-
-	//private:
-
-		// ui variables
-		static glm::vec4 ui_quadrant_ortho[4];
-		static glm::vec4 ui_quadrant_ortho_aspect[4];
-		glm::vec3 ui_panel_size;
-		glm::vec3 half_ui_panel_size;
-		static glm::mat4 ui_projection;
-		static glm::mat4 ui_view;
-		void UpdateCursor();
+		void LoadShaders();		
+		void InitLighting();
+		void RenderToScreen();
+		void UpdateScene();
+		bool InitVR();
+		void RenderToHMD();
+		bool createShadowMap(ShadowMap &sm);
+		void RenderSceneInternal(glm::mat4 _P, glm::mat4 _V);
 
 		// glfw reference (must be initialized before constructor)
 		GLFWwindow * window;
@@ -139,7 +116,7 @@ class Render
 		Texture ** textures;
 
 		// Lights
-		int num_lights;
+		static const int num_lights;
 		Light * lights;
 		void UpdateLights();
 
@@ -161,8 +138,6 @@ class Render
 		
 		// object containers
 		std::vector<AbstractBaseObject*> all_objects;
-		std::vector<ColorObject*> color_ui_elements;
-		std::vector<TextureObject*> texture_ui_elements;
 		std::vector<ColorObject*> color_objects;
 		std::vector<TextureObject*> texture_objects;
 		std::vector<LineObject*> line_objects;
@@ -187,20 +162,22 @@ class Render
 		AbstractBaseObject * selected_element2;
 		glm::mat4 spoofControllerView;
 		
-		// internal functions
-		bool InitVR();
-		void RenderEyes();
-
-		bool createShadowMap(ShadowMap &sm);
-		void RenderSceneInternal(glm::mat4 _P, glm::mat4 _V);
-
 		std::vector<CGLRenderModel*> m_vecRenderModels;
 		CGLRenderModel *m_rTrackedDeviceToRenderModel[vr::k_unMaxTrackedDeviceCount];
 		CGLRenderModel* FindOrLoadRenderModel(const char *pchRenderModelName);
 		void SetupRenderModels();
 		void SetupRenderModelForTrackedDevice(vr::TrackedDeviceIndex_t unTrackedDeviceIndex);
 		
-		// static helper functions
+		// static 
+		static void window_size_callback(GLFWwindow* window, int width, int height);
+		static int window_size_x;
+		static int window_size_y;
+		static int half_window_size_x;
+		static int half_window_size_y;
+		static float window_aspect;
+		static VrData vr_info;
+		static CursorData cursor_info;
+
 		static glm::mat4 ValveMat34ToGlmMat4Inv(vr::HmdMatrix34_t _mIN);
 		static glm::mat4 ValveMat34ToGlmMat4(vr::HmdMatrix34_t _mIN);
 		static glm::mat4 ValveMat4ToGlmMat4(vr::HmdMatrix44_t _mIN);
@@ -209,5 +186,4 @@ class Render
 		static std::string ReadFile(std::string _filePath);
 		static GLuint CompileGLShader(std::string programName);
 		static GLuint CreateShader(GLint target, std::string& src);
-
 };

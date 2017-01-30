@@ -1,64 +1,40 @@
 #include "DicomObjectsContainer.h"
 
-static ColorObject* debug = new ColorObject();
-
 DicomObjectsContainer::DicomObjectsContainer()
 {
-	debug->GenerateSphere(10, 0.025f, false);
-
 	points = new DicomPointCloudObject;
 	viewer = new CoarseDicomViewer;
-	imgui_panel = new TextureObject;
-
-	imgui_panel->GenerateXYPlane(1.0f, 1.0f, 0.0f, glm::vec3(0.0f));
-	imgui_panel->is_selectable = true;
-	imgui_panel->texture_id = 11;
-
-	imgui_panel_handle = new TextureObject;
-	imgui_panel_handle->readObjFromFile(DirectoryInfo::IMGUI_FRAME_MODEL,1.0f,glm::vec3(0.5,0.5f,0.0f));
-	imgui_panel_handle->texture_id = IMGUI_HANDLE_TEXTURE;
-	imgui_panel_handle->is_selectable = true;
 	
-	// set coarse viewer starting location
-	glm::mat4 tmp_viewer_start = glm::translate(glm::mat4(1.0f), glm::vec3( 0.5f, 0.25f, 0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-	viewer->SetAppendPose(tmp_viewer_start);
+	// set starting locations
+	float initial_scale = 0.5f;
+	glm::vec3 initial_position = glm::vec3(0.5f, 0.25f, 0.5f);
+	glm::mat4 tmp_initial_model_matrix = glm::translate(glm::mat4(1.0f), initial_position) * glm::scale(glm::mat4(1.0f), glm::vec3(initial_scale));
+	viewer->SetMasterAppendPose(tmp_initial_model_matrix);
 	
-	// set point cloud starting location
-	glm::mat4 tmp_points_start = glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f, 0.25f, 0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-	points->SetAppendPose(tmp_points_start);
-
+	initial_scale = 0.5f;
+	initial_position = glm::vec3(-0.5f, 0.25f, 0.5f);
+	tmp_initial_model_matrix = glm::translate(glm::mat4(1.0f), initial_position) * glm::scale(glm::mat4(1.0f), glm::vec3(initial_scale));
+	points->SetMasterAppendPose(tmp_initial_model_matrix);
 }
 
 DicomObjectsContainer::~DicomObjectsContainer()
 {
 	delete points;
 	delete viewer;
-	delete imgui_panel;
-	delete imgui_panel_handle;
 }
 
-void DicomObjectsContainer::UpdateSliders() 
+void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 {
-}
-
-void DicomObjectsContainer::SetImguiPanelCoords()
-{
-}
-
-void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr)
-{
-	//UpdateSliders();
-
 	glm::mat4 curr_pose;
 
 	if (viewer->base_handle->is_double_selected)
 	{
-		viewer->SetAppendPose(viewer->base_handle->getDoubleSelectionTransform());
+		viewer->SetMasterAppendPose(viewer->base_handle->GetDoubleSelectionTransform());
 	}	
 	else if(viewer->base_handle->is_selected)
 	{
 		curr_pose = viewer->base_handle->cache.controller_pose_updated * viewer->base_handle->cache.to_controller_space_initial;
-		viewer->SetAppendPose(curr_pose);
+		viewer->SetMasterAppendPose(curr_pose);
 	}
 
 	static bool once = true;
@@ -73,8 +49,8 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 			float curr_intersection_ray_len = glm::length(viewer->point_cloud_selector->cache.primary_to_secondary_collision_point_current);
 			float intersection_ray_ratio = curr_intersection_ray_len / start_interesection_ray_len;
 
-			viewer->point_cloud_selector->Set_scale(intersection_ray_ratio *viewer->point_cloud_selector->cache.initial_scale);
-			viewer->point_cloud_selector_scale = viewer->point_cloud_selector->scale;
+			viewer->point_cloud_selector->SetScale(intersection_ray_ratio *viewer->point_cloud_selector->cache.initial_scale);
+			viewer->point_cloud_selector_scale = viewer->point_cloud_selector->GetScale();
 			once = true;
 		}
 		else
@@ -84,11 +60,11 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 
 			if (once)
 			{
-				offset = viewer->point_cloud_selector->model_position - pointer_model_space;
+				offset = viewer->point_cloud_selector->GetModelPosition() - pointer_model_space;
 				once = false;
 			}
 
-			viewer->point_cloud_selector->Set_model_position(pointer_model_space + offset);
+			viewer->point_cloud_selector->SetModelPosition(pointer_model_space + offset);
 		}
 	}
 	else
@@ -96,8 +72,8 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 		if (!once)
 		{
 			// point cloud selector was moved and released
-			viewer->selector_lower_bounds = viewer->point_cloud_selector->model_position - glm::vec3(0.5f*viewer->point_cloud_selector_scale);
-			viewer->selector_upper_bounds = viewer->point_cloud_selector->model_position + glm::vec3(0.5f*viewer->point_cloud_selector_scale);
+			viewer->selector_lower_bounds = viewer->point_cloud_selector->GetModelPosition() - glm::vec3(0.5f*viewer->point_cloud_selector_scale);
+			viewer->selector_upper_bounds = viewer->point_cloud_selector->GetModelPosition() + glm::vec3(0.5f*viewer->point_cloud_selector_scale);
 			points->lower_bounds = viewer->selector_lower_bounds;
 			points->upper_bounds = viewer->selector_upper_bounds;
 			points->curr_tolerance = 30;
@@ -116,20 +92,19 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 		imaging_data.current_index = (float)(imaging_data.data.size() - 1) * (colp_to_model_space.z / imaging_data.scale.z);
 		viewer->orthoslice_texture->Load(imaging_data.data[imaging_data.current_index], imaging_data.window_width, imaging_data.window_center);
 
-		viewer->orthoslice_handle->Set_model_positionZ(colp_to_model_space.z);
-		viewer->orthoslice->Set_model_positionZ(colp_to_model_space.z);
+		viewer->orthoslice_handle->SetModelPositionZ(colp_to_model_space.z);
+		viewer->orthoslice->SetModelPositionZ(colp_to_model_space.z);
 	}
-
 
 	if (points->handle->is_double_selected)
 	{
-		curr_pose = points->handle->getDoubleSelectionTransform();
-		points->SetAppendPose(curr_pose);
+		curr_pose = points->handle->GetDoubleSelectionTransform();
+		points->SetMasterAppendPose(curr_pose);
 	}
 	else if (points->handle->is_selected) 
 	{
 		curr_pose = points->handle->cache.controller_pose_updated * points->handle->cache.to_controller_space_initial;
-		points->SetAppendPose(curr_pose);
+		points->SetMasterAppendPose(curr_pose);
 	}
 
 	if (viewer->orthoslice->WasClicked())
@@ -146,22 +121,6 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 
 		points->GenerateDicomPointCloud(imaging_data, imaging_data.isovalue, 30);
 	}
-
-	if (imgui_panel_handle->is_selected)
-	{
-		curr_pose = imgui_panel_handle->cache.controller_pose_updated * imgui_panel_handle->cache.to_controller_space_initial;
-		imgui_panel_handle->Set_append_pose(curr_pose);
-		imgui_panel->Set_append_pose(curr_pose);
-
-	}
-
-	if (imgui_panel->is_selected)
-	{
-		glm::vec4 colp_to_model_space = glm::inverse(imgui_panel->GetModelMatrix()) * glm::vec4(imgui_panel->cache.primary_collision_point_world_current, 1.0f);
-		imgui_panel_coords = glm::vec2(colp_to_model_space);
-
-	}
-
 
 	// drawing branches in VR
 	static BranchPoint* prev = NULL;
@@ -201,8 +160,6 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 	}
 	else if (_vr.controller1.alt_is_pressed)
 	{
-		//debug->Set_world_position(_vr.controller1.position);
-
 		if (prev != NULL)
 		{
 			static const float new_bp_dist_threshold = 0.1f;
@@ -210,17 +167,12 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 			if (glm::length(prev->position - _vr.controller1.position) >= new_bp_dist_threshold)
 			{
 				glm::vec4 controller_pos_in_point_space = glm::inverse(points->GetModelMatrix()) * glm::vec4(_vr.controller1.position, 1.0f);
-				//std::cout << controller_pos_in_point_space.x << " " << controller_pos_in_point_space.y << " " << controller_pos_in_point_space.z << std::endl;
-				
 				glm::vec4 tmp = points->GetModelMatrix() * glm::inverse(points->GetModelMatrix()) * glm::vec4(_vr.controller1.position, 1.0f);
-				//debug->Set_world_position(glm::vec3(tmp) - points->lower_bounds);
 				BranchPoint* newBP = new BranchPoint(glm::vec3(controller_pos_in_point_space) - points->lower_bounds);
 				points->branch_points.push_back(newBP);
 				prev->neighbors.push_back(newBP->id);
 				prev = newBP;
-
 			}
-
 		}
 		// first point of disconnected branch
 		else
@@ -232,17 +184,11 @@ void DicomObjectsContainer::Update(float h_asp, VrData & _vr, CursorData & _crsr
 			prev = newBP;
 		}
 	}
-
-
 }
 
 void DicomObjectsContainer::AddObjects(Render * _r) 
 {
-	_r->AddObjectToScene(debug);
-
 	_r->AddObjectToScene(points);
-	_r->AddObjectToScene(imgui_panel);
-	_r->AddObjectToScene(imgui_panel_handle);
 	viewer->AddObjects(_r);
 }
 

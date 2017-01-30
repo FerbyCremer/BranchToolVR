@@ -2,7 +2,7 @@
 
 TextureObject::TextureObject()
 {
-	texture_id = 0;
+	texture_level = 0;
 }
 
 TextureObject::~TextureObject()
@@ -61,9 +61,11 @@ void TextureObject::GenerateText(std::string _text, glm::vec2 _scale, glm::vec2 
 		positions.clear();
 		normals.clear();
 		uvs.clear();
+
+		//TODO: delete opengl buffers
 	}
 
-	texture_id = 1;
+	texture_level = 1;
 	
 	float x_inc = 1.0f / (float)_text.length();
 
@@ -92,7 +94,7 @@ void TextureObject::GenerateText(std::string _text, float _scale, glm::vec2 _pad
 		uvs.clear();
 	}
 
-	texture_id = 1;
+	texture_level = 1; // enum FONT_TEXTURE in render.h
 
 	float tc_fac1 = 1.0f / 16.0f;
 	glm::vec2 uv_padding(tc_fac1 / 5.0f, tc_fac1 / 15.0f);
@@ -192,7 +194,7 @@ void TextureObject::AddLetter(float _scaleX, float _scaleY, glm::vec2 _uvPadding
 
 int TextureObject::Type() 
 {
-	return 1;
+	return AbstractBaseObject::get_type_id<TextureObject>();
 }
 
 void TextureObject::SetSelected(bool _selected)
@@ -390,18 +392,23 @@ void TextureObject::readObjFromFile(std::string _name, float _scale, glm::vec3 _
 			{
 				// access to vertex
 				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+				
 				float vx = attrib.vertices[3 * idx.vertex_index + 0];
 				float vy = attrib.vertices[3 * idx.vertex_index + 1];
 				float vz = attrib.vertices[3 * idx.vertex_index + 2];
+				
 				float nx = attrib.normals[3 * idx.normal_index + 0];
 				float ny = attrib.normals[3 * idx.normal_index + 1];
 				float nz = attrib.normals[3 * idx.normal_index + 2];
 				
-				//if (attrib.texcoords.size() > 1) 
-				//{
-					float tx = attrib.texcoords[2 * idx.texcoord_index + 0];
-					float ty = attrib.texcoords[2 * idx.texcoord_index + 1];
-				//}
+				float tx = 0.0f;
+				float ty = 0.0f;
+
+				if (attrib.texcoords.size() > 1) 
+				{
+					tx = attrib.texcoords[2 * idx.texcoord_index + 0];
+					ty = attrib.texcoords[2 * idx.texcoord_index + 1];
+				}
 
 				positions.push_back(_scale * glm::vec3(vx, vy, vz) + _offset);
 				normals.push_back(glm::vec3(nx, ny, nz));

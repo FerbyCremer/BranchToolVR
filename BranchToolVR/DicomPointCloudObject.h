@@ -50,12 +50,11 @@ class DicomPointCloudObject : public AbstractBaseObject
 		DicomPointCloudObject();
 		~DicomPointCloudObject();
 		void GenerateDicomPointCloud(DicomSet & _ds, int isovalue, int max_tolerance);
-		void SetAppendPose(glm::mat4 _in);
+		void SetMasterAppendPose(glm::mat4 _in);
 		void Clear();
 		void Load();
 		void GenerateCube(glm::vec3 _scale, glm::vec3 _offset);
-		void GenerateSphere(float _scale);
-		bool TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _cp);		
+		void GenerateSphere(float _scale);	
 		int Type();	
 		BranchPoint* GetBranchPointByID(int id);	
 
@@ -63,27 +62,22 @@ class DicomPointCloudObject : public AbstractBaseObject
 		glm::vec3 lower_bounds;
 		glm::vec3 upper_bounds;
 		glm::vec3 voxel_scale;
-		ColorObject * branch_point_marker;
+		ColorObject* branch_point_marker;
 		std::vector<BranchPoint*> branch_points;
 		int current_bp_selection;
 		
 
 	//private:
-		TextureObject * handle;
-		ColorObject * bounding_cube;
-		unsigned int num_vertices;
-		unsigned int num_instances;
+		TextureObject * handle;		
 		bool first_load;
+		unsigned int num_instances;
 		// vertex attributes for point cloud shader
-		std::vector<glm::vec3> positions;
 		std::vector<glm::vec3> normals;
-		std::vector<glm::vec2> texture_coords;
 		std::vector<glm::vec3> instanced_positions;
-		std::vector<int>   states;
-		std::vector<GLfloat>   isovalue_differences;
+		std::vector<int> states;
+		std::vector<GLfloat> isovalue_differences;
 
 		GLuint vao;
-		GLuint positions_buffer;
 		GLuint normals_buffer;
 		GLuint texture_coords_buffer;
 		GLuint instanced_positions_buffer;

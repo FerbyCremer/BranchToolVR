@@ -15,12 +15,6 @@
 #include "Constants.h"
 #include "MiscFunctions.h"
 
-struct IsovaluePoint 
-{
-	glm::vec3 pos;
-	float diff;
-};
-
 struct DicomSingle 
 {
 	std::vector<short> isovalues;
@@ -63,4 +57,3 @@ class DicomReader
 		static DicomSet ReadSet(std::string _dicomFolder);
 		static DicomSingle ReadSingle(std::string _filePath);
 };
-

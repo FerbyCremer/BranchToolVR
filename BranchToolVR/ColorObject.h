@@ -38,4 +38,7 @@ class ColorObject : public AbstractBaseObject
 		glm::vec4 selected_color_additive;
 		float display_color_modifier;
 		float selection_modifier;
+
+		std::vector<glm::vec3> normals;
+		GLuint normals_buffer;
 };

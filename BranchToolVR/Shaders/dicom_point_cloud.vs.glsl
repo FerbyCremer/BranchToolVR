@@ -33,24 +33,24 @@ out vec3 oi_instanced_position;
 
 void main()
 {
-		oi_state = state;
-		oi_pos = vec3(M*vec4(position + instanced_position, 1.0f));
-		oi_normal = normalize(vec3(M*vec4(normal, 0.0f)));
-		oi_instanced_position = normalize(instanced_position)*1.5f;
+	oi_state = state;
+	oi_pos = vec3(M*vec4(position + instanced_position, 1.0f));
+	oi_normal = normalize(vec3(M*vec4(normal, 0.0f)));
+	oi_instanced_position = normalize(instanced_position)*1.5f;
 
-		vec3 to_light1 = lights[0].pos - oi_pos;
-		vec3 to_light2 = lights[1].pos - oi_pos;
-		vec3 to_light3 = lights[2].pos - oi_pos;
+	vec3 to_light1 = lights[0].pos - oi_pos;
+	vec3 to_light2 = lights[1].pos - oi_pos;
+	vec3 to_light3 = lights[2].pos - oi_pos;
 
-		float light_dist1 = length(to_light1);
-		float light_dist2 = length(to_light2);
-		float light_dist3 = length(to_light3);
+	float light_dist1 = length(to_light1);
+	float light_dist2 = length(to_light2);
+	float light_dist3 = length(to_light3);
 
-		oi_state = iso_diff;
+	oi_state = iso_diff;
 
-		oi_lighting  =  0.5f*clamp(dot(oi_normal, normalize(to_light1)),0.0f, 1.0f)/(light_dist1*light_dist1);
-		oi_lighting +=  0.5f*clamp(dot(oi_normal, normalize(to_light2)),0.0f, 1.0f)/(light_dist2*light_dist2);
-		oi_lighting +=  0.5f*clamp(dot(oi_normal, normalize(to_light3)),0.0f, 1.0f)/(light_dist3*light_dist3);
+	oi_lighting  =  0.5f*clamp(dot(oi_normal, normalize(to_light1)),0.0f, 1.0f)/(light_dist1*light_dist1);
+	oi_lighting +=  0.5f*clamp(dot(oi_normal, normalize(to_light2)),0.0f, 1.0f)/(light_dist2*light_dist2);
+	oi_lighting +=  0.5f*clamp(dot(oi_normal, normalize(to_light3)),0.0f, 1.0f)/(light_dist3*light_dist3);
 
-		gl_Position = P * V * vec4(oi_pos,1.0f) + max(sign(iso_diff - tolerance), 0.0)*vec4(100000.0f,100000.0f,100000.0f,100000.0f);
+	gl_Position = P * V * vec4(oi_pos,1.0f) + max(sign(iso_diff - tolerance), 0.0)*vec4(100000.0f,100000.0f,100000.0f,100000.0f);
 }

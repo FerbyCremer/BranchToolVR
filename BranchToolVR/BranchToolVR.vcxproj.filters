@@ -22,9 +22,6 @@
     <Filter Include="misc">
       <UniqueIdentifier>{776a5492-83b4-4f0d-b71f-373ae5b9e64d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="imgui">
-      <UniqueIdentifier>{e707e310-2172-4489-9e7c-e5ff3e3f811c}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -43,9 +40,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MarchingCubesVars.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="UiPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LineObject.cpp">
@@ -288,16 +282,7 @@
     <ClCompile Include="RenderModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Libraries\imgui\imgui_demo.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\imgui\imgui_draw.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\imgui\imgui.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_impl_glfw_gl3.cpp">
+    <ClCompile Include="InputHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -312,9 +297,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DicomReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UiPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LineObject.h">
@@ -347,31 +329,10 @@
     <ClInclude Include="RenderModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MiscStructs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Libraries\misc\tiny_obj_loader.h">
       <Filter>misc</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\imgui\imgui.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\imgui\imgui_internal.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\imgui\stb_rect_pack.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\imgui\stb_textedit.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\imgui\stb_truetype.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\imgui\imconfig.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_impl_glfw_gl3.h">
+    <ClInclude Include="InputHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -410,18 +371,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\branch_line.vs.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\ui_color.fs.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\ui_color.vs.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\ui_texture.fs.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\ui_texture.vs.glsl">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\shadow.fs.glsl">

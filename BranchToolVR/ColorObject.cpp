@@ -85,7 +85,7 @@ void ColorObject::Finalize()
 
 int ColorObject::Type() 
 {
-	return 0;
+	return AbstractBaseObject::get_type_id<ColorObject>();
 }
 
 void ColorObject::Load() 

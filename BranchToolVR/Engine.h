@@ -1,6 +1,5 @@
 #pragma once
 
-// ext
 #include <GL/glew.h>
 #include <glm/gtc/matrix_access.hpp>
 #include <GLFW/glfw3.h>
@@ -12,42 +11,27 @@
 #include <openvr.h>
 #include <chrono>
 
-// int
 #include "Render.h"
 #include "ColorObject.h"
 #include "LineObject.h"
 #include "DicomReader.h"
-#include "UiPanel.h"
 #include "DicomObjectsContainer.h"
 #include "Constants.h"
-
-
-#include <imgui.h>
-#include "imgui_impl_glfw_gl3.h"
 
 class Engine
 {
 	public:
-
 		Engine();
 		~Engine();
 
 	private:
-
-		// objects
-		DicomObjectsContainer * dicomObjects;
-		ColorObject * ground;
-		LineObject * axis;
-
-		// functions
 		bool InitGLFW();
-		bool InitGLEW();
+		bool InitGLEW();		
+		void InitObjects();
 		void Loop();
 		void Update();
 
-		// glfw vars
-		GLFWwindow * window;
-
-		// internal classes - pointers to allocate after Init()
-		Render * renderer;
+		GLFWwindow * window;		
+		Render * renderer; // must be allocated after window is initialized		
+		DicomObjectsContainer * doc;
 };

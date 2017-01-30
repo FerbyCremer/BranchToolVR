@@ -3,15 +3,28 @@
 #include <string>
 #include <glm/glm.hpp>
 
+// single value default constants
 #define DEFAULT_WINDOW_SIZE_X 1000
 #define DEFAULT_WINDOW_SIZE_Y 1000
-#define WINDOW_TITLE_STRING "Branch Tool VR"
+#define DEFAULT_NR_SAMPLES 0
 #define DEFAULT_ISOVALUE 1340
 #define DEFAULT_ISOVALUE_TOLERANCE 10
-#define MAX_ISOVALUE_TOLERANCE 30
 #define DEFAULT_SHADOW_RES 2048
 #define DEFAULT_WINDOW_CENTER 1191
 #define DEFAULT_WINDOW_WIDTH 1066
+#define DEFAULT_SELECTOR_SCALE 0.2f
+#define DEFAULT_POINT_CLOUD_SCALE 1.0f
+#define DEFAULT_LINE_WIDTH 2.0f
+#define MAX_ISOVALUE_TOLERANCE 30
+#define WINDOW_TITLE_STRING "BranchToolVR"
+
+// enablers
+#define BACKFACE_CULLING_ENABLED 0
+
+// math constants
+#define TWOPI 6.28318530718f
+#define PI 3.14159265359f
+#define SQRT3 1.73205080757f
 
 namespace DirectoryInfo
 {
@@ -41,10 +54,4 @@ namespace Constants
 	static const glm::vec3 Y_AXIS = glm::vec3(0.0f,1.0f,0.0f);
 	static const glm::vec3 Z_AXIS = glm::vec3(0.0f,0.0f,1.0f);
 	static const glm::vec3 ZERO_VEC3 = glm::vec3(0.0f, 0.0f, 0.0f);
-	static const float DEFAULT_SELECTOR_SCALE = 0.2f;
-	static const float TWOPI = 6.28318530718f;
-	static const float DEFAULT_POINT_CLOUD_SCALE = 1.0f;
-	static const float PI = 3.14159265359f;
-	static const float SQRT3 = 1.73205080757f;
-	static const glm::ivec2 UI_DIMENSIONS = glm::ivec2(2048, 2048);
 }

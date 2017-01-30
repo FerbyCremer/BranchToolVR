@@ -3,32 +3,31 @@
 #define TINYOBJLOADER_IMPLEMENTATION 
 #include "tiny_obj_loader.h"
 
-int AbstractBaseObject::id_counter = 0;
+int AbstractBaseObject::object_id_counter = 0;
+int AbstractBaseObject::type_id_counter = 0;
 
-AbstractBaseObject::AbstractBaseObject()
+AbstractBaseObject::AbstractBaseObject() : id(object_id_counter++)
 {
 	world_position = glm::vec3(0.0, 0.0, 0.0f);
 	model_orientation = glm::vec3(0.0f, 0.0f, 0.0f);
 	model_position = glm::vec3(0.0f, 0.0f, 0.0f);
 	append_pose = glm::mat4(1.0f);
-	ui_model_matrix = glm::mat4(1.0f);
 	model_matrix = glm::mat4(1.0f);
 	base_model_matrix = glm::mat4(1.0f);
 	scale = 1.0f;
+
 	is_loaded = false;
 	is_hidden = false;
-	is_selectable = false;
-	is_clickable = false;
+	is_selectable = false;	
 	is_selected = false;
+	is_clickable = false;	
+	is_clicked = false;
 	is_double_selected = false;
 	is_double_selectable = false;
-	ui_quadrant = 0;
-	ui_transform = glm::mat4(1.0f);
-	id = id_counter++;
+
 	controllerSelectorId = -1;
 	controllerSelectorIdPrev = -1;
-	level = 0;
-	is_clicked = false;
+
 	CalcModelMatrix();
 }
 
@@ -41,7 +40,7 @@ glm::mat4 AbstractBaseObject::GetModelMatrix()
 	return model_matrix;
 }
 
-void AbstractBaseObject::SetClick() 
+void AbstractBaseObject::SetClicked() 
 {
 	is_clicked = true;
 }
@@ -62,63 +61,79 @@ void AbstractBaseObject::CalcModelMatrix()
 	base_model_matrix = glm::translate(glm::mat4(), model_position) 
 		* glm::yawPitchRoll(model_orientation.x, model_orientation.y, model_orientation.z)
 		* glm::scale(glm::mat4(1.0f), glm::vec3(scale));
+	
 	model_matrix = append_pose
 		* glm::translate(glm::mat4(), world_position)
 		* base_model_matrix;
-	ui_model_matrix = ui_transform * base_model_matrix;
 
 	center = glm::vec3(model_matrix[0][3], model_matrix[1][3], model_matrix[2][3]);
 }
 
-void AbstractBaseObject::Set_world_position(const glm::vec3& v)
+// setters
+void AbstractBaseObject::SetWorldPosition(const glm::vec3& v)
 {
 	world_position = v;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_orientation(const glm::vec3& v)
+void AbstractBaseObject::SetModelOrientation(const glm::vec3& v)
 {
 	model_orientation = v;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_position(const glm::vec3& v)
+void AbstractBaseObject::SetModelPosition(const glm::vec3& v)
 {
 	model_position = v;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_scale(const float & _scale)
+void AbstractBaseObject::SetScale(const float & _scale)
 {
 	scale = _scale;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_positionX(const float _x)
+void AbstractBaseObject::SetModelPositionX(const float _x)
 {
 	model_position.x = _x;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_positionY(const float _y)
+void AbstractBaseObject::SetModelPositionY(const float _y)
 {
 	model_position.y = _y;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_model_positionZ(const float _z)
+void AbstractBaseObject::SetModelPositionZ(const float _z)
 {
 	model_position.z = _z;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::Set_append_pose(const glm::mat4& m)
+void AbstractBaseObject::SetAppendPose(const glm::mat4& m)
 {
 	append_pose = m;
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::ResetPositionAndRotation()
+void AbstractBaseObject::SetModelMatrix(const glm::mat4& m)
+{
+	model_matrix  = m;
+	CalcModelMatrix();
+}
+
+// getters
+glm::vec3 AbstractBaseObject::GetWorldPosition() { return world_position; }
+glm::vec3 AbstractBaseObject::GetModelOrientation() { return model_orientation; }
+glm::vec3 AbstractBaseObject::GetModelPosition() { return model_position; }
+float AbstractBaseObject::GetScale() { return scale; }
+glm::mat4 AbstractBaseObject::GetAppendPose() { return append_pose; }
+GLint AbstractBaseObject::GetVao() { return vao; }
+GLint AbstractBaseObject::GetNumVertices() { return num_vertices; }
+
+void AbstractBaseObject::ResetPose()
 {
 	world_position = glm::vec3(0.0f);
 	model_orientation = glm::vec3(0.0f);
@@ -130,7 +145,8 @@ bool AbstractBaseObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3
 {
 	bool found_collision = false;
 	float collision_dist = 0.0f;
-	if (true || TestBoundingSphere(_ray, _pos)) // TODO: FIX BOUNDING SPHERE CHECK
+	
+	if (true || TestBoundingSphere(_ray, _pos)) // TODO: fix bounding sphere generation and test
 	{
 		glm::mat4 mm = GetModelMatrix();
 		glm::vec3 cg;
@@ -182,7 +198,7 @@ bool AbstractBaseObject::TestBoundingSphere(glm::vec3 _ray, glm::vec3 _pos)
 	return glm::length(perpendicular_vec) < glm::length(model_max*scale);
 }
 
-glm::mat4 AbstractBaseObject::getDoubleSelectionTransform()
+glm::mat4 AbstractBaseObject::GetDoubleSelectionTransform()
 {
 	/*
 		1) translate to controller space
@@ -199,8 +215,10 @@ glm::mat4 AbstractBaseObject::getDoubleSelectionTransform()
 		* cache.to_controller_space_initial;
 }
 
-glm::mat4 AbstractBaseObject::getDoubleSelectionScaleDifference()
+glm::mat4 AbstractBaseObject::GetDoubleSelectionScaleDifference()
 {
+	// scale the object based on the ratio of initial distance between controllers to current
+
 	float start_interesection_ray_len = glm::length(cache.primary_collision_point_world_initial - cache.secondary_collision_point_world_initial);
 	float curr_intersection_ray_len = glm::length(cache.primary_collision_point_world_current - cache.secondary_collision_point_world_current);
 	float intersection_ray_ratio = curr_intersection_ray_len / start_interesection_ray_len;
@@ -211,7 +229,7 @@ glm::mat4 AbstractBaseObject::getDoubleSelectionScaleDifference()
 		* cache.to_controller_space_initial;
 }
 
-void AbstractBaseObject::SetBoundingSphere() // TODO: fix
+void AbstractBaseObject::SetBoundingSphere() // TODO: make this work
 {
 	float curr_max = 0.0f;
 	for (int i = 0; i < positions.size(); ++i) 

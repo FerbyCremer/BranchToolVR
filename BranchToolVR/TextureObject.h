@@ -17,7 +17,6 @@
 class TextureObject : public AbstractBaseObject{
 
 	public:
-
 		TextureObject();
 		~TextureObject();
 		void GenerateXYPlane(float _scaleX, float _scaleY, glm::vec2 _padding, glm::vec3 _offset);
@@ -27,11 +26,18 @@ class TextureObject : public AbstractBaseObject{
 		void readObjFromFile(std::string _name);
 		void readObjFromFile(std::string _name, float _scale, glm::vec3 _offset);
 		void readObjFromFile(std::string _name, float _scale);
-		void Load();
-		int Type();
 		void SetSelected(bool _selected);
+
+	private:
+		int Type();
+		void Load();
 		void Finalize();
 		void AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset);
 		void AddLetter(float _scaleX, float _scaleY, glm::vec2 _uvPadding, glm::vec2 _padding, glm::vec3 _offset, int _ascii);
+		
+		std::vector<glm::vec3> normals;		
+		std::vector<glm::vec2> uvs;
+		GLuint normals_buffer;
+		GLuint uvs_buffer;
 };
 

@@ -4,14 +4,11 @@ A tool designed to map vascular systems present in medical images in virtual rea
 
 ## TODO list:
 * continue work on vein tracing using controller position
-* recreate old ui in imgui
-	* <sup>isovalue sliders</sup>
-	* <sup>orthoslice slider</sup>
-	* <sup>how to use instructions text</sup>
 * transparent object depth sorting
 * auto detect sensible windowing values
 * data set testing
-* clamp box within bounds
+* clamp point cloud selector box within bounds
+* fix bounding sphere generation and collision testing
 * add isovalue coloring to static mesh
 * refactor shaders
 * combine proj and view matrices on cpu
@@ -20,12 +17,15 @@ A tool designed to map vascular systems present in medical images in virtual rea
 * add object manager class
 * refactor code from other sources
 * re-enable shadows
+* refactor shaders to class objects
 * point cloud culling
 * refactor class/struct destructors
+	* delete opengl data in renderer destructor
 * refactor class privelages
 * identify performance bottlenecks
 * add visual feedback to actions
 * repository features
+* assign object type ids automatically
 * add selector cube model (remove transparency)
 	* <sup>add compile instructions</sup>
 	* <sup>create libraries zip in download section</sup>
@@ -38,5 +38,5 @@ A tool designed to map vascular systems present in medical images in virtual rea
 * OpenVR
 * GLFW
 * GLM
-* imgui
 * imebra
+* tinyobjloader

@@ -6,35 +6,27 @@ DicomPointCloudObject::DicomPointCloudObject()
 {
 	// default values
 	is_selectable = true;
-	scale = Constants::DEFAULT_POINT_CLOUD_SCALE;
 	curr_tolerance = DEFAULT_ISOVALUE_TOLERANCE;
 	first_load = false;
 	current_bp_selection = -1;
 	lower_bounds = glm::vec3(0.5f, 0.5f, 0.5f);
-	upper_bounds = lower_bounds + glm::vec3(Constants::DEFAULT_SELECTOR_SCALE);
+	upper_bounds = lower_bounds + glm::vec3(DEFAULT_SELECTOR_SCALE);
 
 	// init objects
 	handle = new TextureObject;
 	handle->is_selectable = true;
 	handle->is_double_selectable = true;
-	handle->readObjFromFile(DirectoryInfo::POINT_CLOUD_HANDLE_MODEL, Constants::DEFAULT_POINT_CLOUD_SCALE, 0.5f*glm::vec3(Constants::DEFAULT_POINT_CLOUD_SCALE, 0.0f, Constants::DEFAULT_POINT_CLOUD_SCALE));
-	handle->texture_id = 3; //TODO: temp set POINT_CLOUD_FRAME_TEXTURE;
+	handle->readObjFromFile(DirectoryInfo::POINT_CLOUD_HANDLE_MODEL, DEFAULT_POINT_CLOUD_SCALE, 0.5f*glm::vec3(DEFAULT_POINT_CLOUD_SCALE, 0.0f, DEFAULT_POINT_CLOUD_SCALE));
+	handle->texture_level = 3; //TODO: temp set POINT_CLOUD_FRAME_TEXTURE
 
 	branch_point_marker = new ColorObject;
 	branch_point_marker->SetDisplayColor(glm::vec4(1.0f, 0.1f, 0.2f, 1.0f));
-
-	bounding_cube = new ColorObject;
-	bounding_cube->GenerateXYPrism(glm::vec3(Constants::DEFAULT_POINT_CLOUD_SCALE), glm::vec2(0.0f), glm::vec3());
-
-	// set default transform
-	//Set_scale(Constants::DEFAULT_POINT_CLOUD_SCALE);
 }
 
 DicomPointCloudObject::~DicomPointCloudObject()
 {
 	delete handle;
 	delete branch_point_marker;
-	delete bounding_cube;
 }
 
 void DicomPointCloudObject::Clear() 
@@ -44,7 +36,7 @@ void DicomPointCloudObject::Clear()
 
 int DicomPointCloudObject::Type() 
 {
-	return 2;
+	return AbstractBaseObject::get_type_id<DicomPointCloudObject>();
 }
 
 void DicomPointCloudObject::Load()
@@ -311,7 +303,7 @@ void DicomPointCloudObject::GenerateDicomPointCloud(DicomSet & _ds, int _isovalu
 	}
 
 	float box_diag_len = glm::length(upper_bounds - lower_bounds);
-	Set_scale(Constants::SQRT3 / box_diag_len);
+	SetScale(SQRT3 / box_diag_len);
 	
 	int f = 0;
 	voxel_scale =  glm::vec3(_ds.scale.x / (float)(_ds.data[0].width+f), _ds.scale.y / (float)(_ds.data[0].height+f), _ds.scale.z / ((float)_ds.data.size()+f));
@@ -320,7 +312,6 @@ void DicomPointCloudObject::GenerateDicomPointCloud(DicomSet & _ds, int _isovalu
 	if (!first_load)
 	{
 		GenerateCube(voxel_scale, glm::vec3(0.0f));
-
 		// old generate sphere for picking points
 		//GenerateSphere(voxel_scale.x);
 	}
@@ -357,113 +348,14 @@ void DicomPointCloudObject::GenerateDicomPointCloud(DicomSet & _ds, int _isovalu
 	first_load = true;
 }
 
-bool DicomPointCloudObject::TestCollision(glm::vec3 _ray, glm::vec3 _pos, glm::vec3 & _cp) // TODO: remove completely
+void DicomPointCloudObject::SetMasterAppendPose(glm::mat4 _in)
 {
-	//// test if there is a collision with the bounding cube
-	//if (!bounding_cube->TestCollision(_ray, _pos, _cp))
-	//{
-	//	return false;
-	//}
-	//
-	//glm::mat4 mm = GetModelMatrix();
-	//glm::vec3 cg;
-	//glm::vec3 b = glm::normalize(_ray);
-	//float dist_threshold = voxel_scale.x * 5.5f;
-	//float curr_min_dist = 0.0f;
-	//int curr_min_index = -1;
-	//bool first_collision = true;
-	//
-	//// check existing branch points
-	//for (int i = 0; i < branch_points.size(); i++) 
-	//{
-	//	glm::vec3 real_ipos = glm::vec3(mm*glm::vec4((branch_points[i].position - lower_bounds), 1.0f));
-	//	glm::vec3 a = real_ipos - _pos;
-	//	float x = glm::dot(b, a);
-	//	glm::vec3 y = a - (x*b);
-	//	float dist1 = glm::length(y);
-	//
-	//	if (x > 0 && dist1 <= (voxel_scale.x*3.5f*scale) && (x < curr_min_dist || first_collision)) 
-	//	{
-	//		curr_min_dist = x;
-	//		curr_min_index = i;
-	//		_cp = real_ipos;
-	//		first_collision = false;
-	//	}
-	//}
-	//
-	//// found a branch point collision
-	//if (!first_collision) 
-	//{
-	//	for (int i = 0; i < branch_points.size(); i++) 
-	//	{
-	//		branch_points[i].is_selected = false;
-	//	}
-	//
-	//	current_bp_selection = branch_points[curr_min_index].id;
-	//	branch_points[curr_min_index].is_selected = true;
-	//	return true;
-	//}
-	//
-	//// no branch point collisions, check the point cloud
-	//glm::vec3 voxel_midpoint = voxel_scale * 0.5f;
-	//for (int i = 0; i < instanced_positions.size(); i++) 
-	//{
-	//	if (isovalue_differences[i] < curr_tolerance) 
-	//	{
-	//		glm::vec3 real_ipos = glm::vec3(mm*glm::vec4((instanced_positions[i] + voxel_midpoint), 1.0f));
-	//		glm::vec3 a = real_ipos - _pos;
-	//		float x = glm::dot(b, a);
-	//		glm::vec3 y = a - (x*b);
-	//		float dist1 = glm::length(y);
-	//
-	//		if (x > 0 && dist1 <= dist_threshold && (x < curr_min_dist || first_collision)) 
-	//		{
-	//			curr_min_dist = x;
-	//			curr_min_index = i;
-	//			_cp = real_ipos;
-	//			first_collision = false;
-	//		}
-	//	}
-	//}
-	//
-	//// new isovalue point selected, connect to branch point graph
-	//if (!first_collision) 
-	//{
-	//	// new branch point
-	//	BranchPoint newBP(instanced_positions[curr_min_index] + lower_bounds, states[curr_min_index]);
-	//
-	//	for (int i = 0; i < branch_points.size(); ++i) 
-	//	{
-	//		if (branch_points[i].id == current_bp_selection)
-	//		{
-	//			branch_points[i].neighbors.push_back(newBP.id);
-	//			newBP.neighbors.push_back(branch_points[i].id);
-	//		}
-	//	}
-	//
-	//	for (int i = 0; i < branch_points.size(); i++) 
-	//	{
-	//		branch_points[i].is_selected = false;
-	//	}
-	//
-	//	newBP.is_selected = true;
-	//	current_bp_selection = states[curr_min_index];
-	//	branch_points.push_back(newBP);
-	//	return true;
-	//}
-
-	return false;
+	SetAppendPose(_in);
+	handle->SetAppendPose(_in);
+	branch_point_marker->SetAppendPose(_in);
 }
 
-void DicomPointCloudObject::SetAppendPose(glm::mat4 _in)
-{
-	Set_append_pose(_in);
-	handle->Set_append_pose(_in);
-	branch_point_marker->Set_append_pose(_in);
-	bounding_cube->Set_append_pose(_in);
-}
-
-BranchPoint* DicomPointCloudObject::GetBranchPointByID(int _id) 
+BranchPoint* DicomPointCloudObject::GetBranchPointByID(int _id)  // TODO: switch to id to pointer map
 {
 	for (int i = 0; i < branch_points.size(); ++i) 
 	{

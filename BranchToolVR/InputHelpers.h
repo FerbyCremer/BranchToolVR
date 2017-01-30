@@ -1,9 +1,7 @@
 #pragma once
 
-#include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 struct VrMotionController 
 {
@@ -17,6 +15,8 @@ struct VrMotionController
 	bool alt_first_press;
 	int id;
 
+	static int id_counter;
+
 	VrMotionController() 
 	{
 		trigger_is_pressed = false;
@@ -27,7 +27,7 @@ struct VrMotionController
 		position = glm::vec3(0.0f);
 		orientation = glm::vec3(0.0f);
 		ray = glm::vec3(0.0f, 0.0f, -1.0f);
-		id = 0;
+		id = id_counter++;
 	}
 
 	void Press(bool _is_pressed)
@@ -40,12 +40,15 @@ struct VrMotionController
 	{
 		pose = _inPose;
 		ray = glm::vec3(pose * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
+		position = glm::vec3(pose * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));		
+
+		// TODO: find out why this didn't work
 		//position = glm::vec3(pose[0][3], pose[1][3], pose[2][3]);
-		position = glm::vec3(pose * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	}
 
-	//  spoof functions used to fake controller input for testing
-	void SetPosSpoof(glm::vec3 _pos) 
+	//  spoof functions used to fake controller input for testing without active HMD:
+
+	void SetPositionSpoof(glm::vec3 _pos) 
 	{
 		position = _pos;
 		CalcSpoofPose();

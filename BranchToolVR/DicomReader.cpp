@@ -11,26 +11,27 @@ struct less_than_key
 DicomSet DicomReader::ReadSet(std::string _dicomFolder)
 {
 	_dicomFolder = MiscFunctions::relativeToAbsolutePath(DirectoryInfo::RELATIVE_DICOM_DIR + _dicomFolder);
-
 	DicomSet _dSet;
 
 	tinydir_dir dir;
 	tinydir_open(&dir, _dicomFolder.c_str()); 
 
 	// single threaded version
-	//while (dir.has_next){
-	//
-	//	tinydir_file file;
-	//	tinydir_readfile(&dir, &file);
-	//
-	//	if (std::string(file.extension) == "dcm") {
-	//		_dSet.data.push_back(ReadSingle(std::string(file.path)));
-	//	}
-	//
-	//	tinydir_next(&dir);
-	//}
+	/*
+	while (dir.has_next){
+	
+		tinydir_file file;
+		tinydir_readfile(&dir, &file);
+	
+		if (std::string(file.extension) == "dcm") {
+			_dSet.data.push_back(ReadSingle(std::string(file.path)));
+		}
+	
+		tinydir_next(&dir);
+	}
+	*/
 
-	// multiple threads
+	// multi-threaded version
 	std::vector<std::future<DicomSingle>> threads;
 	
 	while (dir.has_next)

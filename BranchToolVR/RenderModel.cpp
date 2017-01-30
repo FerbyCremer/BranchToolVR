@@ -1,6 +1,8 @@
+/*
+	Adapted from OpenVR example code
+*/
+
 #include "RenderModel.h"
-
-
 
 CGLRenderModel::CGLRenderModel(const std::string & sRenderModelName)
 	: m_sModelName(sRenderModelName)
@@ -16,7 +18,6 @@ CGLRenderModel::~CGLRenderModel()
 {
 	Cleanup();
 }
-
 
 bool CGLRenderModel::BInit(const vr::RenderModel_t & vrModel, const vr::RenderModel_TextureMap_t & vrDiffuseTexture)
 {

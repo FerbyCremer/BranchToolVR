@@ -1,10 +1,14 @@
-#pragma once
+/*
+	Adapted from OpenVR example code
+*/
 
-#include <GL/glew.h>
-#include <openvr.h>
+#pragma once
 
 #include <iostream>
 #include <string>
+
+#include <GL/glew.h>
+#include <openvr.h>
 
 class CGLRenderModel
 {

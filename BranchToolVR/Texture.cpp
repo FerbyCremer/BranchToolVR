@@ -1,15 +1,15 @@
 #include "Texture.h"
 
-int Texture::global_counter = 0;
+int Texture::texture_id_counter = 0;
 
-Texture::Texture()
+Texture::Texture() : id(texture_id_counter++)
 {
-	texture_object_id = global_counter++;
 	is_loaded = false;
 }
 
 Texture::~Texture()
 {
+	Delete();
 }
 
 void Texture::Bind(int _level) 
@@ -17,14 +17,14 @@ void Texture::Bind(int _level)
 	if (is_loaded) 
 	{
 		glActiveTexture(GL_TEXTURE0 + _level);
-		glBindTexture(GL_TEXTURE_2D, id);
+		glBindTexture(GL_TEXTURE_2D, gl_id);
 	}
 }
 
 void Texture::Delete() 
 {
 	if(is_loaded)
-	glDeleteTextures(1, &id);
+	glDeleteTextures(1, &gl_id);
 }
 
 bool Texture::Load(DicomSingle & _ds, int window_width, int window_center)
@@ -44,10 +44,11 @@ bool Texture::Load(DicomSingle & _ds, int window_width, int window_center)
 		{
 			int window_start = window_center - half_ww;
 			char scaled_value = 255.0f*((float)((int)_ds.isovalues[i] - window_start) / (float)window_width);
+			
 			tmp.push_back(scaled_value);
 			tmp.push_back(scaled_value);
 			tmp.push_back(scaled_value);
-			tmp.push_back(240);
+			tmp.push_back(240); // set alpha to be slightly transparent
 		}
 		else 
 		{
@@ -58,8 +59,8 @@ bool Texture::Load(DicomSingle & _ds, int window_width, int window_center)
 		}
 	}
 
-	glGenTextures(1, &id);
-	glBindTexture(GL_TEXTURE_2D, id);
+	glGenTextures(1, &gl_id);
+	glBindTexture(GL_TEXTURE_2D, gl_id);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _ds.width, _ds.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tmp[0]);
 
@@ -76,7 +77,7 @@ bool Texture::Load(DicomSingle & _ds, int window_width, int window_center)
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	is_loaded = id != 0;
+	is_loaded = gl_id != 0;
 	return is_loaded;
 }
 
@@ -110,8 +111,8 @@ bool Texture::Load(std::string _textureName)
 	if (nError != 0)
 		return false;
 
-	glGenTextures(1, &id);
-	glBindTexture(GL_TEXTURE_2D, id);
+	glGenTextures(1, &gl_id);
+	glBindTexture(GL_TEXTURE_2D, gl_id);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, nImageWidth, nImageHeight,
 		0, GL_RGBA, GL_UNSIGNED_BYTE, &imageRGBA[0]);
@@ -129,6 +130,6 @@ bool Texture::Load(std::string _textureName)
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	is_loaded = id != 0;
+	is_loaded = gl_id != 0;
 	return is_loaded;
 }

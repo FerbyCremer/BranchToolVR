@@ -19,16 +19,12 @@ class CoarseDicomViewer
 		float point_cloud_selector_scale;
 		glm::vec3 GetCollisionPointWithOrthosliceHandlePlane(glm::vec3 _pos, glm::vec3 _ray, glm::vec3 & _cg);
 		void Load(DicomSet & _dSet);
-		void SetAppendPose(glm::mat4 _append);
-		void SetAppendScale(float _scale);
+		void SetMasterAppendPose(glm::mat4 _append);
+		void SetMasterAppendScale(float _scale);
 		void AddObjects(Render * _r);
-		void Translate(glm::vec3 & _inWorldPos);
+		void SetMasterAppendTranslate(glm::vec3 & _inWorldPos);
 		void Update(DicomSet & _dSet);
 		bool selector_changed;
 		glm::vec3 selector_lower_bounds;
 		glm::vec3 selector_upper_bounds;
-
-
-		ColorObject * debug_cube;
-
 };

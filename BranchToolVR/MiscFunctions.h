@@ -119,12 +119,12 @@ namespace MiscFunctions
 		else if (xz.x < 0 && xz.z > 0) 
 		{
 			// quad 2
-			return Constants::TWOPI - xzDotXaxis;
+			return TWOPI - xzDotXaxis;
 		}
 		else if (xz.x > 0 && xz.z > 0) 
 		{
 			// quad 3
-			return Constants::TWOPI - xzDotXaxis;
+			return TWOPI - xzDotXaxis;
 		}
 		else
 		{
@@ -135,11 +135,11 @@ namespace MiscFunctions
 			}
 			else if (xz.x == 0.0f && xz.z > 0)
 			{
-				return Constants::TWOPI - xzDotXaxis;
+				return TWOPI - xzDotXaxis;
 			}
 			else if (xz.z == 0.0f && xz.x < 0.0f)
 			{
-				return Constants::PI;
+				return PI;
 			}
 			else if (xz.z == 0.0f && xz.x > 0.0f)
 			{
