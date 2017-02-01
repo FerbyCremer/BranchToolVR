@@ -6,6 +6,7 @@ int Render::window_size_y = DEFAULT_WINDOW_SIZE_Y;
 int Render::half_window_size_x = DEFAULT_WINDOW_SIZE_X/2;
 int Render::half_window_size_y = DEFAULT_WINDOW_SIZE_Y/2;
 float Render::window_aspect = (float)window_size_x / (float)window_size_y;
+glm::mat4 Render::window_projection = glm::perspective(90.0f, window_aspect, 0.01f, 100.0f);
 const int Render::num_lights = 3; // TODO: variable number of lights. Currently hardcoded in all shaders for 3.
 VrData Render::vr_info;
 CursorData Render::cursor_info;
@@ -26,7 +27,7 @@ Render::Render(GLFWwindow *_window)
 	glEnable(GL_BLEND);
 	
 	// culling
-	#if BACKFACE_CULLING_ENABLED
+	#if ENABLE_BACKFACE_CULLING
 		glEnable(GL_CULL_FACE);
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
@@ -57,6 +58,11 @@ Render::Render(GLFWwindow *_window)
 
 Render::~Render()
 {
+	for (int i = 0; i < CURR_NR_TEXTURES; ++i)
+	{
+		delete textures[i];
+	}
+	delete textures;
 }
 
 void Render::window_size_callback(GLFWwindow* window, int width, int height)
@@ -66,6 +72,7 @@ void Render::window_size_callback(GLFWwindow* window, int width, int height)
 	half_window_size_x = width/2;
 	half_window_size_y = height/2;
 	window_aspect = (float)window_size_x / (float)window_size_y;
+	window_projection = glm::perspective(90.0f, window_aspect, 0.01f, 100.0f);
 }
 
 void Render::InitLighting()
@@ -196,6 +203,12 @@ void Render::AddObjectToScene(TextureObject * t)
 	all_objects.push_back(t);
 }
 
+void Render::SetOrthosliceTextureReference(Texture* _t)
+{
+	// not the best solution...
+	textures[CURR_ORTHOSLICE_TEXTURE] = _t;
+}
+
 void Render::RenderToHMD() 
 {
 	if (!m_pHMD)
@@ -240,6 +253,42 @@ void Render::RenderToHMD()
 	
 	vr::Texture_t rightEyeTexture = { (void*)rightEyeDesc.m_nResolveTextureId, vr::API_OpenGL, vr::ColorSpace_Gamma };
 	vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
+}
+
+void Render::RenderVrUi()
+{
+	glUseProgram(color.id);
+
+	glUniformMatrix4fv(color.uniforms[0], 1, GL_FALSE, glm::value_ptr(window_projection));
+	glUniformMatrix4fv(color.uniforms[1], 1, GL_FALSE, glm::value_ptr(vr_info.head_pose_inv));	
+	glUniform3fv(color.uniforms[4], 1, glm::value_ptr(lights[0].position));
+	glUniform3fv(color.uniforms[5], 1, glm::value_ptr(lights[1].position));
+	glUniform3fv(color.uniforms[6], 1, glm::value_ptr(lights[2].position));
+	glUniform3fv(color.uniforms[10], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
+
+	for (int i = 0; i < DicomPointCloudObject::isovalue_point_cloud_sliders.size(); ++i)
+	{
+		IsovaluePointCloudSlider& slider = *DicomPointCloudObject::isovalue_point_cloud_sliders[i];
+		for (int j = 0; j < 2; ++j)
+		{
+			ColorObject* curr = NULL;
+			switch (j) 
+			{
+				case 0: curr = slider.knob; break;
+				case 1: curr = slider.knob; break;
+			}
+
+			curr->SetModelPositionY((float)i*0.25f);
+			glUniformMatrix4fv(color.uniforms[2], 1, GL_FALSE, glm::value_ptr(curr->GetModelMatrix()));
+			glUniform4fv(color.uniforms[3], 1, glm::value_ptr(curr->GetDisplayColor()));
+
+			glBindVertexArray(curr->GetVao());
+			glEnableVertexAttribArray(0);
+			glEnableVertexAttribArray(1);
+
+			glDrawArrays(GL_TRIANGLES, 0, curr->GetNumVertices());
+		}
+	}
 }
 
 void Render::UpdateLights() 
@@ -369,7 +418,7 @@ void Render::RenderShadows()
 		glVertexAttribDivisor(3, 1);
 		glVertexAttribDivisor(4, 1);
 
-		glDrawArraysInstanced(GL_TRIANGLES, 0, dpco->GetNumVertices(), dpco->num_instances);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, dpco->GetNumVertices(), dpco->GetNumInstances());
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -379,12 +428,13 @@ void Render::RenderShadows()
 	glDisable(GL_CULL_FACE);
 }
 
-void Render::RenderToScreen()
+void Render::RenderToWindow()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, window_size_x, window_size_y);
-	glm::mat4& curr_view = vr_info.hmd_connected ? vr_info.head_pose_inv : spoofControllerView;
-	RenderSceneInternal(glm::perspective(90.0f, window_aspect, 0.01f, 100.0f), curr_view);
+	RenderSceneInternal(window_projection, vr_info.head_pose_inv);
+
+	RenderVrUi();
 }
 
 void Render::UpdateScene()
@@ -399,7 +449,7 @@ void Render::UpdateScene()
 void Render::SceneLoop() 
 {
 	UpdateScene();
-	RenderToScreen();
+	RenderToWindow();
 	RenderToHMD();
 }
 
@@ -423,6 +473,7 @@ void Render::LoadTextures()
 	textures[FONT_TEXTURE]->Load("fontGlyph4096");
 	textures[COARSE_VIEWER_SLICE_HANDLE_TEXTURE]->Load("coarseViewerTexture");
 	textures[POINT_CLOUD_FRAME_TEXTURE]->Load("pointCloudFrame");
+	textures[POINT_CLOUD_SELECTOR_TEXTURE]->Load("pointCloudSelector");
 }
 
 void Render::LoadShaders()
@@ -627,7 +678,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 		glUniform3fv(dicom_point_cloud.uniforms[8], 1, glm::value_ptr(dpco->lower_bounds));
 		glUniform3fv(dicom_point_cloud.uniforms[9], 1, glm::value_ptr(dpco->upper_bounds));
 
-		glBindVertexArray(dpco->vao);	
+		glBindVertexArray(dpco->GetVao());	
 
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
@@ -640,7 +691,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 		glVertexAttribDivisor(3, 1);
 		glVertexAttribDivisor(4, 1);
 
-		glDrawArraysInstanced(GL_TRIANGLES, 0, dpco->GetNumVertices(), dpco->num_instances);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, dpco->GetNumVertices(), dpco->GetNumInstances());
 	
 		glUseProgram(branch_point.id);
 
@@ -666,6 +717,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 		}
 
 		glUseProgram(branch_line.id);
+
 		glUniformMatrix4fv(branch_line.uniforms[0], 1, GL_FALSE, glm::value_ptr(_P));
 		glUniformMatrix4fv(branch_line.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 		glUniformMatrix4fv(branch_line.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
@@ -720,8 +772,6 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 
 		glUniform1i(texture.uniforms[3], 0);
 		glDrawElements(GL_TRIANGLES, m_rTrackedDeviceToRenderModel[unTrackedDevice]->m_unVertexCount, GL_UNSIGNED_SHORT, 0);
-
-
 	}
 
 	glDisableVertexAttribArray(0);
@@ -735,7 +785,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 
 struct foundCollision
 {
-	AbstractBaseObject * obj;
+	AbstractBaseObject* obj;
 	glm::vec3 intersection_point;
 	float distance;
 
@@ -758,8 +808,8 @@ struct less_than_key
 void Render::DetectCollision(VrMotionController & _controller)
 {
 	// current controllers selected object and other controllers selected object
-	AbstractBaseObject *& curr = _controller.id == 0 ? selected_element1 : selected_element2;
-	AbstractBaseObject *& oth = _controller.id != 0 ? selected_element1 : selected_element2;
+	AbstractBaseObject*& curr = _controller.id == 0 ? selected_element1 : selected_element2;
+	AbstractBaseObject*& oth = _controller.id != 0 ? selected_element1 : selected_element2;
 
 	// controller trigger is held down with previous selection
 	if (_controller.trigger_is_pressed && curr != NULL)
@@ -894,7 +944,6 @@ void Render::DetectCollision(VrMotionController & _controller)
 		if (curr == oth)
 		{
 			// first release of a double selected object
-			
 		}
 		else
 		{
@@ -913,12 +962,12 @@ void Render::Interact()
 	DetectCollision(vr_info.controller2);
 }
 
-void Render::FakeInput(int controllerIndex) 
+void Render::SpoofInput(int controllerIndex) 
 {
 	static float move_rate = 0.05f;
 	static float rot_rate = 1.0f;
 
-	VrMotionController & currController = controllerIndex == 0 ? vr_info.controller1 : vr_info.controller2;	
+	VrMotionController& currController = controllerIndex == 0 ? vr_info.controller1 : vr_info.controller2;	
 	glm::vec3 strafe = glm::normalize(glm::cross(Constants::Y_AXIS, currController.ray));
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
@@ -943,8 +992,14 @@ void Render::FakeInput(int controllerIndex)
 
 	// the position of the cursor is the distance moved since last reset to center of the screen (0,0)
 
-	currController.SetOrientationSpoof(currController.orientation + glm::vec3(rot_rate*-cursor_info.normalized_cursor_position.x, 
-		glm::clamp(rot_rate*cursor_info.normalized_cursor_position.y, -1.2f, 1.2f), 0.0f));
+	currController.SetOrientationSpoof(currController.orientation + 
+		glm::vec3
+			(
+			rot_rate*-cursor_info.normalized_cursor_position.x, 
+			glm::clamp(rot_rate*cursor_info.normalized_cursor_position.y, -1.2f, 1.2f), 
+			0.0f
+			)
+	);
 
 	// set to center of the screen
 	glfwSetCursorPos(window, half_window_size_x, half_window_size_y);
@@ -990,10 +1045,10 @@ void Render::FakeInput(int controllerIndex)
 		alt_once[controllerIndex] = true;
 	}
 
-	spoofControllerView = glm::inverse(currController.pose);
+	vr_info.head_pose_inv = glm::inverse(currController.pose);
 
-	controller_pointer1->SetModelMatrix(vr_info.controller1.pose);
-	controller_pointer2->SetModelMatrix(vr_info.controller2.pose);
+	controller_pointer1->SetModelMatrixOverride(vr_info.controller1.pose);
+	controller_pointer2->SetModelMatrixOverride(vr_info.controller2.pose);
 
 	controller_pointer1->SetSelected(vr_info.controller1.trigger_is_pressed);
 	controller_pointer2->SetSelected(vr_info.controller2.trigger_is_pressed);
@@ -1007,31 +1062,25 @@ void Render::UpdateHMDMatrixPose()
 		
 		vr_info.hmd_connected = false;
 
-		static int currController = 0;
-		static bool once1 = true;			
+		static int curr_controller_index = 0;
+		static bool once_per_press = true;			
 		
-		controller_pointer1->is_hidden = currController == 0;
-		controller_pointer2->is_hidden = currController == 1;
+		controller_pointer1->is_hidden = curr_controller_index == 0;
+		controller_pointer2->is_hidden = curr_controller_index == 1;
 
-		if (glfwGetKey(window, GLFW_KEY_Q) && once1)
+		if (glfwGetKey(window, GLFW_KEY_Q) && once_per_press)
 		{
-			currController = !currController;
-			once1 = false;
+			curr_controller_index = !curr_controller_index;
+			once_per_press = false;
 		}
 		else if(!glfwGetKey(window, GLFW_KEY_Q))
 		{
-			once1 = true;
+			once_per_press = true;
 		}
 
 		if (glfwGetKey(window, GLFW_KEY_SPACE) && glfwGetWindowAttrib(window, GLFW_FOCUSED)) 
 		{
-			//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-			FakeInput(currController);
-		}
-		else
-		{
-			//std::cout << "NOT HERE" << std::endl;
-			//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			SpoofInput(curr_controller_index);
 		}
 
 		return;
@@ -1089,8 +1138,8 @@ void Render::UpdateHMDMatrixPose()
 		}
 	}
 
-	controller_pointer1->SetModelMatrix(vr_info.controller1.pose);
-	controller_pointer2->SetModelMatrix(vr_info.controller2.pose);
+	controller_pointer1->SetModelMatrixOverride(vr_info.controller1.pose);
+	controller_pointer2->SetModelMatrixOverride(vr_info.controller2.pose);
 
 	controller_pointer1->SetSelected(vr_info.controller1.trigger_is_pressed);
 	controller_pointer2->SetSelected(vr_info.controller2.trigger_is_pressed);

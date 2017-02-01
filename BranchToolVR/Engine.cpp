@@ -25,7 +25,7 @@ void Engine::InitObjects()
 
 	// add the ground plane
 	ColorObject* ground = new ColorObject;
-	ground->GenerateRoom();
+	ground->GenerateGround();
 	renderer->AddObjectToScene(ground);	
 	
 	// init dicom objects with the startup set, TODO: add in VR folder selection

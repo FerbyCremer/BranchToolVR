@@ -12,19 +12,23 @@
 #define DEFAULT_SHADOW_RES 2048
 #define DEFAULT_WINDOW_CENTER 1191
 #define DEFAULT_WINDOW_WIDTH 1066
-#define DEFAULT_SELECTOR_SCALE 0.2f
+#define DEFAULT_SELECTOR_SCALE 1.0f
 #define DEFAULT_POINT_CLOUD_SCALE 1.0f
 #define DEFAULT_LINE_WIDTH 2.0f
 #define MAX_ISOVALUE_TOLERANCE 30
+#define MAX_NR_POINT_CLOUD_SLIDERS 10
 #define WINDOW_TITLE_STRING "BranchToolVR"
 
 // enablers
-#define BACKFACE_CULLING_ENABLED 0
+#define ENABLE_BACKFACE_CULLING 0
+#define ENABLE_STATIC_MESH 0
 
 // math constants
 #define TWOPI 6.28318530718f
 #define PI 3.14159265359f
 #define SQRT3 1.73205080757f
+#define RAD_TO_DEGREE 57.2957795131
+#define DEGREE_TO_RAD 0.01745329251
 
 namespace DirectoryInfo
 {
@@ -36,6 +40,7 @@ namespace DirectoryInfo
 	static const std::string STARTUP_DICOM_SET = "torso/dcm0";
 	static const std::string POINT_CLOUD_HANDLE_MODEL = "pointCloudFrame2";
 	static const std::string COARSE_VIEWER_SLICE_HANDLE_MODEL = "coarseViewerHandle2";
+	static const std::string POINT_CLOUD_SELECTOR_MODEL = "pointCloudSelector";
 	static const std::string IMGUI_FRAME_MODEL = "imguiFrame";
 	static const std::string MODEL_EXT = ".wobj"; // rename from obj to avoid conflicts with obj files which are set in gitignore
 }

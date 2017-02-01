@@ -118,10 +118,9 @@ void AbstractBaseObject::SetAppendPose(const glm::mat4& m)
 	CalcModelMatrix();
 }
 
-void AbstractBaseObject::SetModelMatrix(const glm::mat4& m)
+void AbstractBaseObject::SetModelMatrixOverride(const glm::mat4& m)
 {
 	model_matrix  = m;
-	CalcModelMatrix();
 }
 
 // getters

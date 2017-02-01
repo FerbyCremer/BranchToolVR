@@ -1,6 +1,9 @@
 #include "DicomPointCloudObject.h"
 
-int BranchPoint::id_assigner = 0;
+int BranchPoint::id_counter = 0;
+std::vector<IsovaluePointCloudSlider*> DicomPointCloudObject::isovalue_point_cloud_sliders;
+const int DicomPointCloudObject::max_nr_isovalue_point_cloud_sliders = MAX_NR_POINT_CLOUD_SLIDERS;
+int IsovaluePointCloudSlider::id_counter = 0;
 
 DicomPointCloudObject::DicomPointCloudObject()
 {
@@ -295,7 +298,7 @@ void DicomPointCloudObject::GenerateSphere(float _scale)
 	Load();
 }
 
-void DicomPointCloudObject::GenerateDicomPointCloud(DicomSet & _ds, int _isovalue, int max_tolerance) 
+void DicomPointCloudObject::Generate(DicomSet & _ds, int _isovalue, int max_tolerance) 
 {
 	if (&_ds == NULL || _ds.data.size() < 1)
 	{

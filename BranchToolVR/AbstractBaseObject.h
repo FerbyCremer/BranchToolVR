@@ -52,7 +52,7 @@ class AbstractBaseObject
 		void SetModelPosition(const glm::vec3& v);
 		void SetScale(const float & _scale);
 		void SetAppendPose(const glm::mat4& m);
-		void SetModelMatrix(const glm::mat4 & m);
+		void SetModelMatrixOverride(const glm::mat4 & m);
 		
 		glm::vec3 GetWorldPosition();
 		glm::vec3 GetModelOrientation();

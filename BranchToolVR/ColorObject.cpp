@@ -35,47 +35,6 @@ void ColorObject::SetSelected(bool _isSelected)
 	display_color_modifier = 0.0f;
 }
 
-void ColorObject::GenerateRoom() 
-{
-	glm::vec3 scale(10.0f, 0.0f, 10.0f);
-	glm::vec3 _offset = glm::vec3(-5.0f, -0.1f, -5.0f);
-	display_color = glm::vec4(0.2f, 0.2f, 0.3f,1.0f);
-	
-	positions.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	positions.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-	positions.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	
-	positions.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	positions.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	positions.push_back(glm::vec3(1.0f, 0.0f, 1.0f));
-	
-	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	
-	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	
-	for (unsigned int i = 0; i < positions.size(); ++i) {
-		positions[i] *= scale;
-		positions[i] += _offset;
-	}
-
-	Finalize();
-}
-
-void ColorObject::GenerateController() 
-{
-	float len = 0.05f;
-	float pointer_width = 0.005f;
-
-	AddRectangularPrism(glm::vec3(len, len, len*2.5f), glm::vec3(-len/2.0f, -len/2.0f, 0.0f));
-	AddRectangularPrism(glm::vec3(pointer_width, pointer_width, -30.0f), glm::vec3(-pointer_width/2.0f, -pointer_width/2.0f, 0.0f));
-
-	Finalize();
-}
-
 void ColorObject::Finalize() 
 {
 	SetBoundingSphere();
@@ -116,9 +75,93 @@ void ColorObject::Load()
 	glDisableVertexAttribArray(1);
 }
 
+void ColorObject::GenerateIsovaluePointSliderFrame()
+{
+	SetModelOrientation(glm::vec3(-10.0f*DEGREE_TO_RAD, 0, 0));
+
+	float scale = 1.0f;
+	glm::vec2 d(scale, scale / 4.0f);
+	
+	glm::vec3 pos[4] = 
+	{
+		glm::vec3(0),
+		glm::vec3(d.x, 0, 0),
+		glm::vec3(0, d.y, 0),
+		glm::vec3(d.x, d.y, 0)
+	};
+	
+	glm::vec3 tmp = glm::vec3(0.0f, 0.0f, 0);
+	positions.push_back(pos[0]+ tmp);
+	positions.push_back(pos[1]+ tmp);
+	positions.push_back(pos[3]+ tmp);
+	positions.push_back(pos[0]+ tmp);
+	positions.push_back(pos[3]+ tmp);
+	positions.push_back(pos[2]+ tmp);
+	
+	for(int i = 0; i < 6; ++i)
+		normals.push_back(glm::vec3(0,0,1));
+
+	Finalize();
+}
+
+void ColorObject::GenerateIsovaluePointSliderKnob()
+{
+	SetModelOrientation(glm::vec3(-10.0f*DEGREE_TO_RAD, 0, 0));
+
+	float scale = 0.25f;
+	glm::vec2 d(scale, scale);
+
+	AddRectangularPrism(glm::vec3(0.25f), glm::vec3(0));
+
+	Finalize();
+}
+
+void ColorObject::GenerateGround() 
+{
+	glm::vec3 scale(10.0f, 0.0f, 10.0f);
+	glm::vec3 _offset = glm::vec3(-5.0f, -0.1f, -5.0f);
+	
+	positions.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	positions.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+	positions.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	
+	positions.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	positions.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	positions.push_back(glm::vec3(1.0f, 0.0f, 1.0f));
+	
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	
+	for (unsigned int i = 0; i < positions.size(); ++i) 
+	{
+		positions[i] *= scale;
+		positions[i] += _offset;
+	}
+
+	display_color = glm::vec4(0.2f, 0.2f, 0.3f,1.0f);
+	Finalize();
+}
+
+void ColorObject::GenerateController() 
+{
+	float len = 0.05f;
+	float pointer_width = 0.005f;
+
+	AddRectangularPrism(glm::vec3(len, len, len*2.5f), glm::vec3(-len/2.0f, -len/2.0f, 0.0f));
+	AddRectangularPrism(glm::vec3(pointer_width, pointer_width, -30.0f), glm::vec3(-pointer_width/2.0f, -pointer_width/2.0f, 0.0f));
+
+	Finalize();
+}
+
+
+
 void ColorObject::AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset) 
 {
-
 	int prev_num_positions = positions.size();
 
 	glm::vec3 cube[8];
@@ -248,6 +291,7 @@ void ColorObject::GenerateXYPrism(float _scaleX, float _scaleY, float _scaleZ, g
 void ColorObject::GenerateXYPrism(glm::vec3 _scale, glm::vec2 _padding, glm::vec3 _offset) 
 {
 	AddRectangularPrism(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
 	for (unsigned int i = 0; i < positions.size(); ++i) 
 	{
 		positions[i].x *= _scale.x - _padding.x*2.0f;
@@ -319,30 +363,9 @@ extern int triTable[][16];
 
 glm::vec3 VertexInterp(double isolevel, glm::vec3 p1, glm::vec3 p2, double valp1, double valp2)
 {
-	//double mu;
-	//glm::vec3 p;
-	//
-	//if (abs(isolevel - valp1) < 0.00001)
-	//	return(p1);
-	//if (abs(isolevel - valp2) < 0.00001)
-	//	return(p2);
-	//if (abs(valp1 - valp2) < 0.00001)
-	//	return(p1);
-	//mu = (isolevel - valp1) / (valp2 - valp1);
-	//p.x = p1.x + mu * (p2.x - p1.x);
-	//p.y = p1.y + mu * (p2.y - p1.y);
-	//p.z = p1.z + mu * (p2.z - p1.z);
-	//
-	//return(p);
-	//if (valp1 == valp2) {
-	//	return (p2 - p1)*0.5f + p1;
-	//}
-
-
 	glm::vec3 P1toP2 = p2 - p1;
 	double isoDiffP1 = (isolevel - valp1) / abs(valp1 - valp2);
 	return (float)isoDiffP1 * P1toP2 + p1;
-
 }
 
 void ColorObject::GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isolevel) 

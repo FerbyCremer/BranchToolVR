@@ -14,15 +14,18 @@ A tool designed to map vascular systems present in medical images in virtual rea
 * combine proj and view matrices on cpu
 * refactor screen ui
 * sort points by isovalue for faster surface lookup
+* declare const where possible in class functions
 * add object manager class
 * refactor code from other sources
 * re-enable shadows
 * refactor shaders to class objects
+* add virtual draw function to inherited class
 * point cloud culling
 * refactor class/struct destructors
 	* delete opengl data in renderer destructor
 * refactor class privelages
 * identify performance bottlenecks
+* include all .psd and .blend files in repo
 * add visual feedback to actions
 * repository features
 * assign object type ids automatically

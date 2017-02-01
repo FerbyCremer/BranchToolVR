@@ -36,7 +36,7 @@ struct VrMotionController
 		trigger_is_pressed = _is_pressed;
 	}
 
-	void SetPose(glm::mat4 & _inPose)
+	void SetPose(glm::mat4& _inPose)
 	{
 		pose = _inPose;
 		ray = glm::vec3(pose * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));

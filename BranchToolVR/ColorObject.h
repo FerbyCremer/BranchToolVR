@@ -25,14 +25,18 @@ class ColorObject : public AbstractBaseObject
 		void GenerateSphere(int _res, float _radius, bool _invNormals);
 		void GenerateIsosurfaceFromDicomSet(DicomSet & _dSet, int _isovalue);
 		void GenerateController();
-		void GenerateRoom();
+		void GenerateGround();
 		void SetDisplayColor(const glm::vec4 & _inColor);
 		void SetSelected(bool _isSelected);
-		glm::vec4 GetDisplayColor();
+		void GenerateIsovaluePointSliderFrame();
+		void GenerateIsovaluePointSliderKnob();
+		glm::vec4 GetDisplayColor();		
+		int Type();
+
+	private:
 		void AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset);
 		void Finalize();
 		void Load();
-		int Type();
 
 		glm::vec4 display_color;
 		glm::vec4 selected_color_additive;

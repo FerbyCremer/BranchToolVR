@@ -24,6 +24,7 @@
 #include "MiscFunctions.h"
 #include "InputHelpers.h"
 #include "Constants.h"
+#include "Ui.h"
 
 struct Light 
 {
@@ -57,6 +58,7 @@ enum TexturesEnum
 	CURR_ORTHOSLICE_TEXTURE,
 	POINT_CLOUD_FRAME_TEXTURE,
 	COARSE_VIEWER_SLICE_HANDLE_TEXTURE,
+	POINT_CLOUD_SELECTOR_TEXTURE,
 	CURR_NR_TEXTURES, // keep as last element of enum
 };
 
@@ -88,6 +90,7 @@ class Render
 		void AddObjectToScene(DicomPointCloudObject * dpco);
 		void AddObjectToScene(LineObject * l);
 		void AddObjectToScene(TextureObject * t);
+		void SetOrthosliceTextureReference(Texture* _t);
 		const CursorData& GetCursorData() { return cursor_info; };
 		const VrData& GetVrData() { return vr_info; };
 
@@ -95,16 +98,17 @@ class Render
 		void Interact();
 		void UpdateHMDMatrixPose();		
 		void UpdateCursor();
-		void FakeInput(int controllerIndex);
+		void SpoofInput(int controllerIndex);
 		void DetectCollision(VrMotionController & _controller);
 		void BindTextures();
 		void LoadTextures();
 		void LoadShaders();		
 		void InitLighting();
-		void RenderToScreen();
+		void RenderToWindow();
 		void UpdateScene();
 		bool InitVR();
 		void RenderToHMD();
+		void RenderVrUi();
 		bool createShadowMap(ShadowMap &sm);
 		void RenderSceneInternal(glm::mat4 _P, glm::mat4 _V);
 
@@ -112,7 +116,6 @@ class Render
 		GLFWwindow * window;
 
 		// Textures
-		int num_textures;
 		Texture ** textures;
 
 		// Lights
@@ -131,8 +134,6 @@ class Render
 		ShaderProgram dicom_point_cloud;
 		ShaderProgram branch_point;
 		ShaderProgram branch_line;
-		ShaderProgram ui_color;
-		ShaderProgram ui_texture;
 		ShaderProgram shadow;
 		ShaderProgram recieve_shadow_color;
 		
@@ -156,28 +157,31 @@ class Render
 		uint32_t m_nRenderHeight;
 		
 		// motion controller
-		ColorObject * controller_pointer1;
-		ColorObject * controller_pointer2;
-		AbstractBaseObject * selected_element1;
-		AbstractBaseObject * selected_element2;
+		ColorObject* controller_pointer1;
+		ColorObject* controller_pointer2;
+		AbstractBaseObject* selected_element1;
+		AbstractBaseObject* selected_element2;
 		glm::mat4 spoofControllerView;
 		
+		// valve models
 		std::vector<CGLRenderModel*> m_vecRenderModels;
 		CGLRenderModel *m_rTrackedDeviceToRenderModel[vr::k_unMaxTrackedDeviceCount];
 		CGLRenderModel* FindOrLoadRenderModel(const char *pchRenderModelName);
 		void SetupRenderModels();
 		void SetupRenderModelForTrackedDevice(vr::TrackedDeviceIndex_t unTrackedDeviceIndex);
 		
-		// static 
-		static void window_size_callback(GLFWwindow* window, int width, int height);
+		// static vars
 		static int window_size_x;
 		static int window_size_y;
 		static int half_window_size_x;
 		static int half_window_size_y;
 		static float window_aspect;
+		static glm::mat4 window_projection;
 		static VrData vr_info;
 		static CursorData cursor_info;
 
+		// static functions
+		static void window_size_callback(GLFWwindow* window, int width, int height); // glfw callback
 		static glm::mat4 ValveMat34ToGlmMat4Inv(vr::HmdMatrix34_t _mIN);
 		static glm::mat4 ValveMat34ToGlmMat4(vr::HmdMatrix34_t _mIN);
 		static glm::mat4 ValveMat4ToGlmMat4(vr::HmdMatrix44_t _mIN);

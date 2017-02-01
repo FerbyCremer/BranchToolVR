@@ -4,6 +4,10 @@ CoarseDicomViewer::CoarseDicomViewer()
 {
 	static_mesh = new ColorObject;
 	static_mesh->SetDisplayColor(Constants::STATIC_DICOM_MESH_COLOR);
+
+	#if !ENABLE_STATIC_MESH
+		static_mesh->is_hidden = true;
+	#endif
 	
 	float base_handle_scale = 1.6f;
 	base_handle = new TextureObject;
@@ -24,13 +28,13 @@ CoarseDicomViewer::CoarseDicomViewer()
 	orthoslice_texture = new Texture;
 	selector_changed = false;
 
-	point_cloud_selector = new ColorObject;
+	point_cloud_selector = new TextureObject;
 	point_cloud_selector->is_selectable = true;
 	point_cloud_selector->is_double_selectable = true;
-	point_cloud_selector->SetDisplayColor(glm::vec4(0.0f, 0.5f, 0.5f, 0.5f));
-	point_cloud_selector->GenerateXYPrism(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f), glm::vec3(-0.5f));
+	//point_cloud_selector->GenerateXYPrism(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f), glm::vec3(-0.5f));
+	point_cloud_selector->readObjFromFile(DirectoryInfo::POINT_CLOUD_SELECTOR_MODEL, 1.0f);
+	point_cloud_selector->texture_level = 5; // POINT_CLOUD_SELECTOR_TEXTURE
 	point_cloud_selector->SetScale(DEFAULT_SELECTOR_SCALE);
-	point_cloud_selector->selection_modifier = -0.25f;
 	point_cloud_selector_scale = DEFAULT_SELECTOR_SCALE;
 }
 
@@ -47,12 +51,10 @@ void CoarseDicomViewer::AddObjects(Render * _r)
 {
 	_r->AddObjectToScene(static_mesh);
 	_r->AddObjectToScene(base_handle);
-	_r->AddObjectToScene(orthoslice);
 	_r->AddObjectToScene(orthoslice_handle);
-	_r->AddObjectToScene(point_cloud_selector);
-
-	// set texture reference
-	_r->textures[CURR_ORTHOSLICE_TEXTURE] = orthoslice_texture;
+	_r->AddObjectToScene(point_cloud_selector);	
+	_r->AddObjectToScene(orthoslice);
+	_r->SetOrthosliceTextureReference(orthoslice_texture);
 }
 
 glm::vec3 CoarseDicomViewer::GetCollisionPointWithOrthosliceHandlePlane(glm::vec3 _pos, glm::vec3 _ray, glm::vec3 & _cg) 

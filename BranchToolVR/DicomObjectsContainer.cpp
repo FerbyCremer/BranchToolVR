@@ -77,7 +77,7 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 			points->lower_bounds = viewer->selector_lower_bounds;
 			points->upper_bounds = viewer->selector_upper_bounds;
 			points->curr_tolerance = 30;
-			points->GenerateDicomPointCloud(imaging_data, imaging_data.isovalue, 30);
+			points->Generate(imaging_data, imaging_data.isovalue, 30);
 		}
 
 		once = true;
@@ -119,7 +119,8 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 		int index_y = (float)imaging_data.data[imaging_data.current_index].height * colp_to_model_space.y;
 		imaging_data.isovalue = imaging_data.data[imaging_data.current_index].isovalues.at(imaging_data.data[imaging_data.current_index].width * index_y + index_x);
 
-		points->GenerateDicomPointCloud(imaging_data, imaging_data.isovalue, 30);
+		AddIsovaluePointCloudSlider(imaging_data.isovalue);
+		points->Generate(imaging_data, imaging_data.isovalue, MAX_ISOVALUE_TOLERANCE);
 	}
 
 	// drawing branches in VR
@@ -192,6 +193,11 @@ void DicomObjectsContainer::AddObjects(Render * _r)
 	viewer->AddObjects(_r);
 }
 
+void DicomObjectsContainer::AddIsovaluePointCloudSlider(const int _isovalue)
+{
+	DicomPointCloudObject::isovalue_point_cloud_sliders.push_back(new IsovaluePointCloudSlider(_isovalue));
+}
+
 void DicomObjectsContainer::Load(std::string _dicomDir)
 {
 	imaging_data = DicomReader::ReadSet(_dicomDir);
@@ -202,5 +208,5 @@ void DicomObjectsContainer::Load(std::string _dicomDir)
 void DicomObjectsContainer::UpdateDicomPointCloud(int _isovalue)
 {
 	imaging_data.isovalue = _isovalue;
-	points->GenerateDicomPointCloud(imaging_data, _isovalue, MAX_ISOVALUE_TOLERANCE);
+	points->Generate(imaging_data, _isovalue, MAX_ISOVALUE_TOLERANCE);
 }
