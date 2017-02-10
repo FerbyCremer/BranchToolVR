@@ -1,11 +1,13 @@
 #include "DicomPointCloudObject.h"
 
 int BranchPoint::id_counter = 0;
-std::vector<IsovaluePointCloudSlider*> DicomPointCloudObject::isovalue_point_cloud_sliders;
-const int DicomPointCloudObject::max_nr_isovalue_point_cloud_sliders = MAX_NR_POINT_CLOUD_SLIDERS;
 int IsovaluePointCloudSlider::id_counter = 0;
+const int DicomPointCloudObject::max_nr_isovalue_point_cloud_sliders = MAX_NR_POINT_CLOUD_SLIDERS;
+glm::vec2 IsovaluePointCloudSlider::frame_scale = glm::vec2(1.0f, 0.25f);
+glm::vec2 IsovaluePointCloudSlider::knob_scale = glm::vec2(IsovaluePointCloudSlider::frame_scale.y);
+float IsovaluePointCloudSlider::knob_travel_dist = IsovaluePointCloudSlider::frame_scale.x - IsovaluePointCloudSlider::knob_scale.x;
 
-DicomPointCloudObject::DicomPointCloudObject()
+DicomPointCloudObject::DicomPointCloudObject() : isovalue_point_cloud_sliders(MAX_NR_POINT_CLOUD_SLIDERS)
 {
 	// default values
 	is_selectable = true;
@@ -24,6 +26,12 @@ DicomPointCloudObject::DicomPointCloudObject()
 
 	branch_point_marker = new ColorObject;
 	branch_point_marker->SetDisplayColor(glm::vec4(1.0f, 0.1f, 0.2f, 1.0f));
+
+	for(int i = 0; i < isovalue_point_cloud_sliders.size(); ++i)
+	{
+		isovalue_point_cloud_sliders[i] = new IsovaluePointCloudSlider;
+		isovalue_point_cloud_sliders[i]->SetModelPosition(glm::vec3(0.0f, 0.3f*(float)i, 0.0f));
+	}
 }
 
 DicomPointCloudObject::~DicomPointCloudObject()
@@ -35,6 +43,26 @@ DicomPointCloudObject::~DicomPointCloudObject()
 void DicomPointCloudObject::Clear() 
 {
 	num_instances = 0;
+}
+
+void DicomPointCloudObject::AddNewIsovaluePointCloudSlider(int _isovalue)
+{
+	bool unused_slider_slot_found = false;
+
+	for (int i = 0; i < isovalue_point_cloud_sliders.size(); ++i)
+	{
+		if (!isovalue_point_cloud_sliders[i]->in_use)
+		{
+			isovalue_point_cloud_sliders[i]->SetInUse(true);
+
+			unused_slider_slot_found = true;
+			break;
+		}
+	}
+}
+
+void DicomPointCloudObject::SetIsovaluePointCloudSlidersHeights()
+{
 }
 
 int DicomPointCloudObject::Type() 
@@ -292,7 +320,6 @@ void DicomPointCloudObject::GenerateSphere(float _scale)
 			normals.push_back(vertices[(x + 1) % resolution + (y + 1)*resolution]);
 			normals.push_back(vertices[x % resolution + (y + 1)*resolution]);
 		}
-
 	}
 
 	Load();
@@ -356,6 +383,19 @@ void DicomPointCloudObject::SetMasterAppendPose(glm::mat4 _in)
 	SetAppendPose(_in);
 	handle->SetAppendPose(_in);
 	branch_point_marker->SetAppendPose(_in);
+
+	for (auto*& slider : isovalue_point_cloud_sliders)
+	{
+		slider->SetAppendPose(_in);
+	}
+}
+
+void DicomPointCloudObject::SetIsovalueSliderTagAppendPose(const glm::mat4 _in)
+{
+	for (auto*& slider : isovalue_point_cloud_sliders)
+	{
+		slider->SetTagsAppendPose(_in);
+	}
 }
 
 BranchPoint* DicomPointCloudObject::GetBranchPointByID(int _id)  // TODO: switch to id to pointer map

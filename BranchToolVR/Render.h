@@ -65,7 +65,7 @@ enum TexturesEnum
 struct ShaderProgram 
 {
 	GLuint id;
-	GLuint * uniforms;
+	GLuint* uniforms;
 	GLuint num_uniforms;
 };
 
@@ -90,6 +90,8 @@ class Render
 		void AddObjectToScene(DicomPointCloudObject * dpco);
 		void AddObjectToScene(LineObject * l);
 		void AddObjectToScene(TextureObject * t);
+		void AddObjectToScene(std::vector<IsovaluePointCloudSlider*> _ipcs);
+		void AddObjectToScene(IsovaluePointCloudSlider* _ipcs);
 		void SetOrthosliceTextureReference(Texture* _t);
 		const CursorData& GetCursorData() { return cursor_info; };
 		const VrData& GetVrData() { return vr_info; };
@@ -108,15 +110,14 @@ class Render
 		void UpdateScene();
 		bool InitVR();
 		void RenderToHMD();
-		void RenderVrUi();
 		bool createShadowMap(ShadowMap &sm);
 		void RenderSceneInternal(glm::mat4 _P, glm::mat4 _V);
 
 		// glfw reference (must be initialized before constructor)
-		GLFWwindow * window;
+		GLFWwindow* window;
 
 		// Textures
-		Texture ** textures;
+		Texture** textures;
 
 		// Lights
 		static const int num_lights;
@@ -147,8 +148,8 @@ class Render
 		// VR variables
 		FramebufferDesc leftEyeDesc;
 		FramebufferDesc rightEyeDesc;
-		vr::IVRSystem *m_pHMD;
-		vr::IVRRenderModels *m_pRenderModels;
+		vr::IVRSystem* m_pHMD;
+		vr::IVRRenderModels* m_pRenderModels;
 		vr::TrackedDevicePose_t m_rTrackedDevicePose[vr::k_unMaxTrackedDeviceCount];
 		bool m_rbShowTrackedDevice[vr::k_unMaxTrackedDeviceCount];
 		glm::mat4 m_rmat4DevicePose[vr::k_unMaxTrackedDeviceCount];
@@ -165,7 +166,7 @@ class Render
 		
 		// valve models
 		std::vector<CGLRenderModel*> m_vecRenderModels;
-		CGLRenderModel *m_rTrackedDeviceToRenderModel[vr::k_unMaxTrackedDeviceCount];
+		CGLRenderModel* m_rTrackedDeviceToRenderModel[vr::k_unMaxTrackedDeviceCount];
 		CGLRenderModel* FindOrLoadRenderModel(const char *pchRenderModelName);
 		void SetupRenderModels();
 		void SetupRenderModelForTrackedDevice(vr::TrackedDeviceIndex_t unTrackedDeviceIndex);

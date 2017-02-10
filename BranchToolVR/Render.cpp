@@ -148,59 +148,82 @@ void Render::AddObjectToScene(std::vector<AbstractBaseObject*> abstractBaseObjs)
 	}
 }
 
-void Render::AddObjectToScene(AbstractBaseObject* abso) 
+void Render::AddObjectToScene(AbstractBaseObject* _abso) 
 {
-	if (abso == NULL) 
-	{
-		return;
-	}
+	if (_abso == NULL)	return;
 
-	if (abso->Type() == 0) 
+	if (_abso->Type() == 0) 
 	{
-		ColorObject * s = static_cast<ColorObject*>(abso);
+		ColorObject * s = static_cast<ColorObject*>(_abso);
 		AddObjectToScene(s);
 	}
-	else if (abso->Type() == 1) 
+	else if (_abso->Type() == 1) 
 	{
-		TextureObject * s = static_cast<TextureObject*>(abso);
+		TextureObject * s = static_cast<TextureObject*>(_abso);
 		AddObjectToScene(s);
 	}
 
-	all_objects.push_back(abso);
+	all_objects.push_back(_abso);
 }
 
-void Render::AddObjectToScene(ColorObject * co)
+void Render::AddObjectToScene(ColorObject* _co)
 {
-	if (co != NULL) 
+	if (_co != NULL) 
 	{
-		color_objects.push_back(co);
-		all_objects.push_back(co);
+		color_objects.push_back(_co);
+		all_objects.push_back(_co);
 	}
 }
 
-void Render::AddObjectToScene(DicomPointCloudObject * dpco)
+void Render::AddObjectToScene(DicomPointCloudObject * _dpco)
 {
-	if (dpco == NULL) 
+	if (_dpco == NULL) 
 		return;
 
-	all_objects.push_back(dpco); 
-	dicom_point_cloud_objects.push_back(dpco);
-	AddObjectToScene(dpco->handle);
+	all_objects.push_back(_dpco); 
+	dicom_point_cloud_objects.push_back(_dpco);
+	AddObjectToScene(_dpco->handle);
+	AddObjectToScene(_dpco->isovalue_point_cloud_sliders);
+
+	for (auto slider : _dpco->isovalue_point_cloud_sliders)
+	{
+		AddObjectToScene(slider);
+	}
 }
 
-void Render::AddObjectToScene(LineObject * l) 
+void Render::AddObjectToScene(LineObject * _l) 
 {
-	if (l != NULL)
-		line_objects.push_back(l);
+	if (_l != NULL)
+		line_objects.push_back(_l);
 }
 
-void Render::AddObjectToScene(TextureObject * t) 
+void Render::AddObjectToScene(TextureObject * _t) 
 {
-	if (t == NULL)
+	if (_t == NULL)
 		return;
 
-	texture_objects.push_back(t);
-	all_objects.push_back(t);
+	texture_objects.push_back(_t);
+	all_objects.push_back(_t);
+}
+
+void Render::AddObjectToScene(std::vector<IsovaluePointCloudSlider*> _ipcs)
+{
+	for (auto i : _ipcs)
+		AddObjectToScene(i);
+}
+
+void Render::AddObjectToScene(IsovaluePointCloudSlider* _ipcs)
+{
+	if (_ipcs == NULL) return;
+
+	AddObjectToScene(_ipcs->knob);
+	AddObjectToScene(_ipcs->frame);
+	AddObjectToScene(_ipcs->value_label);
+	AddObjectToScene(_ipcs->x_button);
+	
+	AddObjectToScene(_ipcs->tag_frame);
+	AddObjectToScene(_ipcs->tag_label);
+	AddObjectToScene(_ipcs->tag_x_button);
 }
 
 void Render::SetOrthosliceTextureReference(Texture* _t)
@@ -253,42 +276,6 @@ void Render::RenderToHMD()
 	
 	vr::Texture_t rightEyeTexture = { (void*)rightEyeDesc.m_nResolveTextureId, vr::API_OpenGL, vr::ColorSpace_Gamma };
 	vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
-}
-
-void Render::RenderVrUi()
-{
-	glUseProgram(color.id);
-
-	glUniformMatrix4fv(color.uniforms[0], 1, GL_FALSE, glm::value_ptr(window_projection));
-	glUniformMatrix4fv(color.uniforms[1], 1, GL_FALSE, glm::value_ptr(vr_info.head_pose_inv));	
-	glUniform3fv(color.uniforms[4], 1, glm::value_ptr(lights[0].position));
-	glUniform3fv(color.uniforms[5], 1, glm::value_ptr(lights[1].position));
-	glUniform3fv(color.uniforms[6], 1, glm::value_ptr(lights[2].position));
-	glUniform3fv(color.uniforms[10], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
-
-	for (int i = 0; i < DicomPointCloudObject::isovalue_point_cloud_sliders.size(); ++i)
-	{
-		IsovaluePointCloudSlider& slider = *DicomPointCloudObject::isovalue_point_cloud_sliders[i];
-		for (int j = 0; j < 2; ++j)
-		{
-			ColorObject* curr = NULL;
-			switch (j) 
-			{
-				case 0: curr = slider.knob; break;
-				case 1: curr = slider.knob; break;
-			}
-
-			curr->SetModelPositionY((float)i*0.25f);
-			glUniformMatrix4fv(color.uniforms[2], 1, GL_FALSE, glm::value_ptr(curr->GetModelMatrix()));
-			glUniform4fv(color.uniforms[3], 1, glm::value_ptr(curr->GetDisplayColor()));
-
-			glBindVertexArray(curr->GetVao());
-			glEnableVertexAttribArray(0);
-			glEnableVertexAttribArray(1);
-
-			glDrawArrays(GL_TRIANGLES, 0, curr->GetNumVertices());
-		}
-	}
 }
 
 void Render::UpdateLights() 
@@ -433,8 +420,6 @@ void Render::RenderToWindow()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, window_size_x, window_size_y);
 	RenderSceneInternal(window_projection, vr_info.head_pose_inv);
-
-	RenderVrUi();
 }
 
 void Render::UpdateScene()
@@ -640,7 +625,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 	glUniformMatrix4fv(texture.uniforms[1], 1, GL_FALSE, glm::value_ptr(_V));
 	glUniform3fv(texture.uniforms[4], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
 
-	for (TextureObject* & tObj : texture_objects) 
+	for (TextureObject*& tObj : texture_objects) 
 	{
 		if (tObj->is_hidden || !tObj->is_loaded)
 			continue;
@@ -964,30 +949,38 @@ void Render::Interact()
 
 void Render::SpoofInput(int controllerIndex) 
 {
-	static float move_rate = 0.05f;
-	static float rot_rate = 1.0f;
+	float mov_rate = 0.05f;
+	float rot_rate = 1.0f;
+	float slo_rate = 0.25f;
+
+	// slow down the movement rate if shift is being held down
+	if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT))
+	{
+		mov_rate *= slo_rate;
+		rot_rate *= slo_rate;
+	}
 
 	VrMotionController& currController = controllerIndex == 0 ? vr_info.controller1 : vr_info.controller2;	
 	glm::vec3 strafe = glm::normalize(glm::cross(Constants::Y_AXIS, currController.ray));
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
 	{
-		currController.SetPositionSpoof(currController.position + move_rate*currController.ray);
+		currController.SetPositionSpoof(currController.position + mov_rate*currController.ray);
 	}
 	
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) 
 	{
-		currController.SetPositionSpoof(currController.position - move_rate*currController.ray);
+		currController.SetPositionSpoof(currController.position - mov_rate*currController.ray);
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		currController.SetPositionSpoof(currController.position + move_rate*strafe);
+		currController.SetPositionSpoof(currController.position + mov_rate*strafe);
 	}
 	
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		currController.SetPositionSpoof(currController.position - move_rate*strafe);
+		currController.SetPositionSpoof(currController.position - mov_rate*strafe);
 	}
 
 	// the position of the cursor is the distance moved since last reset to center of the screen (0,0)

@@ -20,6 +20,7 @@ class DicomObjectsContainer
 
 	private:
 		void UpdateDicomPointCloud(int _isovalue);
+		void SetCoarseViewerAppendPose(const glm::mat4 _m);
 		DicomSet imaging_data;
 		DicomPointCloudObject * points;
 		CoarseDicomViewer * viewer;

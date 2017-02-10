@@ -28,8 +28,9 @@ class ColorObject : public AbstractBaseObject
 		void GenerateGround();
 		void SetDisplayColor(const glm::vec4 & _inColor);
 		void SetSelected(bool _isSelected);
-		void GenerateIsovaluePointSliderFrame();
-		void GenerateIsovaluePointSliderKnob();
+		void GenerateIsovaluePointSliderFrame(const glm::vec2 _frame_scale);
+		void GenerateIsovaluePointSliderKnob(const glm::vec2 _frame_scale);
+		void GenerateIsovaluePointSliderButton(const glm::vec2 _button_scale, glm::vec3 _offset);
 		glm::vec4 GetDisplayColor();		
 		int Type();
 
@@ -37,6 +38,8 @@ class ColorObject : public AbstractBaseObject
 		void AddRectangularPrism(glm::vec3 _scale, glm::vec3 _offset);
 		void Finalize();
 		void Load();
+
+
 
 		glm::vec4 display_color;
 		glm::vec4 selected_color_additive;

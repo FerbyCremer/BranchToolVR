@@ -9,7 +9,8 @@ DicomObjectsContainer::DicomObjectsContainer()
 	float initial_scale = 0.5f;
 	glm::vec3 initial_position = glm::vec3(0.5f, 0.25f, 0.5f);
 	glm::mat4 tmp_initial_model_matrix = glm::translate(glm::mat4(1.0f), initial_position) * glm::scale(glm::mat4(1.0f), glm::vec3(initial_scale));
-	viewer->SetMasterAppendPose(tmp_initial_model_matrix);
+	//viewer->SetMasterAppendPose(tmp_initial_model_matrix);
+	SetCoarseViewerAppendPose(tmp_initial_model_matrix);
 	
 	initial_scale = 0.5f;
 	initial_position = glm::vec3(-0.5f, 0.25f, 0.5f);
@@ -29,12 +30,14 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 
 	if (viewer->base_handle->is_double_selected)
 	{
-		viewer->SetMasterAppendPose(viewer->base_handle->GetDoubleSelectionTransform());
+		//viewer->SetMasterAppendPose(viewer->base_handle->GetDoubleSelectionTransform());
+		SetCoarseViewerAppendPose(viewer->base_handle->GetDoubleSelectionTransform());
 	}	
 	else if(viewer->base_handle->is_selected)
 	{
 		curr_pose = viewer->base_handle->cache.controller_pose_updated * viewer->base_handle->cache.to_controller_space_initial;
-		viewer->SetMasterAppendPose(curr_pose);
+		//viewer->SetMasterAppendPose(curr_pose);
+		SetCoarseViewerAppendPose(curr_pose);
 	}
 
 	static bool once = true;
@@ -123,6 +126,32 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 		points->Generate(imaging_data, imaging_data.isovalue, MAX_ISOVALUE_TOLERANCE);
 	}
 
+
+	for (int i = 0; i < points->isovalue_point_cloud_sliders.size(); ++i)
+	{
+		IsovaluePointCloudSlider* curr = points->isovalue_point_cloud_sliders[i];
+		if (curr->knob->is_selected)
+		{
+
+			glm::vec4 colp_to_model_space = glm::inverse(curr->frame->GetModelMatrix()) * glm::vec4(curr->knob->cache.primary_collision_point_world_current, 1.0f);
+			float new_model_x = colp_to_model_space.x;
+
+			if (curr->knob_first_select)
+			{
+				curr->knob_offset = new_model_x - curr->knob->GetModelPosition().x;
+				curr->knob_first_select = false;
+			}
+
+
+			float curr_knob_pos_with_offset = new_model_x - curr->knob_offset;
+			curr->knob->SetModelPositionX(glm::clamp(curr_knob_pos_with_offset, 0.0f, IsovaluePointCloudSlider::knob_travel_dist));
+		}
+		else
+		{
+			curr->knob_first_select = true;
+		}
+	}
+
 	// drawing branches in VR
 	static BranchPoint* prev = NULL;
 	static const float dist_threshold_to_existing = 0.1f;
@@ -179,7 +208,6 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 		else
 		{
 			glm::vec4 controller_pos_in_point_space = glm::inverse(points->GetModelMatrix()) * glm::vec4(_vr.controller1.position, 1.0f);
-			std::cout << controller_pos_in_point_space.x << " " << controller_pos_in_point_space.y << " " << controller_pos_in_point_space.z << std::endl;
 			BranchPoint* newBP = new BranchPoint(glm::vec3(controller_pos_in_point_space) - points->lower_bounds);
 			points->branch_points.push_back(newBP);
 			prev = newBP;
@@ -187,7 +215,7 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 	}
 }
 
-void DicomObjectsContainer::AddObjects(Render * _r) 
+void DicomObjectsContainer::AddObjects(Render* _r) 
 {
 	_r->AddObjectToScene(points);
 	viewer->AddObjects(_r);
@@ -195,7 +223,8 @@ void DicomObjectsContainer::AddObjects(Render * _r)
 
 void DicomObjectsContainer::AddIsovaluePointCloudSlider(const int _isovalue)
 {
-	DicomPointCloudObject::isovalue_point_cloud_sliders.push_back(new IsovaluePointCloudSlider(_isovalue));
+	//DicomPointCloudObject::isovalue_point_cloud_sliders.push_back(new IsovaluePointCloudSlider(_isovalue));
+	points->AddNewIsovaluePointCloudSlider(_isovalue);
 }
 
 void DicomObjectsContainer::Load(std::string _dicomDir)
@@ -209,4 +238,10 @@ void DicomObjectsContainer::UpdateDicomPointCloud(int _isovalue)
 {
 	imaging_data.isovalue = _isovalue;
 	points->Generate(imaging_data, _isovalue, MAX_ISOVALUE_TOLERANCE);
+}
+
+void DicomObjectsContainer::SetCoarseViewerAppendPose(const glm::mat4 _m)
+{
+	viewer->SetMasterAppendPose(_m);
+	points->SetIsovalueSliderTagAppendPose(_m);
 }
