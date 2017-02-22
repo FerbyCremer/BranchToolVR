@@ -364,7 +364,6 @@ void DicomPointCloudObject::Generate(DicomSet & _ds, int _isovalue, int max_tole
 				if (iso_abs_check <= max_tolerance)
 				{
 					col = isovalue_point_cloud_sliders[k]->color;
-					col = glm::vec3(0.25f, 1.0f, 0.1f);
 					found = true;
 					break;
 				}
