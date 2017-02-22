@@ -18,6 +18,8 @@
 #define MAX_ISOVALUE_TOLERANCE 30
 #define MAX_NR_POINT_CLOUD_SLIDERS 10
 #define WINDOW_TITLE_STRING "BranchToolVR"
+#define TMP_MIN_ISOVALUE -1000
+#define TMP_MAX_ISOVALUE 3000
 
 // enablers
 #define ENABLE_BACKFACE_CULLING 0
@@ -29,6 +31,9 @@
 #define SQRT3 1.73205080757f
 #define RAD_TO_DEGREE 57.2957795131
 #define DEGREE_TO_RAD 0.01745329251
+
+// macros
+#define RAND_0_TO_1 static_cast <float> (rand()) / static_cast <float> (RAND_MAX)
 
 namespace DirectoryInfo
 {

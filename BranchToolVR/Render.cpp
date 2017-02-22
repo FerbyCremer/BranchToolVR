@@ -649,7 +649,7 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 	glUniform3fv(dicom_point_cloud.uniforms[4], 1, glm::value_ptr(lights[0].position));
 	glUniform3fv(dicom_point_cloud.uniforms[5], 1, glm::value_ptr(lights[1].position));
 	glUniform3fv(dicom_point_cloud.uniforms[6], 1, glm::value_ptr(lights[2].position));
-	glUniform3fv(dicom_point_cloud.uniforms[12], 1, glm::value_ptr(vr_info.head_position));
+	//glUniform3fv(dicom_point_cloud.uniforms[12], 1, glm::value_ptr(vr_info.head_position));
 	glUniform3fv(dicom_point_cloud.uniforms[13], 1, glm::value_ptr(Constants::AMBIENT_LIGHT));
 
 	for (DicomPointCloudObject* & dpco : dicom_point_cloud_objects) 
@@ -658,10 +658,10 @@ void Render::RenderSceneInternal(glm::mat4 _P, glm::mat4 _V)
 			continue;
 
 		glUniformMatrix4fv(dicom_point_cloud.uniforms[2], 1, GL_FALSE, glm::value_ptr(dpco->GetModelMatrix()));
-		glUniform1i(dicom_point_cloud.uniforms[3], dpco->curr_tolerance);
-		glUniform3fv(dicom_point_cloud.uniforms[7], 1, glm::value_ptr(glm::vec3(dpco->GetScale())));
-		glUniform3fv(dicom_point_cloud.uniforms[8], 1, glm::value_ptr(dpco->lower_bounds));
-		glUniform3fv(dicom_point_cloud.uniforms[9], 1, glm::value_ptr(dpco->upper_bounds));
+		//glUniform1i(dicom_point_cloud.uniforms[3], dpco->curr_tolerance);
+		//glUniform3fv(dicom_point_cloud.uniforms[7], 1, glm::value_ptr(glm::vec3(dpco->GetScale())));
+		//glUniform3fv(dicom_point_cloud.uniforms[8], 1, glm::value_ptr(dpco->lower_bounds));
+		//glUniform3fv(dicom_point_cloud.uniforms[9], 1, glm::value_ptr(dpco->upper_bounds));
 
 		glBindVertexArray(dpco->GetVao());	
 

@@ -31,8 +31,8 @@ CoarseDicomViewer::CoarseDicomViewer()
 	point_cloud_selector = new TextureObject;
 	point_cloud_selector->is_selectable = true;
 	point_cloud_selector->is_double_selectable = true;
-	//point_cloud_selector->GenerateXYPrism(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f), glm::vec3(-0.5f));
-	point_cloud_selector->readObjFromFile(DirectoryInfo::POINT_CLOUD_SELECTOR_MODEL, 1.0f);
+	//point_cloud_selector->GenerateXYPrism(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f), glm::vec3(-0.5f)); // OLD CUBE BEFORE NEW MODEL
+	point_cloud_selector->readObjFromFile(DirectoryInfo::POINT_CLOUD_SELECTOR_MODEL, 1.0f*0.6f); // TODO: FIX MODEL SCALE WITH LOWER BOUND AND UPPER BOUNDS
 	point_cloud_selector->texture_level = 5; // POINT_CLOUD_SELECTOR_TEXTURE
 	point_cloud_selector->SetScale(DEFAULT_SELECTOR_SCALE);
 	point_cloud_selector_scale = DEFAULT_SELECTOR_SCALE;

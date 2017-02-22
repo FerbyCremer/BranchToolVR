@@ -79,20 +79,27 @@ void Engine::Update()
 
 void Engine::Loop() 
 {
-	double frame_time_start = glfwGetTime();
-	double frame_time_end = glfwGetTime();
+	double last_frame_time = glfwGetTime();
+	int set_elapsed_time = 5.0f;
+	int frame_counter = 0;
 
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) 
 	{
-		frame_time_start = glfwGetTime();
-		double prev_frame_time = frame_time_start - frame_time_end;
-	
 		glfwPollEvents();
 		Update();
 		glfwSwapBuffers(window);
 
-		//TODO: limit fps
-		frame_time_end = frame_time_start;
+		double curr_time = glfwGetTime();
+
+		if ((curr_time - last_frame_time) >= set_elapsed_time)
+		{
+			std::cout << (double)frame_counter / set_elapsed_time << std::endl;
+			last_frame_time = curr_time;
+			frame_counter = 0;
+		}
+		
+
+		frame_counter++;
 	} 
 
 	glfwTerminate();

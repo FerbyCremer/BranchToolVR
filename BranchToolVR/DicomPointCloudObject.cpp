@@ -6,6 +6,8 @@ const int DicomPointCloudObject::max_nr_isovalue_point_cloud_sliders = MAX_NR_PO
 glm::vec2 IsovaluePointCloudSlider::frame_scale = glm::vec2(1.0f, 0.25f);
 glm::vec2 IsovaluePointCloudSlider::knob_scale = glm::vec2(IsovaluePointCloudSlider::frame_scale.y);
 float IsovaluePointCloudSlider::knob_travel_dist = IsovaluePointCloudSlider::frame_scale.x - IsovaluePointCloudSlider::knob_scale.x;
+float IsovaluePointCloudSlider::min_isovalue = TMP_MIN_ISOVALUE;
+float IsovaluePointCloudSlider::max_isovalue = TMP_MAX_ISOVALUE;
 
 DicomPointCloudObject::DicomPointCloudObject() : isovalue_point_cloud_sliders(MAX_NR_POINT_CLOUD_SLIDERS)
 {
@@ -72,14 +74,6 @@ int DicomPointCloudObject::Type()
 
 void DicomPointCloudObject::Load()
 {
-	/* dicom point cloud shader layouts
-	"layout(location = 0) in vec3 position;\n"
-	"layout(location = 1) in vec3 normal;\n"
-	"layout(location = 2) in vec3 instanced_position;\n"
-	"layout(location = 3) in float state;\n"
-	"layout(location = 4) in float iso_diff;\n"
-	*/		
-
 	num_vertices = positions.size();
 	num_instances = instanced_positions.size();
 
@@ -97,8 +91,8 @@ void DicomPointCloudObject::Load()
 		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*normals.size(), &normals[0], GL_STATIC_DRAW);
 
 		glGenBuffers(1, &instanced_positions_buffer);
-		glGenBuffers(1, &states_buffer);
-		glGenBuffers(1, &isovalue_differences_buffer);
+		glGenBuffers(1, &instanced_colors_buffer);
+		glGenBuffers(1, &instanced_isovalue_differences_buffer);
 
 		if (instanced_positions.size() > 0)
 		{
@@ -106,16 +100,16 @@ void DicomPointCloudObject::Load()
 			glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*instanced_positions.size(), &instanced_positions[0], GL_STATIC_DRAW);
 		}
 
-		if (states.size() > 0)
+		if (instanced_colors.size() > 0)
 		{
-			glBindBuffer(GL_ARRAY_BUFFER, states_buffer);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*states.size(), &states[0], GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, instanced_colors_buffer);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*instanced_colors.size(), &instanced_colors[0], GL_STATIC_DRAW);
 		}
 
-		if (isovalue_differences.size() > 0)
+		if (instanced_isovalue_differences.size() > 0)
 		{
-			glBindBuffer(GL_ARRAY_BUFFER, isovalue_differences_buffer);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*isovalue_differences.size(), &isovalue_differences[0], GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, instanced_isovalue_differences_buffer);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*instanced_isovalue_differences.size(), &instanced_isovalue_differences[0], GL_STATIC_DRAW);
 		}
 
 		glEnableVertexAttribArray(0);
@@ -131,11 +125,11 @@ void DicomPointCloudObject::Load()
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 		glEnableVertexAttribArray(3);
-		glBindBuffer(GL_ARRAY_BUFFER, states_buffer);
-		glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
+		glBindBuffer(GL_ARRAY_BUFFER, instanced_colors_buffer);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 		glEnableVertexAttribArray(4);
-		glBindBuffer(GL_ARRAY_BUFFER, isovalue_differences_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, instanced_isovalue_differences_buffer);
 		glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 		glBindVertexArray(0);
@@ -153,16 +147,16 @@ void DicomPointCloudObject::Load()
 			glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*instanced_positions.size(), &instanced_positions[0], GL_STATIC_DRAW);
 		}
 
-		if (states.size() > 0)
+		if (instanced_colors.size() > 0)
 		{
-			glBindBuffer(GL_ARRAY_BUFFER, states_buffer);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*states.size(), &states[0], GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, instanced_colors_buffer);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*instanced_colors.size(), &instanced_colors[0], GL_STATIC_DRAW);
 		}
 
-		if (isovalue_differences.size() > 0)
+		if (instanced_isovalue_differences.size() > 0)
 		{
-			glBindBuffer(GL_ARRAY_BUFFER, isovalue_differences_buffer);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*isovalue_differences.size(), &isovalue_differences[0], GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, instanced_isovalue_differences_buffer);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*instanced_isovalue_differences.size(), &instanced_isovalue_differences[0], GL_STATIC_DRAW);
 		}
 	}
 }
@@ -348,18 +342,35 @@ void DicomPointCloudObject::Generate(DicomSet & _ds, int _isovalue, int max_tole
 	else
 	{
 		instanced_positions.clear();
-		isovalue_differences.clear();
-		states.clear();
+		instanced_isovalue_differences.clear();
+		instanced_colors.clear();
 	}
 	
-	// loop through dicom data and add points that are within the current isovalue tolerance
+	// loop through dicom data and add points that are within the current isovalue tolerance, needs optimization
+
 	for (int i = 0; i < _ds.data.size(); ++i) 
 	{
 		for (int j = 0; j < _ds.data[i].isovalues.size(); ++j) 
 		{
-			short iso_abs_check = abs(_ds.data[i].isovalues[j] - _isovalue);
+			glm::vec3 col = glm::vec3(1.0f,0.0f,1.0f);
+			short iso_abs_check;
+			bool found = false;
 
-			if (iso_abs_check <= max_tolerance) 
+			for (int k = 0; k < isovalue_point_cloud_sliders.size(); ++k)
+			{
+				if (!isovalue_point_cloud_sliders[k]->in_use) continue;
+
+				iso_abs_check = abs(_ds.data[i].isovalues[j] - (short)isovalue_point_cloud_sliders[k]->curr_isovalue);
+				if (iso_abs_check <= max_tolerance)
+				{
+					col = isovalue_point_cloud_sliders[k]->color;
+					col = glm::vec3(0.25f, 1.0f, 0.1f);
+					found = true;
+					break;
+				}
+			}
+
+			if (found)
 			{
 				glm::vec3 instanced_position = glm::vec3((float)(j % _ds.data[0].width), float(j / _ds.data[0].width), (float)i) * voxel_scale;
 
@@ -367,8 +378,8 @@ void DicomPointCloudObject::Generate(DicomSet & _ds, int _isovalue, int max_tole
 				&& instanced_position.x < upper_bounds.x && instanced_position.y < upper_bounds.y && instanced_position.z < upper_bounds.z) 
 				{
 					instanced_positions.push_back(instanced_position - lower_bounds);
-					isovalue_differences.push_back(iso_abs_check);
-					states.push_back(i*_ds.data[i].isovalues.size()+j);
+					instanced_isovalue_differences.push_back(iso_abs_check);
+					instanced_colors.push_back(col);
 				}
 			}
 		}

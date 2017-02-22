@@ -1,5 +1,8 @@
 #include "DicomObjectsContainer.h"
 
+ColorObject* debug1 = new ColorObject;
+ColorObject* debug2 = new ColorObject;
+
 DicomObjectsContainer::DicomObjectsContainer()
 {
 	points = new DicomPointCloudObject;
@@ -16,6 +19,9 @@ DicomObjectsContainer::DicomObjectsContainer()
 	initial_position = glm::vec3(-0.5f, 0.25f, 0.5f);
 	tmp_initial_model_matrix = glm::translate(glm::mat4(1.0f), initial_position) * glm::scale(glm::mat4(1.0f), glm::vec3(initial_scale));
 	points->SetMasterAppendPose(tmp_initial_model_matrix);
+
+	debug1->GenerateSphere(10, 0.05f, false);
+	debug2->GenerateSphere(10, 0.05f, false);
 }
 
 DicomObjectsContainer::~DicomObjectsContainer()
@@ -123,16 +129,17 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 		imaging_data.isovalue = imaging_data.data[imaging_data.current_index].isovalues.at(imaging_data.data[imaging_data.current_index].width * index_y + index_x);
 
 		AddIsovaluePointCloudSlider(imaging_data.isovalue);
-		points->Generate(imaging_data, imaging_data.isovalue, MAX_ISOVALUE_TOLERANCE);
+		//points->Generate(imaging_data, imaging_data.isovalue, MAX_ISOVALUE_TOLERANCE);
 	}
 
+	// detect if slider has been moved or has been initialized, then generate dicom point cloud
 
 	for (int i = 0; i < points->isovalue_point_cloud_sliders.size(); ++i)
 	{
 		IsovaluePointCloudSlider* curr = points->isovalue_point_cloud_sliders[i];
+
 		if (curr->knob->is_selected)
 		{
-
 			glm::vec4 colp_to_model_space = glm::inverse(curr->frame->GetModelMatrix()) * glm::vec4(curr->knob->cache.primary_collision_point_world_current, 1.0f);
 			float new_model_x = colp_to_model_space.x;
 
@@ -145,9 +152,14 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 
 			float curr_knob_pos_with_offset = new_model_x - curr->knob_offset;
 			curr->knob->SetModelPositionX(glm::clamp(curr_knob_pos_with_offset, 0.0f, IsovaluePointCloudSlider::knob_travel_dist));
+			curr->MoveSliderModelPosXAndCalcIsovalue(glm::clamp(curr_knob_pos_with_offset, 0.0f, IsovaluePointCloudSlider::knob_travel_dist));
 		}
 		else
 		{
+			if (!curr->knob_first_select)
+			{
+				points->Generate(imaging_data, -1, MAX_ISOVALUE_TOLERANCE);
+			}
 			curr->knob_first_select = true;
 		}
 	}
@@ -213,12 +225,20 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 			prev = newBP;
 		}
 	}
+
+	debug1->SetAppendPose(viewer->base_handle->GetAppendPose());
+	debug2->SetAppendPose(viewer->base_handle->GetAppendPose());
+	debug1->SetWorldPosition(points->lower_bounds);
+	debug2->SetWorldPosition(points->upper_bounds);
 }
 
 void DicomObjectsContainer::AddObjects(Render* _r) 
 {
 	_r->AddObjectToScene(points);
 	viewer->AddObjects(_r);
+
+	_r->AddObjectToScene(debug1);
+	_r->AddObjectToScene(debug2);
 }
 
 void DicomObjectsContainer::AddIsovaluePointCloudSlider(const int _isovalue)
