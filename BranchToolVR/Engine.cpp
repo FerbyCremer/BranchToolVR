@@ -51,6 +51,7 @@ bool Engine::InitGLFW()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwSwapInterval(1);
 
 	window = glfwCreateWindow(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_X, WINDOW_TITLE_STRING, NULL, NULL);
 
@@ -83,8 +84,21 @@ void Engine::Loop()
 	int set_elapsed_time = 5.0f;
 	int frame_counter = 0;
 
+
+	double max_fps = 60.0f;
+	double min_frame_time = 1.0f/ max_fps;
+	double frame_start = 0, frame_end = 0;
+
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) 
 	{
+		frame_start = glfwGetTime();
+		double frame_time = frame_end - frame_start;
+
+		if (frame_time < min_frame_time)
+		{
+			Sleep((min_frame_time - frame_time)*1000.0f);
+		}
+
 		glfwPollEvents();
 		Update();
 		glfwSwapBuffers(window);
@@ -97,9 +111,9 @@ void Engine::Loop()
 			last_frame_time = curr_time;
 			frame_counter = 0;
 		}
-		
-
 		frame_counter++;
+
+		frame_end = glfwGetTime();
 	} 
 
 	glfwTerminate();

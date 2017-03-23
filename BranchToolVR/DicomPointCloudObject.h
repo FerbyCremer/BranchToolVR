@@ -104,6 +104,7 @@ struct IsovaluePointCloudSlider
 		x_button->GenerateIsovaluePointSliderButton(knob_scale*0.75f,glm::vec3(frame_scale.x,knob_scale.x*0.25f*0.5f,-knob_scale.y*0.25f));
 		x_button->SetDisplayColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 		x_button->is_hidden = true;
+		x_button->is_clickable = true;
 
 		SetWorldPosition(glm::vec3(1.0f, 0.0f, 0.0f));
 
@@ -112,12 +113,28 @@ struct IsovaluePointCloudSlider
 
 	void MoveSliderModelPosXAndCalcIsovalue(float _x)
 	{
+		_x = ClampX(_x);
+
 		knob->SetModelPositionX(_x);
 		value_label->SetModelPositionX(_x);
 
 		float curr_percent = _x / knob_travel_dist;
 		curr_isovalue = curr_percent*(max_isovalue - min_isovalue) + min_isovalue;
 		value_label->GenerateText(MiscFunctions::to_string_with_precision(curr_isovalue, 0), knob_scale.x, glm::vec2(0.0f), glm::vec3(0.0f, knob_scale.x*0.5f,knob_scale.x*0.5f + 0.01f));
+	}
+
+	void MoveSliderModelPosX(int _isovalue)
+	{
+		int iso_range = max_isovalue - min_isovalue;
+		int iso_dist = _isovalue - min_isovalue;
+
+		float iso_percent = (float)iso_dist / (float)iso_range;
+
+		std::cout << "isoval: " << _isovalue << std::endl;
+		std::cout << iso_percent << "  " << iso_percent*iso_range + min_isovalue << std::endl;
+		std::cout << std::endl;
+
+		MoveSliderModelPosXAndCalcIsovalue(iso_percent*IsovaluePointCloudSlider::knob_travel_dist);
 	}
 
 	void SetColor(const glm::vec3 _color)
@@ -177,6 +194,11 @@ struct IsovaluePointCloudSlider
 		tag_frame->is_hidden = _in_use;
 		tag_label->is_hidden = _in_use;
 		tag_x_button->is_hidden = _in_use;
+	}
+
+	float ClampX(float _x)
+	{
+		return glm::clamp(_x, 0.0f, IsovaluePointCloudSlider::knob_travel_dist);
 	}
 
 	~IsovaluePointCloudSlider()

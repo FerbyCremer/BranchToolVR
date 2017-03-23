@@ -56,6 +56,7 @@ void DicomPointCloudObject::AddNewIsovaluePointCloudSlider(int _isovalue)
 		if (!isovalue_point_cloud_sliders[i]->in_use)
 		{
 			isovalue_point_cloud_sliders[i]->SetInUse(true);
+			isovalue_point_cloud_sliders[i]->MoveSliderModelPosX(_isovalue);
 
 			unused_slider_slot_found = true;
 			break;

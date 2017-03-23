@@ -116,6 +116,8 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 		points->SetMasterAppendPose(curr_pose);
 	}
 
+	bool hasChanged = false; // flag to regenerate point cloud
+
 	if (viewer->orthoslice->WasClicked())
 	{
 		glm::vec4 colp_to_model_space = glm::inverse(viewer->base_handle->GetModelMatrix()) * glm::vec4(viewer->orthoslice->cache.primary_collision_point_world_current, 1.0f);
@@ -129,14 +131,20 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 		imaging_data.isovalue = imaging_data.data[imaging_data.current_index].isovalues.at(imaging_data.data[imaging_data.current_index].width * index_y + index_x);
 
 		AddIsovaluePointCloudSlider(imaging_data.isovalue);
-		//points->Generate(imaging_data, imaging_data.isovalue, MAX_ISOVALUE_TOLERANCE);
+		hasChanged = true;
 	}
 
-	// detect if slider has been moved or has been initialized, then generate dicom point cloud
-
+	// detect if slider has been moved or has been initialized, then regenerate generate dicom point cloud
+	int inUseIndex = 0;
 	for (int i = 0; i < points->isovalue_point_cloud_sliders.size(); ++i)
 	{
 		IsovaluePointCloudSlider* curr = points->isovalue_point_cloud_sliders[i];
+
+		if (curr->x_button->WasClicked())
+		{
+			curr->SetInUse(false);
+		}
+
 
 		if (curr->knob->is_selected)
 		{
@@ -151,17 +159,29 @@ void DicomObjectsContainer::Update(const VrData& _vr, const CursorData& _crsr)
 
 
 			float curr_knob_pos_with_offset = new_model_x - curr->knob_offset;
-			curr->knob->SetModelPositionX(glm::clamp(curr_knob_pos_with_offset, 0.0f, IsovaluePointCloudSlider::knob_travel_dist));
-			curr->MoveSliderModelPosXAndCalcIsovalue(glm::clamp(curr_knob_pos_with_offset, 0.0f, IsovaluePointCloudSlider::knob_travel_dist));
+			//curr->knob->SetModelPositionX(glm::clamp(curr_knob_pos_with_offset, 0.0f, IsovaluePointCloudSlider::knob_travel_dist));
+			curr->MoveSliderModelPosXAndCalcIsovalue(curr_knob_pos_with_offset);
 		}
 		else
 		{
 			if (!curr->knob_first_select)
 			{
-				points->Generate(imaging_data, -1, MAX_ISOVALUE_TOLERANCE);
+				// knob has been released
+				hasChanged = true;
 			}
 			curr->knob_first_select = true;
 		}
+
+		if (curr->in_use)
+		{
+			curr->SetModelPositionY(0.3f*(float)inUseIndex);
+			inUseIndex++;
+		}
+	}
+
+	if (hasChanged)
+	{
+		points->Generate(imaging_data, -1, MAX_ISOVALUE_TOLERANCE);
 	}
 
 	// drawing branches in VR
@@ -243,7 +263,6 @@ void DicomObjectsContainer::AddObjects(Render* _r)
 
 void DicomObjectsContainer::AddIsovaluePointCloudSlider(const int _isovalue)
 {
-	//DicomPointCloudObject::isovalue_point_cloud_sliders.push_back(new IsovaluePointCloudSlider(_isovalue));
 	points->AddNewIsovaluePointCloudSlider(_isovalue);
 }
 
