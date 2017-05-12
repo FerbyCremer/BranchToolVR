@@ -1118,8 +1118,11 @@ void Render::UpdateHMDMatrixPose()
 
 		if (m_pHMD->GetControllerState(unTrackedDevice, &state))
 		{
-			if (state.ulButtonPressed != 0) 
+
+
+			if (state.ulButtonPressed == 8589934592)
 			{
+				
 				currController.trigger_first_press = !currController.trigger_is_pressed;
 				currController.trigger_is_pressed = true;
 			}
@@ -1127,6 +1130,19 @@ void Render::UpdateHMDMatrixPose()
 			{
 				currController.trigger_first_press = false;
 				currController.trigger_is_pressed = false;
+			}
+
+
+			if (state.ulButtonPressed == 4)
+			{
+
+				currController.alt_first_press = !currController.alt_is_pressed;
+				currController.alt_is_pressed = true;
+			}
+			else
+			{
+				currController.alt_first_press = false;
+				currController.alt_is_pressed = false;
 			}
 		}
 	}
