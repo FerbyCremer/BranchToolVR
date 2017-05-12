@@ -322,6 +322,12 @@ void DicomPointCloudObject::GenerateSphere(float _scale)
 
 void DicomPointCloudObject::Generate(DicomSet & _ds, int _isovalue, int max_tolerance) 
 {
+	if (!has_changed) {
+		return;
+	}
+
+	has_changed = false;
+
 	if (&_ds == NULL || _ds.data.size() < 1)
 	{
 		return;
@@ -420,4 +426,9 @@ BranchPoint* DicomPointCloudObject::GetBranchPointByID(int _id)  // TODO: switch
 	}
 
 	return NULL;
+}
+
+void DicomPointCloudObject::MarkForRegeneration()
+{
+	has_changed = true;
 }

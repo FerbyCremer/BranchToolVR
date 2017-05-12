@@ -224,8 +224,9 @@ class DicomPointCloudObject : public AbstractBaseObject
 		int Type();	
 		const GLuint GetNumInstances() { return num_instances; }
 		BranchPoint* GetBranchPointByID(int id);	
-		
+		void MarkForRegeneration();
 		bool first_load;	
+
 		int curr_tolerance;
 		glm::vec3 lower_bounds;
 		glm::vec3 upper_bounds;
@@ -241,7 +242,8 @@ class DicomPointCloudObject : public AbstractBaseObject
 	private:		
 		void GenerateCube(glm::vec3 _scale, glm::vec3 _offset);
 		void GenerateSphere(float _scale);	
-		void Load();
+		void Load();		
+		bool has_changed; // used to flag if the sliders have changed after each change for regeneration
 
 		unsigned int num_instances;
 		std::vector<glm::vec3> normals;

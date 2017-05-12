@@ -17,7 +17,7 @@
 
 struct DicomSingle 
 {
-	std::vector<short> isovalues;
+	std::vector<unsigned short> isovalues;
 	int width;
 	int height;
 	int layer;
@@ -37,6 +37,8 @@ struct DicomSet
 	int window_center;
 	int window_width;
 	int current_index;
+	unsigned short min;
+	unsigned short max;
 
 	DicomSet() 
 	{

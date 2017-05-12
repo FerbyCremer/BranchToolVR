@@ -21,11 +21,14 @@ class Texture
 		void Bind(int _level);
 		bool Load(std::string _fp);
 		bool Load(DicomSingle & _ds, int window_width, int window_center);
+		int width; // TODO: make private, add getters
+		int height;
+		int id;
+		int level;
 	
 	private:
 		void Delete();
 		static int texture_id_counter;
 		GLuint gl_id;
-		int id;
 		bool is_loaded;
 };

@@ -66,6 +66,24 @@ DicomSet DicomReader::ReadSet(std::string _dicomFolder)
 		_dSet.scale.z = (float)_dSet.data.size() * scaledHeight;
 	}
 
+
+	for (int i = 0; i < _dSet.data.size(); ++i) {
+		auto tmp_max = *std::max_element(_dSet.data[i].isovalues.begin(), _dSet.data[i].isovalues.end());
+		auto tmp_min = *std::min_element(_dSet.data[i].isovalues.begin(), _dSet.data[i].isovalues.end());
+
+		if (i == 0) {
+			_dSet.max = tmp_max;
+			_dSet.min = tmp_min;
+			continue;
+		}
+		
+		if (_dSet.max < tmp_max) _dSet.max = tmp_max;
+		if (_dSet.min > tmp_min) _dSet.min = tmp_min;
+	}
+
+	std::cout << _dSet.max << std::endl;
+	std::cout << _dSet.min << std::endl;
+
 	return _dSet;
 }
 

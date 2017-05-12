@@ -7,12 +7,15 @@
 #include "DicomPointCloudObject.h"
 #include "Render.h"
 #include "Ui.h"
+#include "imgui.h"
+#include "imgui_impl_glfw_gl3.h"
 
 class DicomObjectsContainer
 {
 	public:
 		DicomObjectsContainer();
 		~DicomObjectsContainer();
+		void RenderUi();
 		void Update(const VrData& _vr, const CursorData& _crsr);
 		void Load(std::string _dicomDir);		
 		void AddObjects(Render * _r);

@@ -84,15 +84,29 @@ void Engine::Loop()
 	int set_elapsed_time = 5.0f;
 	int frame_counter = 0;
 
-
 	double max_fps = 60.0f;
 	double min_frame_time = 1.0f/ max_fps;
 	double frame_start = 0, frame_end = 0;
+
+	ImGui_ImplGlfwGL3_Init(window, true);
 
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) 
 	{
 		frame_start = glfwGetTime();
 		double frame_time = frame_end - frame_start;
+
+		ImGui_ImplGlfwGL3_NewFrame();
+
+		Update();		
+		
+		// Rendering
+		int display_w, display_h;
+		glfwGetFramebufferSize(window, &display_w, &display_h);
+		glViewport(0, 0, display_w, display_h);
+		//glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+		//glClear(GL_COLOR_BUFFER_BIT);
+		ImGui::Render();
+
 
 		if (frame_time < min_frame_time)
 		{
@@ -100,7 +114,7 @@ void Engine::Loop()
 		}
 
 		glfwPollEvents();
-		Update();
+
 		glfwSwapBuffers(window);
 
 		double curr_time = glfwGetTime();
